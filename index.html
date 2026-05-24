@@ -2056,6 +2056,64 @@ window.openEditMatch=function(sid){
         </div>`;
     }).join('');
     extraHtml=`<div class="fg"><div class="flbl">Player Stats</div>${rows||'<div style="color:var(--muted);font-size:12px">No player data</div>'}</div>`;
+  } else {
+    // history mode: no player data — let user add it now, will upgrade to 'post' on save
+    const plist=Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+    const groups=groupPlayersByTeam(plist);
+    const accordionHtml=plist.length===0
+      ?`<div style="color:var(--muted);font-size:12px">No players found.</div>`
+      :groups.map(({t,players})=>`
+        <div class="ng-team-section">
+          <button class="ng-team-toggle" id="pgtogg-${t}" onclick="pgToggleTeam('${t}')"
+            style="border-left:3px solid ${TEAM_COLOR[t]}">
+            <span style="display:flex;align-items:center;gap:10px">
+              <span>${TEAM_EMOJI[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+              <span class="ng-sel-badge" id="pgbadge-${t}">0 / ${players.length}</span>
+            </span>
+            <span class="ng-chev">›</span>
+          </button>
+          <div class="ng-team-body" id="pgbody-${t}">
+            ${players.map(([id,p])=>`
+              <div class="lpg-row">
+                <div class="lpg-top">
+                  <input type="checkbox" class="ng-cb" id="pgcb-${id}" onchange="pgCbChange('${id}','${p.defaultPosition}','${t}')">
+                  <label for="pgcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
+                </div>
+                <div class="lpg-sels" id="pgsels-${id}" style="display:none;gap:8px;margin-top:8px">
+                  <select class="assign-sel" id="pgpos-${id}" onchange="pgUpdateGKRow('${id}')">
+                    <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+                    <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+                    <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+                    <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+                  </select>
+                  <select class="assign-sel" id="pgteam-${id}">
+                    <option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
+                    <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
+                    <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
+                    <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
+                  </select>
+                </div>
+                <div class="lpg-stats" id="pgstats-${id}">
+                  <div class="lpg-stat-row">
+                    <span class="lpg-stat-label">⚽ G</span><input class="finput-sm" id="pgG-${id}" type="number" min="0" value="0">
+                    <span class="lpg-stat-label">👟 A</span><input class="finput-sm" id="pgA-${id}" type="number" min="0" value="0">
+                    <span class="lpg-stat-label">🟨</span><input class="finput-sm" id="pgY-${id}" type="number" min="0" value="0">
+                    <span class="lpg-stat-label">🟥</span><input class="finput-sm" id="pgR-${id}" type="number" min="0" value="0">
+                  </div>
+                  <div class="lpg-stat-row" id="pgGKrow-${id}" style="display:none">
+                    <span class="lpg-stat-label">🧤 Sv</span><input class="finput-sm" id="pgSv-${id}" type="number" min="0" value="0">
+                    <span class="lpg-stat-label">✋ PenSv</span><input class="finput-sm" id="pgPen-${id}" type="number" min="0" value="0">
+                    <span class="lpg-stat-label">😓 Conc</span><input class="finput-sm" id="pgConc-${id}" type="number" min="0" value="0">
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>`).join('');
+    extraHtml=`<div class="fg">
+      <div class="flbl">Player Stats</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5">Tick players who played. Saving will upgrade this record with full player data.</div>
+      ${accordionHtml}
+    </div>`;
   }
 
   document.getElementById('em-body').innerHTML=`
@@ -2091,6 +2149,34 @@ window.saveEditMatch=async function(){
       }
     });
     updates.playerStats=playerStats;
+  }
+  if(mode==='history'){
+    const teamsBuilt={}, playerStats={};
+    let anyPlayed=false;
+    for(const [id,p] of Object.entries(S.players)){
+      const cb=document.getElementById('pgcb-'+id);
+      if(!cb||!cb.checked) continue;
+      anyPlayed=true;
+      const pos=document.getElementById('pgpos-'+id)?.value||p.defaultPosition;
+      const team=document.getElementById('pgteam-'+id)?.value||p.defaultTeam;
+      if(!teamsBuilt[team]) teamsBuilt[team]={players:{}};
+      teamsBuilt[team].players[id]={position:pos};
+      const g=parseInt(document.getElementById('pgG-'+id)?.value)||0;
+      const a=parseInt(document.getElementById('pgA-'+id)?.value)||0;
+      const y=parseInt(document.getElementById('pgY-'+id)?.value)||0;
+      const r=parseInt(document.getElementById('pgR-'+id)?.value)||0;
+      playerStats[id]={played:true,goals:g,assists:a,yellow:y,red:r};
+      if(pos==='GK'){
+        playerStats[id].saves=parseInt(document.getElementById('pgSv-'+id)?.value)||0;
+        playerStats[id].penaltySaves=parseInt(document.getElementById('pgPen-'+id)?.value)||0;
+        playerStats[id].conceded=parseInt(document.getElementById('pgConc-'+id)?.value)||0;
+      }
+    }
+    if(anyPlayed){
+      updates.teams=teamsBuilt;
+      updates.playerStats=playerStats;
+      updates.mode='post';
+    }
   }
   await DB.update(`sessions/${editSessId}`,updates);
   closeM('m-editmatch');toast('Match updated ✓');
