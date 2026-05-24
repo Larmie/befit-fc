@@ -1,6 +1,6 @@
 {
-  "name": "BeFit FC",
-  "short_name": "BeFit FC",
+  "name": "BE Fit Club",
+  "short_name": "BE Fit Club",
   "description": "Monday night football tracker",
   "start_url": "/",
   "display": "standalone",

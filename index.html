@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>BeFit FC</title>
+  <title>BE Fit Club</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#00d68f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="BeFit FC">
+  <meta name="apple-mobile-web-app-title" content="BE Fit Club">
   <link rel="apple-touch-icon" href="/icon.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -467,7 +467,7 @@
 <div class="bg-glow"></div>
 
 <header class="app-header">
-  <h1>⚽ BeFit FC</h1>
+  <h1>⚽ BE Fit Club</h1>
   <div id="header-viewer" style="position:absolute;right:14px;display:flex;align-items:center;gap:5px"></div>
 </header>
 
@@ -696,7 +696,7 @@
   <div class="modal welcome-modal">
     <div style="text-align:center;margin-bottom:24px">
       <div style="font-size:48px;margin-bottom:10px">⚽</div>
-      <div style="font-size:22px;font-weight:900;color:var(--green);letter-spacing:0.5px">BeFit FC</div>
+      <div style="font-size:22px;font-weight:900;color:var(--green);letter-spacing:0.5px">BE Fit Club</div>
       <div style="font-size:13px;color:var(--muted);margin-top:8px">Season 2025/26 · Who are you?</div>
     </div>
     <div id="welcome-list" style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto"></div>
@@ -2538,7 +2538,7 @@ function drawPlayerCard(pid,pl,st){
 
   // Club name
   ctx.fillStyle='#7fa8c9';ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
-  ctx.fillText('BeFit FC · Season 2025/26',W/2,22);
+  ctx.fillText('BE Fit Club · Season 2025/26',W/2,22);
 
   // Player name
   ctx.fillStyle='#e8f4fd';ctx.font='bold 24px -apple-system,sans-serif';ctx.textAlign='center';
@@ -2588,7 +2588,7 @@ function drawPlayerCard(pid,pl,st){
   ctx.fillStyle='#3d5f7e';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='center';
   const co=pl.carryover;
   if(co&&co.pts>0)ctx.fillText(`incl. ${co.pts} carried from Jan–May 2026`,W/2,418);
-  ctx.fillText('befit-fc.larmiereuben.workers.dev',W/2,432);
+  ctx.fillText('befit-club.larmiereuben.workers.dev',W/2,432);
 
   return canvas;
 }
