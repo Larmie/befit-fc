@@ -444,6 +444,45 @@
     /* ── PLAYER CARD PREVIEW ── */
     #pc-canvas-wrap canvas { max-width: 100%; border-radius: 12px; }
 
+    /* ── MATCH SUMMARY ── */
+    .ms-score {
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+      padding: 22px 14px;
+      background: linear-gradient(180deg, rgba(0,214,143,0.06) 0%, rgba(17,34,64,0.4) 100%);
+      border: 1px solid rgba(0,214,143,0.15);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      position: relative; overflow: hidden;
+    }
+    .ms-score::before {
+      content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,214,143,0.5), transparent);
+    }
+    .ms-team { text-align: center; flex: 1; }
+    .ms-team-name { font-size: 11px; font-weight: 900; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 6px; }
+    .ms-team-goals { font-size: 42px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 24px currentColor; filter: brightness(1.08); }
+    .ms-vs { font-size: 22px; color: var(--muted); opacity: 0.35; font-weight: 900; }
+    .ms-meta { text-align: center; font-size: 11px; color: var(--muted); margin-bottom: 18px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+    .ms-sect { margin-bottom: 6px; }
+    .ms-sect-hdr {
+      font-size: 11px; font-weight: 900; color: var(--text); letter-spacing: 1.4px;
+      text-transform: uppercase; padding: 10px 14px;
+      background: linear-gradient(90deg, rgba(0,214,143,0.08), rgba(23,47,82,0.4));
+      border-left: 3px solid var(--green);
+      border-radius: 6px;
+      margin-top: 12px; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ms-row {
+      display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+      font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .ms-row:last-child { border-bottom: none; }
+    .ms-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+    .ms-name { font-weight: 700; flex: 1; }
+    .ms-count { font-size: 12px; color: var(--green); font-weight: 800; }
+    .ms-empty { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+
     /* ── TAB ANIMATION ── */
     .tab.active { animation: tabFadeIn 0.28s ease forwards; }
     @keyframes tabFadeIn {
@@ -589,12 +628,12 @@
     <span>Players</span>
   </button>
   <button class="nav-btn" onclick="switchTab('teams',this)">
-    <span class="nav-pill"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-    <span>Teams</span>
+    <span class="nav-pill"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></span>
+    <span>Season</span>
   </button>
   <button class="nav-btn" onclick="switchTab('admin',this)">
-    <span class="nav-pill"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></svg></span>
-    <span>Admin</span>
+    <span class="nav-pill"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+    <span>Settings</span>
   </button>
 </nav>
 
@@ -756,6 +795,18 @@
     <div class="mfooter">
       <button class="btn btn-ghost" onclick="closeM('m-pastgame')">Cancel</button>
       <button class="btn btn-primary" onclick="submitPastGame()">Save Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- MATCH SUMMARY MODAL -->
+<div class="overlay" id="m-matchsummary">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="ms-title">Match Summary</div>
+    <div id="ms-body"></div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-matchsummary')">Close</button>
     </div>
   </div>
 </div>
@@ -1624,7 +1675,7 @@ function renderTeams() {
     const mode = s.mode||'live';
     const modeBadge = `<span class="sess-mode-badge mode-${mode}">${mode}</span>`;
     return `
-      <div class="session-row">
+      <div class="session-row" onclick="openMatchSummary('${sid}')" style="cursor:pointer">
         <div>
           <div style="font-size:13px;font-weight:700">${fmtDate(s.date)} ${modeBadge}</div>
           <div style="font-size:12px;margin-top:4px">${scoreStr}</div>
@@ -1656,10 +1707,10 @@ function renderAdmin() {
   if (!S.admin) {
     el.innerHTML = `
       <div class="empty">
-        <div class="e-icon">🔐</div>
-        <div class="e-title">Admin Access</div>
+        <div class="e-icon">🔒</div>
+        <div class="e-title">Settings</div>
         <div class="e-desc">Password required to manage players and sessions.</div>
-        <button class="btn btn-primary" style="width:auto;padding:12px 32px;margin-top:20px" onclick="openM('m-login')">Login</button>
+        <button class="btn btn-primary" style="width:auto;padding:12px 32px;margin-top:20px" onclick="openM('m-login')">Unlock</button>
       </div>`;
     return;
   }
@@ -1697,7 +1748,7 @@ function renderAdmin() {
         const editNote = mode==='history' ? '(score only)' : mode==='post' ? '(player stats)' : '(events)';
         return `
           <div class="sess-admin-row">
-            <div>
+            <div onclick="openMatchSummary('${sid}')" style="cursor:pointer;flex:1">
               <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
               <div style="font-size:11px;color:var(--muted);margin-top:2px">${scoreStr}</div>
               <div style="font-size:10px;color:var(--muted);margin-top:2px"><span class="sess-mode-badge mode-${mode}">${mode}</span> <span style="opacity:0.6">${editNote}</span></div>
@@ -2136,6 +2187,105 @@ window.submitPastGame=async function(){
 
 // ─── EDIT MATCH (full) ───
 let emPickedTeam=null, emPickedPid=null;
+
+function playerTeamInSession(sess, pid) {
+  if (!sess.teams) return null;
+  for (const [team, data] of Object.entries(sess.teams)) {
+    if (data.players?.[pid]) return team;
+  }
+  return null;
+}
+
+function getMatchSummary(sess) {
+  const mode = sess.mode || 'live';
+  const sum = { goals: {}, assists: {}, yellowCards: {}, redCards: {}, saves: {}, penaltySaves: {} };
+  const inc = (bucket, pid, by=1) => {
+    if (!pid || by <= 0) return;
+    sum[bucket][pid] = (sum[bucket][pid] || 0) + by;
+  };
+  if (mode === 'live') {
+    for (const ev of Object.values(sess.events || {})) {
+      switch(ev.type) {
+        case 'goal':        inc('goals', ev.scorerId); if (ev.assistId) inc('assists', ev.assistId); break;
+        case 'save':        inc('saves', ev.playerId); break;
+        case 'penaltySave': inc('penaltySaves', ev.playerId); break;
+        case 'yellowCard':  inc('yellowCards', ev.playerId); break;
+        case 'redCard':     inc('redCards', ev.playerId); break;
+      }
+    }
+  } else if (mode === 'post') {
+    for (const [pid, stats] of Object.entries(sess.playerStats || {})) {
+      inc('goals', pid, stats.goals || 0);
+      inc('assists', pid, stats.assists || 0);
+      inc('yellowCards', pid, stats.yellow || 0);
+      inc('redCards', pid, stats.red || 0);
+      inc('saves', pid, stats.saves || 0);
+      inc('penaltySaves', pid, stats.penaltySaves || 0);
+    }
+  }
+  return sum;
+}
+
+window.openMatchSummary = function(sid) {
+  const s = S.sessions[sid];
+  if (!s) return;
+  const sum = getMatchSummary(s);
+  const teams = getActiveTeams(s);
+  const mode = s.mode || 'live';
+
+  const scoreBanner = teams.length === 2 ? `
+    <div class="ms-team">
+      <div class="ms-team-name" style="color:${TEAM_COLOR[teams[0]]}">${TEAM_EMOJI[teams[0]]||''} ${teams[0].charAt(0).toUpperCase()+teams[0].slice(1)}</div>
+      <div class="ms-team-goals" style="color:${TEAM_COLOR[teams[0]]}">${getTeamGoals(s, teams[0])}</div>
+    </div>
+    <div class="ms-vs">—</div>
+    <div class="ms-team">
+      <div class="ms-team-name" style="color:${TEAM_COLOR[teams[1]]}">${TEAM_EMOJI[teams[1]]||''} ${teams[1].charAt(0).toUpperCase()+teams[1].slice(1)}</div>
+      <div class="ms-team-goals" style="color:${TEAM_COLOR[teams[1]]}">${getTeamGoals(s, teams[1])}</div>
+    </div>
+  ` : teams.map(t => `<div class="ms-team"><div class="ms-team-name" style="color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t}</div><div class="ms-team-goals" style="color:${TEAM_COLOR[t]}">${getTeamGoals(s,t)}</div></div>`).join('<div class="ms-vs">—</div>');
+
+  const renderSection = (icon, title, bucket) => {
+    const entries = Object.entries(bucket).filter(([,c]) => c > 0).sort((a,b)=>b[1]-a[1]);
+    if (entries.length === 0) return '';
+    return `<div class="ms-sect">
+      <div class="ms-sect-hdr">${icon} ${title}</div>
+      ${entries.map(([pid, count]) => {
+        const p = S.players[pid];
+        const team = playerTeamInSession(s, pid) || p?.defaultTeam;
+        const tc = TEAM_COLOR[team] || 'var(--muted)';
+        return `<div class="ms-row">
+          <span class="ms-dot" style="background:${tc};color:${tc}"></span>
+          <span class="ms-name">${p?.name || 'Unknown'}</span>
+          ${count > 1 ? `<span class="ms-count">×${count}</span>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  const sections = [
+    renderSection('⚽', 'Goals Scored', sum.goals),
+    renderSection('👟', 'Assists', sum.assists),
+    renderSection('🧤', 'Saves', sum.saves),
+    renderSection('✨', 'Penalty Saves', sum.penaltySaves),
+    renderSection('🟨', 'Yellow Cards', sum.yellowCards),
+    renderSection('🟥', 'Red Cards', sum.redCards),
+  ].filter(Boolean).join('');
+
+  const hasData = sections.length > 0;
+  const editBtn = S.admin
+    ? `<div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 18px" onclick="closeM('m-matchsummary');openEditMatch('${sid}')">✏️ Edit Match</button></div>`
+    : '';
+
+  document.getElementById('ms-title').textContent = `🏟️ ${fmtDate(s.date)}`;
+  document.getElementById('ms-body').innerHTML = `
+    <div class="ms-score">${scoreBanner}</div>
+    <div class="ms-meta">${mode === 'history' ? 'Legacy entry' : mode === 'post' ? 'Logged' : 'Live'}</div>
+    ${hasData ? sections : `<div class="ms-empty">No player events recorded${mode==='history'?' — only the final score was logged':''}</div>`}
+    ${editBtn}
+  `;
+  openM('m-matchsummary');
+};
 
 window.openEditMatch=function(sid){
   const s=S.sessions[sid];if(!s)return;
