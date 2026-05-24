@@ -8,10 +8,11 @@
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     :root {
-      --bg: #0b1a2e;
-      --surface: #112240;
-      --surface2: #172f52;
-      --border: #1e3a5f;
+      --bg: #080f1e;
+      --surface: rgba(17,34,64,0.6);
+      --surface2: rgba(23,47,82,0.5);
+      --border: rgba(255,255,255,0.08);
+      --border-solid: #1e3a5f;
       --green: #00d68f;
       --red: #ff4757;
       --yellow: #ffd43b;
@@ -22,21 +23,32 @@
       --muted: #7fa8c9;
       --nav-h: 64px;
       --header-h: 54px;
+      --blur: blur(20px);
+      --blur-sm: blur(12px);
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
+      background: linear-gradient(160deg, #0a1628 0%, #0c1e38 60%, #091424 100%);
       color: var(--text);
       min-height: 100vh;
       max-width: 480px;
       margin: 0 auto;
     }
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      max-width: 480px; margin: 0 auto;
+      background:
+        radial-gradient(ellipse 70% 50% at 15% 10%, rgba(0,214,143,0.09) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 60% at 85% 85%, rgba(255,71,87,0.07) 0%, transparent 70%);
+    }
 
     /* ── HEADER ── */
     .app-header {
       height: var(--header-h);
-      background: var(--surface);
+      background: rgba(10,18,40,0.82);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -51,7 +63,10 @@
     .bottom-nav {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 480px; height: var(--nav-h);
-      background: var(--surface); border-top: 1px solid var(--border);
+      background: rgba(10,18,40,0.88);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-top: 1px solid var(--border);
       display: flex; z-index: 50;
     }
     .nav-btn {
@@ -66,10 +81,17 @@
     /* ── TABS ── */
     .tab { display: none; }
     .tab.active { display: block; }
-    .main { padding: 14px 14px calc(var(--nav-h) + 14px); min-height: calc(100vh - var(--header-h)); }
+    .main { padding: 16px 14px calc(var(--nav-h) + 16px); min-height: calc(100vh - var(--header-h)); position: relative; z-index: 1; }
 
     /* ── CARD ── */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .card {
+      background: rgba(17,34,64,0.55);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 16px; margin-bottom: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
     .card-title { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
 
     /* ── BUTTONS ── */
@@ -81,25 +103,25 @@
     }
     .btn:active { transform: scale(0.96); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-primary  { background: var(--green); color: #0b1a2e; }
-    .btn-danger   { background: var(--red);   color: #fff; }
-    .btn-ghost    { background: transparent;  color: var(--muted); border: 1px solid var(--border); }
+    .btn-primary  { background: linear-gradient(135deg, #00d68f, #00b573); color: #051020; box-shadow: 0 4px 16px rgba(0,214,143,0.3); }
+    .btn-danger   { background: linear-gradient(135deg, #ff4757, #e0394a); color: #fff; box-shadow: 0 4px 12px rgba(255,71,87,0.3); }
+    .btn-ghost    { background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border); }
     .btn-sm       { padding: 8px 14px; font-size: 12px; }
 
     /* ── ACTION GRID ── */
     .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .action-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 5px; padding: 18px 10px; border-radius: 14px; border: none; font-size: 12px;
+      gap: 5px; padding: 20px 10px; border-radius: 16px; border: none; font-size: 12px;
       font-weight: 800; cursor: pointer; letter-spacing: 0.5px; transition: transform 0.1s;
     }
     .action-btn:active { transform: scale(0.94); }
-    .action-btn .ab-icon { font-size: 26px; }
-    .ab-goal    { background: var(--green);  color: #0b1a2e; }
-    .ab-save    { background: var(--blue);   color: #fff; }
-    .ab-yellow  { background: var(--yellow); color: #0b1a2e; }
-    .ab-red     { background: var(--red);    color: #fff; }
-    .ab-pensave { background: var(--purple); color: #fff; grid-column: 1 / -1; flex-direction: row; padding: 14px; gap: 10px; }
+    .action-btn .ab-icon { font-size: 28px; }
+    .ab-goal    { background: linear-gradient(135deg, #00d68f, #00a870); color: #051020; box-shadow: 0 4px 16px rgba(0,214,143,0.25); }
+    .ab-save    { background: linear-gradient(135deg, #4a90d9, #3470b8); color: #fff; box-shadow: 0 4px 12px rgba(74,144,217,0.25); }
+    .ab-yellow  { background: linear-gradient(135deg, #ffd43b, #e8be20); color: #0b1a2e; box-shadow: 0 4px 12px rgba(255,212,59,0.2); }
+    .ab-red     { background: linear-gradient(135deg, #ff4757, #e03347); color: #fff; box-shadow: 0 4px 12px rgba(255,71,87,0.25); }
+    .ab-pensave { background: linear-gradient(135deg, #a855f7, #9333e0); color: #fff; grid-column: 1 / -1; flex-direction: row; padding: 14px; gap: 10px; box-shadow: 0 4px 12px rgba(168,85,247,0.2); }
 
     /* ── SCORE DISPLAY ── */
     .score-wrap { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 20px 10px 14px; }
@@ -111,8 +133,11 @@
     /* ── LIVE BANNER ── */
     .live-banner {
       display: flex; align-items: center; justify-content: space-between;
-      background: rgba(0,214,143,0.07); border: 1px solid rgba(0,214,143,0.25);
+      background: rgba(0,214,143,0.07);
+      backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+      border: 1px solid rgba(0,214,143,0.2);
       border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
+      box-shadow: 0 0 24px rgba(0,214,143,0.06);
     }
     .live-banner .live-left { font-size: 13px; display: flex; align-items: center; gap: 8px; }
     .live-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: blink 1.4s infinite; }
@@ -151,11 +176,15 @@
 
     /* ── PODIUM ── */
     .podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-bottom: 20px; padding: 0 4px; }
-    .pod-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 14px; padding: 14px 8px 12px; cursor: pointer; flex: 1; max-width: 130px; }
+    .pod-slot {
+      display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 16px;
+      padding: 14px 8px 12px; cursor: pointer; flex: 1; max-width: 130px;
+      backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+    }
     .pod-slot:active { opacity: 0.8; }
-    .pod-1 { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.3); padding-bottom: 20px; }
-    .pod-2 { background: rgba(192,192,192,0.06); border: 1px solid rgba(192,192,192,0.25); }
-    .pod-3 { background: rgba(205,127,50,0.06);  border: 1px solid rgba(205,127,50,0.25); }
+    .pod-1 { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25); padding-bottom: 20px; box-shadow: 0 0 30px rgba(255,215,0,0.08), 0 8px 20px rgba(0,0,0,0.2); }
+    .pod-2 { background: rgba(192,192,192,0.06); border: 1px solid rgba(192,192,192,0.2); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+    .pod-3 { background: rgba(205,127,50,0.06);  border: 1px solid rgba(205,127,50,0.2); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
     .pod-medal { font-size: 26px; }
     .pod-name  { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.2; }
     .pod-pts   { font-size: 22px; font-weight: 900; color: var(--green); }
@@ -163,29 +192,39 @@
 
     /* ── PLAYERS VIEW TOGGLE ── */
     .view-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
-    .vtbtn { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 800; cursor: pointer; }
-    .vtbtn.active { background: rgba(0,214,143,0.12); border-color: var(--green); color: var(--green); }
+    .vtbtn { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--muted); font-size: 12px; font-weight: 800; cursor: pointer; }
+    .vtbtn.active { background: rgba(0,214,143,0.12); border-color: rgba(0,214,143,0.4); color: var(--green); }
+    /* viewer row highlight in list view */
+    .viewer-row td { background: rgba(0,214,143,0.04); }
+    .viewer-row td:first-child { border-left: 2px solid rgba(0,214,143,0.45); padding-left: 3px; }
 
     /* ── PLAYER GRID ── */
     .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .pgrid-card {
-      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; cursor: pointer; transition: border-color 0.15s;
+      background: rgba(17,34,64,0.5);
+      backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 12px 10px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
       display: flex; flex-direction: column; gap: 5px;
     }
     .pgrid-card:active { border-color: var(--green); }
-    .pgrid-name { font-size: 13px; font-weight: 800; }
-    .pgrid-pts  { font-size: 20px; font-weight: 900; color: var(--green); }
-    .pgrid-sub  { font-size: 10px; color: var(--muted); }
-    .pgrid-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .viewer-card { border-color: rgba(0,214,143,0.4) !important; box-shadow: 0 0 16px rgba(0,214,143,0.12); }
+    .pgrid-name  { font-size: 13px; font-weight: 800; }
+    .pgrid-rank  { font-size: 10px; color: var(--muted); font-weight: 700; }
+    .pgrid-tags  { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pgrid-statrow { display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .pgrid-sc    { text-align: center; flex: 1; }
+    .pgrid-sv    { font-size: 15px; font-weight: 900; color: var(--text); line-height: 1; }
+    .pgrid-pts-v { color: var(--green); }
+    .pgrid-sl    { font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: 0.3px; margin-top: 2px; }
 
     /* ── TEAMS TAB ── */
     .team-vs { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    .tvc { flex: 1; text-align: center; padding: 18px 10px; border-radius: 12px; }
-    .tvc.red   { background: rgba(255,71,87,0.08);  border: 1px solid rgba(255,71,87,0.25); }
-    .tvc.green { background: rgba(0,214,143,0.08);  border: 1px solid rgba(0,214,143,0.25); }
-    .tvc.blue  { background: rgba(74,144,217,0.08); border: 1px solid rgba(74,144,217,0.25); }
-    .tvc.gold  { background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.25); }
+    .tvc { flex: 1; text-align: center; padding: 20px 10px; border-radius: 14px; backdrop-filter: var(--blur-sm); -webkit-backdrop-filter: var(--blur-sm); }
+    .tvc.red   { background: rgba(255,71,87,0.08);  border: 1px solid rgba(255,71,87,0.2); box-shadow: 0 0 20px rgba(255,71,87,0.06); }
+    .tvc.green { background: rgba(0,214,143,0.08);  border: 1px solid rgba(0,214,143,0.2); box-shadow: 0 0 20px rgba(0,214,143,0.06); }
+    .tvc.blue  { background: rgba(74,144,217,0.08); border: 1px solid rgba(74,144,217,0.2); }
+    .tvc.gold  { background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.2); }
     .tvc .tc-name { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
     .tvc.red   .tc-name { color: #ff7b7b; }
     .tvc.green .tc-name { color: var(--green); }
@@ -208,31 +247,37 @@
     .session-row:last-child { border-bottom: none; }
 
     /* ── MODAL ── */
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200; align-items: flex-end; justify-content: center; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
     .overlay.open { display: flex; }
-    .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px 16px 28px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; border-top: 1px solid var(--border); }
+    .modal { background: rgba(9,19,40,0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: 22px 22px 0 0; padding: 16px 16px 32px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border); border-bottom: none; box-shadow: 0 -8px 40px rgba(0,0,0,0.4); }
+    /* welcome modal variant */
+    .welcome-overlay { align-items: center !important; }
+    .welcome-modal { border-radius: 22px !important; max-height: 80vh; margin: 0 16px; width: calc(100% - 32px); border-bottom: 1px solid var(--border) !important; }
+    .wplayer-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; text-align: left; transition: all 0.12s; }
+    .wplayer-btn:active { transform: scale(0.97); border-color: rgba(0,214,143,0.3); }
+    .wdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .mhandle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
     .mtitle { font-size: 15px; font-weight: 800; color: var(--green); margin-bottom: 16px; }
 
     /* ── FORM ── */
     .fg { margin-bottom: 14px; }
     .flbl { display: block; font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 7px; }
-    .finput, .fsel { width: 100%; padding: 11px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; }
-    .finput:focus, .fsel:focus { outline: none; border-color: var(--green); }
+    .finput, .fsel { width: 100%; padding: 11px 12px; background: rgba(23,47,82,0.4); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; }
+    .finput:focus, .fsel:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,214,143,0.1); }
     .fsel { cursor: pointer; }
-    .finput-sm { width: 60px; padding: 7px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; text-align: center; }
+    .finput-sm { width: 60px; padding: 7px 8px; background: rgba(23,47,82,0.4); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; text-align: center; }
     .finput-sm:focus { outline: none; border-color: var(--green); }
 
     /* ── PLAYER CHIPS ── */
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip { padding: 7px 13px; border-radius: 20px; border: 2px solid var(--border); background: var(--surface2); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.12s; }
+    .chip { padding: 7px 13px; border-radius: 20px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.12s; }
     .chip.sel-green { border-color: var(--green); background: rgba(0,214,143,0.12); color: var(--green); }
     .chip.sel-red   { border-color: var(--red);   background: rgba(255,71,87,0.12);  color: #ff7b7b; }
-    .chip.sel-none  { border-color: var(--muted);  background: rgba(127,168,201,0.1); color: var(--muted); }
+    .chip.sel-none  { border-color: var(--muted);  background: rgba(127,168,201,0.08); color: var(--muted); }
 
     /* ── TEAM SELECTOR BTNS ── */
     .team-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-    .tsel-btn { flex: 1; min-width: 70px; padding: 12px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
+    .tsel-btn { flex: 1; min-width: 70px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
     .tsel-btn.red-sel   { border-color: var(--red);    background: rgba(255,71,87,0.12);  color: #ff7b7b; }
     .tsel-btn.green-sel { border-color: var(--green);  background: rgba(0,214,143,0.12);  color: var(--green); }
     .tsel-btn.blue-sel  { border-color: var(--blue);   background: rgba(74,144,217,0.12); color: #4a90d9; }
@@ -240,7 +285,7 @@
 
     /* ── CARD TYPE / SAVE TYPE BTNS ── */
     .card-type-btns, .save-type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
-    .ctbtn, .stbtn { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
+    .ctbtn, .stbtn { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
     .ctbtn.yellow-sel { border-color: var(--yellow); background: rgba(255,212,59,0.12); color: var(--yellow); }
     .ctbtn.red-sel, .stbtn.red-sel { border-color: var(--red); background: rgba(255,71,87,0.12); color: #ff7b7b; }
     .stbtn.sel { border-color: var(--blue); background: rgba(74,144,217,0.12); color: var(--blue); }
@@ -253,7 +298,7 @@
     .ng-cb { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
     .ng-sels { display: none; margin-top: 8px; display: none; gap: 8px; }
     .ng-sels.show { display: flex; }
-    .assign-sel { flex: 1; padding: 7px 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; }
+    .assign-sel { flex: 1; padding: 7px 6px; background: rgba(23,47,82,0.4); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; }
 
     /* ── LOG PAST GAME ROWS ── */
     .lpg-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
@@ -307,9 +352,11 @@
   </style>
 </head>
 <body>
+<div class="bg-glow"></div>
 
 <header class="app-header">
   <h1>⚽ BeFit FC</h1>
+  <div id="header-viewer" style="position:absolute;right:14px;display:flex;align-items:center;gap:5px"></div>
 </header>
 
 <div class="toast" id="toast"></div>
@@ -507,7 +554,7 @@
 <div class="overlay" id="m-subon">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">➕ Sub On</div>
+    <div class="mtitle">➕ Add Player</div>
     <div class="fg">
       <div class="flbl">Who's coming on? (tick + assign position &amp; team)</div>
       <div id="subon-players"></div>
@@ -529,6 +576,19 @@
     <div style="margin-top:10px">
       <button class="btn btn-ghost" onclick="closeM('m-playercard')">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- WELCOME MODAL -->
+<div class="overlay welcome-overlay" id="m-welcome">
+  <div class="modal welcome-modal">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:48px;margin-bottom:10px">⚽</div>
+      <div style="font-size:22px;font-weight:900;color:var(--green);letter-spacing:0.5px">BeFit FC</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">Season 2025/26 · Who are you?</div>
+    </div>
+    <div id="welcome-list" style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto"></div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:16px;font-size:11px" onclick="selectViewer(null)">Just browsing</button>
   </div>
 </div>
 
@@ -701,6 +761,8 @@ let editPid = null;
 let editSessId = null;
 let pcPid = null;
 let playersView = 'list';
+let viewerPid = null;
+let _welcomeShown = false;
 
 // ─── INIT ───
 (async () => {
@@ -880,7 +942,84 @@ function calcStreak() {
 }
 
 // ─── RENDER ───
-function renderAll() { renderLive(); renderPlayers(); renderTeams(); renderAdmin(); }
+function renderAll() {
+  renderLive(); renderPlayers(); renderTeams(); renderAdmin();
+  if (!_welcomeShown && Object.keys(S.players).length > 0) {
+    _welcomeShown = true;
+    checkViewer();
+  }
+}
+
+// ─── VIEWER / WELCOME ───
+function checkViewer() {
+  const stored = localStorage.getItem('befit_viewer');
+  if (stored) {
+    try {
+      const v = JSON.parse(stored);
+      if (v.pid && v.pid !== 'guest' && S.players[v.pid]) {
+        viewerPid = v.pid; updateHeaderViewer(); return;
+      } else { return; }
+    } catch(e) {}
+  }
+  openWelcome();
+}
+
+function openWelcome() {
+  const pids = Object.keys(S.players).sort((a,b) => S.players[a].name.localeCompare(S.players[b].name));
+  if (!pids.length) return;
+  document.getElementById('welcome-list').innerHTML = pids.map(pid => {
+    const p = S.players[pid];
+    const tc = TEAM_COLOR[p.defaultTeam] || 'var(--muted)';
+    return `<button class="wplayer-btn" onclick="selectViewer('${pid}')">
+      <span class="wdot" style="background:${tc}"></span>
+      <span>${p.name}</span>
+      <span style="margin-left:auto;font-size:10px;color:${tc};font-weight:800">${(p.defaultTeam||'').toUpperCase()}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('m-welcome').classList.add('open');
+}
+
+window.selectViewer = function(pid) {
+  viewerPid = pid;
+  localStorage.setItem('befit_viewer', JSON.stringify({pid: pid || 'guest'}));
+  document.getElementById('m-welcome').classList.remove('open');
+  if (pid) { updateHeaderViewer(); renderPlayers(); }
+};
+
+function updateHeaderViewer() {
+  const el = document.getElementById('header-viewer');
+  if (!el) return;
+  if (!viewerPid || !S.players[viewerPid]) { el.innerHTML = ''; return; }
+  const p = S.players[viewerPid];
+  const tc = TEAM_COLOR[p.defaultTeam] || 'var(--muted)';
+  el.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${tc};display:inline-block;flex-shrink:0"></span><span style="font-size:11px;font-weight:700;color:var(--muted)">${p.name.split(' ')[0]}</span>`;
+}
+
+// ─── LIVE START (inline auth) ───
+window.liveStartGame = function() {
+  if (S.admin) { openNewGame(); return; }
+  const wrap = document.getElementById('live-start-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center">
+      <input class="finput" id="live-pw" type="password" placeholder="Admin password"
+        style="flex:1" onkeydown="if(event.key==='Enter')liveLoginAndStart()">
+      <button class="btn btn-primary btn-sm" style="width:auto;padding:11px 18px" onclick="liveLoginAndStart()">Go</button>
+    </div>
+    <div id="live-pw-err" style="color:var(--red);font-size:12px;margin-top:8px;display:none">Wrong password</div>`;
+  setTimeout(() => document.getElementById('live-pw')?.focus(), 80);
+};
+
+window.liveLoginAndStart = function() {
+  const pw = document.getElementById('live-pw')?.value;
+  if (pw === ADMIN_PW) {
+    S.admin = true;
+    document.getElementById('live-pw-err').style.display = 'none';
+    openNewGame();
+  } else {
+    document.getElementById('live-pw-err').style.display = 'block';
+  }
+};
 
 function renderLive() {
   const el = document.getElementById('live-root');
@@ -890,7 +1029,10 @@ function renderLive() {
       <div class="empty">
         <div class="e-icon">⚽</div>
         <div class="e-title">No Active Game</div>
-        <div class="e-desc">Start a session from the Admin tab to begin tracking.</div>
+        <div class="e-desc">Ready to kick off?</div>
+      </div>
+      <div style="padding:0 4px;margin-top:-10px" id="live-start-wrap">
+        <button class="btn btn-primary" onclick="liveStartGame()">🏟️ Start New Game</button>
       </div>`;
     return;
   }
@@ -909,7 +1051,7 @@ function renderLive() {
       <div class="live-left"><div class="live-dot"></div><strong>LIVE</strong> · ${fmtDate(sess.date)}</div>
     </div>
     ${adm?`<div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openSubOn()">➕ Sub On</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openSubOn()">➕ Add Player</button>
       <button class="btn btn-danger btn-sm" style="flex:1" onclick="openEndGame()">🏁 End Game</button>
     </div>`:''}
     <div class="score-wrap">${scoreHtml}</div>
@@ -992,11 +1134,16 @@ function renderPlayers() {
     restHtml = `
       <div class="pgrid">
         ${rest.map((p,i)=>`
-          <div class="pgrid-card" onclick="openPlayerCard('${p.id}')">
+          <div class="pgrid-card${p.id===viewerPid?' viewer-card':''}" onclick="openPlayerCard('${p.id}')">
             <div class="pgrid-tags">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+            <div class="pgrid-rank">#${i+4}</div>
             <div class="pgrid-name">${p.name}</div>
-            <div class="pgrid-pts">${p.pts}</div>
-            <div class="pgrid-sub">#${i+4} · ${p.apps} apps · ${p.g}G ${p.a}A</div>
+            <div class="pgrid-statrow">
+              <div class="pgrid-sc"><div class="pgrid-sv">${p.apps}</div><div class="pgrid-sl">App</div></div>
+              <div class="pgrid-sc"><div class="pgrid-sv">${p.defaultPosition==='GK'?p.sv:p.g}</div><div class="pgrid-sl">${p.defaultPosition==='GK'?'Sv':'G'}</div></div>
+              <div class="pgrid-sc"><div class="pgrid-sv">${p.a}</div><div class="pgrid-sl">A</div></div>
+              <div class="pgrid-sc"><div class="pgrid-sv pgrid-pts-v">${p.pts}</div><div class="pgrid-sl">Pts</div></div>
+            </div>
           </div>`).join('')}
       </div>`;
   } else {
@@ -1007,7 +1154,7 @@ function renderPlayers() {
         </thead>
         <tbody>
           ${rest.map((p,i)=>`
-            <tr onclick="openPlayerCard('${p.id}')" style="cursor:pointer">
+            <tr onclick="openPlayerCard('${p.id}')" style="cursor:pointer" ${p.id===viewerPid?'class="viewer-row"':''}>
               <td class="rk">${i+4}</td>
               <td>
                 <div style="font-weight:700;font-size:13px">${p.name}</div>
@@ -1166,14 +1313,6 @@ function renderAdmin() {
              <button class="btn btn-primary" onclick="openNewGame()">🏟️ Start New Game</button>
              <button class="btn btn-ghost" onclick="openLogPastGame()">📋 Log Past Game</button>
            </div>`}
-    </div>
-
-    <div class="card" style="border-color:rgba(0,214,143,0.3);background:rgba(0,214,143,0.04)">
-      <div class="card-title" style="color:var(--green)">Historical Data</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6">Import all 47 players + 17 historical matches. Safe to run — won't overwrite existing players.</p>
-      <button class="btn btn-primary" style="margin-bottom:10px" onclick="seedHistoricalData()">⬇️ Import Historical Data</button>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6">Sync goals, assists, apps &amp; cards for all 47 players from the Jan–May 2026 records.</p>
-      <button class="btn btn-ghost" onclick="syncCarryoverStats()">🔄 Sync Player Stats</button>
     </div>
 
     <div class="card">
