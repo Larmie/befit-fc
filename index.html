@@ -763,6 +763,7 @@ let pcPid = null;
 let playersView = 'list';
 let viewerPid = null;
 let _welcomeShown = false;
+let _may24cleaned = false;
 
 // ─── INIT ───
 (async () => {
@@ -947,6 +948,10 @@ function renderAll() {
   if (!_welcomeShown && Object.keys(S.players).length > 0) {
     _welcomeShown = true;
     checkViewer();
+  }
+  if (!_may24cleaned && Object.values(S.sessions).some(s => s.date === '2026-05-24')) {
+    _may24cleaned = true;
+    Object.entries(S.sessions).filter(([,s]) => s.date === '2026-05-24').forEach(([sid]) => DB.remove(`sessions/${sid}`));
   }
 }
 
@@ -1356,13 +1361,6 @@ function renderAdmin() {
           </div>`
       }).join('')}
     </div>` : ''}
-
-    ${Object.values(S.sessions).some(s=>s.date==='2026-05-24')?`
-    <div class="card" style="border-color:rgba(255,71,87,0.25)">
-      <div class="card-title" style="color:var(--red)">Test Data</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Sessions from Sun 24 May (test) detected. Remove them to keep records clean.</p>
-      <button class="btn btn-danger" onclick="cleanMay24Data()">🗑 Delete May 24 Test Sessions</button>
-    </div>`:''}
 
     <div class="card">
       <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
