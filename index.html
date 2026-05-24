@@ -1236,7 +1236,10 @@ function renderTeams() {
     ${streakHtml}`;
 
   const played = T.red.played;
-  const standingsRows = activeTeams.map(t=>`
+  const sortedTeams = [...activeTeams].sort((a,b) =>
+    T[b].pts - T[a].pts || (T[b].gf-T[b].ga) - (T[a].gf-T[a].ga) || T[b].gf - T[a].gf
+  );
+  const standingsRows = sortedTeams.map((t,i)=>`
     <tr>
       <td style="font-weight:800;color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</td>
       <td>${T[t].w}</td><td>${T[t].d}</td><td>${T[t].l}</td>
@@ -1354,6 +1357,13 @@ function renderAdmin() {
       }).join('')}
     </div>` : ''}
 
+    ${Object.values(S.sessions).some(s=>s.date==='2026-05-24')?`
+    <div class="card" style="border-color:rgba(255,71,87,0.25)">
+      <div class="card-title" style="color:var(--red)">Test Data</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Sessions from Sun 24 May (test) detected. Remove them to keep records clean.</p>
+      <button class="btn btn-danger" onclick="cleanMay24Data()">🗑 Delete May 24 Test Sessions</button>
+    </div>`:''}
+
     <div class="card">
       <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
     </div>`;
@@ -1398,6 +1408,16 @@ window.doLogin = function() {
   }
 };
 window.doLogout = function() { S.admin=false; renderAdmin(); renderLive(); };
+
+// ─── CLEANUP TEST DATA ───
+window.cleanMay24Data = async function() {
+  if (!S.admin) return;
+  const toDelete = Object.entries(S.sessions).filter(([,s]) => s.date === '2026-05-24');
+  if (!toDelete.length) return toast('No May 24 sessions found', true);
+  if (!confirm(`Delete ${toDelete.length} session(s) from 24 May 2026?`)) return;
+  for (const [sid] of toDelete) await DB.remove(`sessions/${sid}`);
+  toast(`✓ Deleted ${toDelete.length} May 24 test session(s)`);
+};
 
 // ─── GOAL MODAL ───
 window.openGoal = function() {
