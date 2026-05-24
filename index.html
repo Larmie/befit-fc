@@ -55,10 +55,11 @@
     /* ── HEADER ── */
     .app-header {
       height: var(--header-h);
-      background: rgba(10,18,40,0.82);
+      background: rgba(8,15,30,0.95);
       backdrop-filter: var(--blur);
       -webkit-backdrop-filter: var(--blur);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(0,214,143,0.15);
+      box-shadow: 0 2px 24px rgba(0,0,0,0.35);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -66,13 +67,15 @@
       top: 0;
       z-index: 50;
     }
-    .app-header h1 { font-size: 17px; font-weight: 800; color: var(--green); letter-spacing: 1.5px; }
+    .app-header h1 { font-size: 18px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; }
+    .h1-main { color: var(--text); }
+    .h1-accent { color: var(--green); }
 
     /* ── NAV ── */
     .bottom-nav {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 480px; height: var(--nav-h);
-      background: rgba(10,18,40,0.88);
+      background: rgba(8,15,30,0.97);
       backdrop-filter: var(--blur);
       -webkit-backdrop-filter: var(--blur);
       border-top: 1px solid var(--border);
@@ -80,12 +83,14 @@
     }
     .nav-btn {
       flex: 1; display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 3px; background: none; border: none;
+      justify-content: center; gap: 2px; background: none; border: none;
       color: var(--muted); cursor: pointer; font-size: 10px; font-weight: 700;
       letter-spacing: 0.5px; transition: color 0.15s;
     }
     .nav-btn.active { color: var(--green); }
-    .nav-btn .icon { font-size: 20px; }
+    .nav-pill { display: flex; align-items: center; justify-content: center; padding: 3px 14px; border-radius: 14px; transition: background 0.2s; }
+    .nav-btn.active .nav-pill { background: rgba(0,214,143,0.12); }
+    .nav-pill .icon { font-size: 20px; }
 
     /* ── TABS ── */
     .tab { display: none; }
@@ -470,7 +475,7 @@
 <div class="bg-glow"></div>
 
 <header class="app-header">
-  <h1>⚽ BE Fit Club</h1>
+  <h1><span class="h1-main">BE FIT</span><span class="h1-accent"> CLUB</span></h1>
   <div id="header-viewer" style="position:absolute;right:14px;display:flex;align-items:center;gap:5px"></div>
 </header>
 
@@ -484,10 +489,10 @@
 </main>
 
 <nav class="bottom-nav">
-  <button class="nav-btn active" onclick="switchTab('live',this)"><span class="icon">⚽</span><span>Live</span></button>
-  <button class="nav-btn" onclick="switchTab('players',this)"><span class="icon">👤</span><span>Players</span></button>
-  <button class="nav-btn" onclick="switchTab('teams',this)"><span class="icon">🏆</span><span>Teams</span></button>
-  <button class="nav-btn" onclick="switchTab('admin',this)"><span class="icon">⚙️</span><span>Admin</span></button>
+  <button class="nav-btn active" onclick="switchTab('live',this)"><span class="nav-pill"><span class="icon">⚽</span></span><span>Live</span></button>
+  <button class="nav-btn" onclick="switchTab('players',this)"><span class="nav-pill"><span class="icon">👤</span></span><span>Players</span></button>
+  <button class="nav-btn" onclick="switchTab('teams',this)"><span class="nav-pill"><span class="icon">🏆</span></span><span>Teams</span></button>
+  <button class="nav-btn" onclick="switchTab('admin',this)"><span class="nav-pill"><span class="icon">⚙️</span></span><span>Admin</span></button>
 </nav>
 
 <!-- ═══════════ MODALS ═══════════ -->
