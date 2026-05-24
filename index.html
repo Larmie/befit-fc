@@ -1224,10 +1224,18 @@ function renderTeams() {
       </div>
     </div>` : '';
 
-  const streakHtml = streak.team && streak.count>1 ? `
-    <div style="text-align:center;margin-top:6px">
-      <span class="streak-badge" style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd43b">
-        🔥 ${TEAM_EMOJI[streak.team]} ${streak.team.charAt(0).toUpperCase()+streak.team.slice(1)} on ${streak.count}-game win streak
+  const streakTeamName = streak.team ? streak.team.charAt(0).toUpperCase()+streak.team.slice(1) : '';
+  const streakLabel = streak.count >= 3
+    ? `🔥 ${TEAM_EMOJI[streak.team]} ${streakTeamName} on ${streak.count}-game win streak`
+    : streak.count === 2
+      ? `${TEAM_EMOJI[streak.team]} ${streakTeamName} on ${streak.count}-game winning run`
+      : streak.count === 1
+        ? `${TEAM_EMOJI[streak.team]} ${streakTeamName} won the last game`
+        : '';
+  const streakHtml = streak.team ? `
+    <div style="text-align:center;margin-top:8px">
+      <span class="streak-badge" style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);color:#ffd43b">
+        ${streakLabel}
       </span>
     </div>` : '';
 
