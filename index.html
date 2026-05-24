@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>BeFit FC</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00d68f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BeFit FC">
+  <link rel="apple-touch-icon" href="/icon.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -343,15 +349,95 @@
 
     /* ── TOAST ── */
     .toast {
-      position: fixed; top: 64px; left: 50%;
-      transform: translateX(-50%) translateY(-16px);
-      padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 800;
-      opacity: 0; z-index: 999; transition: all 0.25s; pointer-events: none; white-space: nowrap;
+      position: fixed; bottom: calc(var(--nav-h) + 16px); left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      padding: 10px 22px; border-radius: 24px; font-size: 13px; font-weight: 800;
+      opacity: 0; z-index: 999; transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+      pointer-events: none; white-space: nowrap; max-width: calc(100vw - 32px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ── PLAYER CARD PREVIEW ── */
     #pc-canvas-wrap canvas { max-width: 100%; border-radius: 12px; }
+
+    /* ── TAB ANIMATION ── */
+    .tab.active { animation: tabFadeIn 0.2s ease forwards; }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── BUTTON RIPPLE ── */
+    .btn, .action-btn { position: relative; overflow: hidden; }
+    .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      transform: scale(0); animation: rippleAnim 0.5s linear;
+      pointer-events: none;
+    }
+    @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+    /* ── SKELETON LOADER ── */
+    .skel {
+      background: linear-gradient(90deg,
+        rgba(23,47,82,0.45) 25%, rgba(35,64,105,0.55) 50%, rgba(23,47,82,0.45) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 12px;
+    }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    .skel-card { height: 180px; margin-bottom: 14px; }
+    .skel-card2 { height: 260px; }
+
+    /* ── PLAYER SEARCH ── */
+    .player-search-wrap { position: relative; margin-bottom: 12px; }
+    .player-search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; pointer-events: none;
+    }
+    .player-search {
+      width: 100%; padding: 10px 14px 10px 36px;
+      background: rgba(23,47,82,0.5); border: 1px solid var(--border);
+      border-radius: 24px; color: var(--text); font-size: 13px;
+      -webkit-appearance: none;
+    }
+    .player-search::placeholder { color: var(--muted); }
+    .player-search:focus { outline: none; border-color: rgba(0,214,143,0.35); box-shadow: 0 0 0 3px rgba(0,214,143,0.08); }
+
+    /* ── PLAYER PROFILE MODAL ── */
+    .profile-modal { max-height: 95vh; }
+    .profile-header { display: flex; flex-direction: column; align-items: center; padding: 4px 0 20px; gap: 6px; }
+    .profile-avatar {
+      width: 76px; height: 76px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; font-weight: 900; margin-bottom: 6px;
+    }
+    .profile-name { font-size: 22px; font-weight: 900; line-height: 1.2; text-align: center; }
+    .profile-stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+    .profile-stat {
+      background: rgba(23,47,82,0.5); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 6px; text-align: center;
+    }
+    .profile-stat-val { font-size: 22px; font-weight: 900; line-height: 1; }
+    .profile-stat-lbl { font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; margin-top: 4px; }
+    .form-dots { display: flex; gap: 8px; justify-content: center; margin: 10px 0 16px; }
+    .form-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900;
+    }
+    .form-dot-w { background: rgba(0,214,143,0.15); color: var(--green); border: 1px solid rgba(0,214,143,0.35); }
+    .form-dot-l { background: rgba(255,71,87,0.15); color: #ff4757; border: 1px solid rgba(255,71,87,0.35); }
+    .form-dot-d { background: rgba(127,168,201,0.12); color: var(--muted); border: 1px solid rgba(127,168,201,0.2); }
+    .form-dot-n { background: rgba(23,47,82,0.4); color: rgba(127,168,201,0.25); border: 1px solid var(--border); }
+    .history-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .history-row:last-child { border-bottom: none; }
+    .history-date { font-size: 12px; color: var(--muted); min-width: 90px; }
+    .history-detail { font-size: 11px; color: var(--muted); flex: 1; }
+    .history-result { font-size: 11px; font-weight: 900; min-width: 18px; text-align: center; }
+    .history-pts { font-size: 13px; font-weight: 800; color: var(--green); }
+    .profile-section-lbl { font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
   </style>
 </head>
 <body>
@@ -595,6 +681,18 @@
   </div>
 </div>
 
+<!-- PLAYER PROFILE MODAL -->
+<div class="overlay" id="m-profile">
+  <div class="modal profile-modal">
+    <div class="mhandle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px" onclick="closeM('m-profile')">✕ Close</button>
+      <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 14px" onclick="openExportCard()">📥 Card</button>
+    </div>
+    <div id="profile-body"></div>
+  </div>
+</div>
+
 <!-- ADMIN LOGIN MODAL -->
 <div class="overlay" id="m-login">
   <div class="modal">
@@ -767,6 +865,15 @@ let playersView = 'list';
 let viewerPid = null;
 let _welcomeShown = false;
 let _may24cleaned = false;
+let _dataReady = false;
+let playerSearch = '';
+
+// ─── PWA / SERVICE WORKER ───
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 
 // ─── INIT ───
 (async () => {
@@ -947,6 +1054,7 @@ function calcStreak() {
 
 // ─── RENDER ───
 function renderAll() {
+  if (!_dataReady && (Object.keys(S.players).length > 0 || !FIREBASE_CONFIGURED)) _dataReady = true;
   renderLive(); renderPlayers(); renderTeams(); renderAdmin();
   if (!_welcomeShown && Object.keys(S.players).length > 0) {
     _welcomeShown = true;
@@ -1107,10 +1215,53 @@ function renderPlayers() {
   const el = document.getElementById('players-root');
   const ids = Object.keys(S.players);
   if (!ids.length) {
-    el.innerHTML = `<div class="card"><div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">No players yet. Add them in Admin.</div></div>`;
+    if (!_dataReady) {
+      el.innerHTML = `<div class="card skel skel-card"></div><div class="card skel skel-card2"></div>`;
+    } else {
+      el.innerHTML = `<div class="card"><div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">No players yet. Add them in Admin.</div></div>`;
+    }
     return;
   }
   const board = ids.map(id=>({id,...S.players[id],...calcStats(id)})).sort((a,b)=>b.pts-a.pts||b.g-a.g);
+  const searchBar = `
+    <div class="player-search-wrap">
+      <span class="player-search-icon">🔍</span>
+      <input class="player-search" id="player-search" type="search" placeholder="Search players…"
+        autocomplete="off" oninput="setPlayerSearch(this.value)" value="${playerSearch.replace(/"/g,'&quot;')}">
+    </div>`;
+
+  if (playerSearch) {
+    const q = playerSearch.toLowerCase();
+    const filtered = board.map((p,i)=>({...p,rank:i+1})).filter(p=>p.name.toLowerCase().includes(q));
+    const rows = filtered.length === 0
+      ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">No players match "${playerSearch}"</div>`
+      : `<table class="ptable">
+           <thead><tr><th>#</th><th>Player</th><th>App</th><th>G</th><th>A</th><th>Sv</th><th>Pts</th></tr></thead>
+           <tbody>${filtered.map(p=>`
+             <tr onclick="openPlayerProfile('${p.id}')" style="cursor:pointer" ${p.id===viewerPid?'class="viewer-row"':''}>
+               <td class="rk">${p.rank}</td>
+               <td>
+                 <div style="font-weight:700;font-size:13px">${p.name}</div>
+                 <div style="margin-top:3px;display:flex;gap:4px">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+               </td>
+               <td>${p.apps}</td><td>${p.g}</td><td>${p.a}</td>
+               <td>${p.defaultPosition==='GK'?p.sv:'—'}</td>
+               <td class="pts">${p.pts}</td>
+             </tr>`).join('')}
+           </tbody>
+         </table>`;
+    el.innerHTML = `
+      <div class="card">
+        <div class="sh" style="margin-bottom:12px">
+          <div class="card-title" style="margin:0">Players</div>
+          <div style="color:var(--muted);font-size:12px">${filtered.length} result${filtered.length!==1?'s':''}</div>
+        </div>
+        ${searchBar}
+        ${rows}
+      </div>`;
+    return;
+  }
+
   const top3  = board.slice(0,3);
   const rest  = board.slice(3);
   const medals = ['🥇','🥈','🥉'];
@@ -1126,7 +1277,7 @@ function renderPlayers() {
           ? `${p.apps}app · ${p.sv}sv · ${p.g}g`
           : `${p.apps}app · ${p.g}g · ${p.a}a`;
         return `
-          <div class="pod-slot ${podClasses[rank]}" onclick="openPlayerCard('${p.id}')">
+          <div class="pod-slot ${podClasses[rank]}" onclick="openPlayerProfile('${p.id}')">
             <div class="pod-medal">${medals[rank]}</div>
             <div class="pod-name">${p.name}</div>
             <div class="pod-pts">${p.pts}</div>
@@ -1147,7 +1298,7 @@ function renderPlayers() {
     restHtml = `
       <div class="pgrid">
         ${rest.map((p,i)=>`
-          <div class="pgrid-card${p.id===viewerPid?' viewer-card':''}" onclick="openPlayerCard('${p.id}')">
+          <div class="pgrid-card${p.id===viewerPid?' viewer-card':''}" onclick="openPlayerProfile('${p.id}')">
             <div class="pgrid-tags">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
             <div class="pgrid-rank">#${i+4}</div>
             <div class="pgrid-name">${p.name}</div>
@@ -1167,7 +1318,7 @@ function renderPlayers() {
         </thead>
         <tbody>
           ${rest.map((p,i)=>`
-            <tr onclick="openPlayerCard('${p.id}')" style="cursor:pointer" ${p.id===viewerPid?'class="viewer-row"':''}>
+            <tr onclick="openPlayerProfile('${p.id}')" style="cursor:pointer" ${p.id===viewerPid?'class="viewer-row"':''}>
               <td class="rk">${i+4}</td>
               <td>
                 <div style="font-weight:700;font-size:13px">${p.name}</div>
@@ -1190,6 +1341,7 @@ function renderPlayers() {
       <div class="sh" style="margin-bottom:12px">
         <div class="card-title" style="margin:0">Full Leaderboard</div>
       </div>
+      ${searchBar}
       ${toggleHtml}
       ${restHtml}
     </div>`;
@@ -1197,8 +1349,19 @@ function renderPlayers() {
 
 window.setPlayersView = function(v) { playersView=v; renderPlayers(); };
 
+window.setPlayerSearch = function(v) {
+  playerSearch = v;
+  renderPlayers();
+  const el = document.getElementById('player-search');
+  if (el) { el.focus(); try { el.setSelectionRange(v.length, v.length); } catch(e) {} }
+};
+
 function renderTeams() {
   const el = document.getElementById('teams-root');
+  if (!_dataReady) {
+    el.innerHTML = `<div class="card skel skel-card"></div><div class="card skel skel-card2"></div>`;
+    return;
+  }
   const T  = calcTeams();
   const streak = calcStreak();
   const activeTeams = ALL_TEAMS.filter(t => T[t].played > 0);
@@ -1996,6 +2159,124 @@ window.seedHistoricalData=async function(){
   }
 };
 
+// ─── PLAYER HISTORY ───
+function getPlayerHistory(pid, limit=5) {
+  const history = [];
+  const sorted = Object.values(S.sessions)
+    .filter(s => s.status==='completed' && (s.mode||'live')!=='history')
+    .sort((a,b) => new Date(b.date)-new Date(a.date));
+  for (const sess of sorted) {
+    const sp = sessPlayers(sess).find(p => p.pid===pid);
+    if (!sp) continue;
+    const rules = SCORE[sp.pos];
+    const mode = sess.mode||'live';
+    let pts=rules.app, g=0, a=0, sv=0;
+    if (mode==='live') {
+      const evs = sessEvents(sess);
+      g   = evs.filter(e=>e.type==='goal'&&e.scorerId===pid).length;
+      a   = evs.filter(e=>e.type==='goal'&&e.assistId===pid).length;
+      sv  = evs.filter(e=>e.type==='save'&&e.playerId===pid).length;
+      const y = evs.filter(e=>e.type==='yellowCard'&&e.playerId===pid).length;
+      const r = evs.filter(e=>e.type==='redCard'&&e.playerId===pid).length;
+      pts += g*rules.goal + a*rules.assist + y*rules.yellow + r*rules.red;
+      if (sp.pos==='GK') pts += Math.floor(sv/rules.savePer);
+    } else if (mode==='post') {
+      const ps = sess.playerStats?.[pid]||{};
+      g=ps.goals||0; a=ps.assists||0; sv=ps.saves||0;
+      pts += g*rules.goal + a*rules.assist + (ps.yellow||0)*rules.yellow + (ps.red||0)*rules.red;
+      if (sp.pos==='GK') pts += Math.floor(sv/rules.savePer);
+    }
+    const cs = sess.cleanSheets?.[sp.team];
+    if (cs && (sp.pos==='GK'||sp.pos==='DEF')) pts += rules.cleanSheet;
+    const teams = getActiveTeams(sess);
+    if (teams.length >= 2) {
+      const myG  = getTeamGoals(sess, sp.team);
+      const oppG = getTeamGoals(sess, teams.find(t=>t!==sp.team));
+      const result = myG>oppG?'W':myG<oppG?'L':'D';
+      history.push({ date:sess.date, g, a, sv, pts, result, pos:sp.pos });
+    }
+    if (history.length >= limit) break;
+  }
+  return history;
+}
+
+// ─── PLAYER PROFILE MODAL ───
+window.openPlayerProfile = function(pid) {
+  const p = S.players[pid]; if (!p) return;
+  pcPid = pid;
+  const st = calcStats(pid);
+  const tc = TEAM_COLOR[p.defaultTeam] || 'var(--green)';
+  const history = getPlayerHistory(pid, 5);
+
+  const statsConf = p.defaultPosition==='GK'
+    ? [['Pts',st.pts,'var(--green)'],['Sv',st.sv,'var(--blue)'],['G',st.g,'var(--text)'],['App',st.apps,'var(--muted)']]
+    : [['Pts',st.pts,'var(--green)'],['G',st.g,'var(--text)'],['A',st.a,'var(--blue)'],['App',st.apps,'var(--muted)']];
+
+  const statsHtml = statsConf.map(([l,v,c])=>`
+    <div class="profile-stat">
+      <div class="profile-stat-val" style="color:${c}">${v}</div>
+      <div class="profile-stat-lbl">${l}</div>
+    </div>`).join('');
+
+  const formDots = [0,1,2,3,4].map(i=>{
+    const h = history[i];
+    if (!h) return `<span class="form-dot form-dot-n">·</span>`;
+    const cls = h.result==='W'?'form-dot-w':h.result==='L'?'form-dot-l':'form-dot-d';
+    return `<span class="form-dot ${cls}">${h.result}</span>`;
+  }).join('');
+
+  const historyRows = history.map(h=>{
+    const rc = h.result==='W'?'var(--green)':h.result==='L'?'#ff4757':'var(--muted)';
+    const detail = h.pos==='GK'
+      ? [h.sv?`${h.sv}sv`:'',h.g?`${h.g}g`:''].filter(Boolean).join(' ')||'—'
+      : [h.g?`${h.g}g`:'',h.a?`${h.a}a`:''].filter(Boolean).join(' ')||'—';
+    return `<div class="history-row">
+      <span class="history-date">${fmtDate(h.date)}</span>
+      <span class="history-detail">${detail}</span>
+      <span class="history-result" style="color:${rc}">${h.result}</span>
+      <span class="history-pts">+${h.pts}</span>
+    </div>`;
+  }).join('');
+
+  const cardsLine = (st.y||st.r) ? `
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:14px">
+      ${st.y?`<span style="font-size:12px;font-weight:700">🟨 ${st.y} yellow</span>`:''}
+      ${st.r?`<span style="font-size:12px;font-weight:700">🟥 ${st.r} red</span>`:''}
+    </div>` : '';
+
+  document.getElementById('profile-body').innerHTML = `
+    <div class="profile-header">
+      <div class="profile-avatar" style="background:${tc}1a;border:2px solid ${tc}55">
+        <span style="color:${tc}">${p.name.charAt(0).toUpperCase()}</span>
+      </div>
+      <div class="profile-name">${p.name}</div>
+      <div style="display:flex;gap:6px;margin-top:2px">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+    </div>
+    <div class="profile-stats-grid">${statsHtml}</div>
+    ${cardsLine}
+    ${history.length ? `
+    <div class="profile-section-lbl">Recent Form</div>
+    <div class="form-dots">${formDots}</div>
+    <div class="div"></div>
+    <div class="profile-section-lbl" style="margin-top:14px">Match History</div>
+    ${historyRows}` : `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No matches yet</div>`}
+    <div style="margin-top:20px">
+      <button class="btn btn-ghost btn-sm" onclick="openExportCard()">📥 Export Player Card</button>
+    </div>`;
+  openM('m-profile');
+};
+
+window.openExportCard = function() {
+  const p = S.players[pcPid]; if (!p) return;
+  const st = calcStats(pcPid);
+  document.getElementById('pc-title').textContent = p.name;
+  const canvas = drawPlayerCard(pcPid, p, st);
+  document.getElementById('pc-canvas-wrap').innerHTML = '';
+  document.getElementById('pc-canvas-wrap').appendChild(canvas);
+  closeM('m-profile');
+  openM('m-playercard');
+};
+
 // ─── PLAYER CARD (canvas export) ───
 window.openPlayerCard=function(pid){
   pcPid=pid;
@@ -2106,6 +2387,19 @@ window.downloadPlayerCard=function(){
   a.download=`befit_${p.name.replace(/\s+/g,'_')}.png`;
   a.click();
 };
+
+// ─── BUTTON RIPPLE ───
+document.addEventListener('pointerdown', e => {
+  const btn = e.target.closest('.btn, .action-btn');
+  if (!btn) return;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+  btn.appendChild(r);
+  r.addEventListener('animationend', () => r.remove());
+});
 
 </script>
 </body>

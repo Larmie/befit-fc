@@ -1,0 +1,12 @@
+{
+  "name": "BeFit FC",
+  "short_name": "BeFit FC",
+  "description": "Monday night football tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080f1e",
+  "theme_color": "#00d68f",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
