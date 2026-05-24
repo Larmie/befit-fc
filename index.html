@@ -17,6 +17,7 @@
       --yellow: #ffd43b;
       --blue: #4a90d9;
       --purple: #a855f7;
+      --gold-col: #f5a623;
       --text: #e8f4fd;
       --muted: #7fa8c9;
       --nav-h: 64px;
@@ -48,33 +49,16 @@
 
     /* ── NAV ── */
     .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      height: var(--nav-h);
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      z-index: 50;
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; height: var(--nav-h);
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; z-index: 50;
     }
     .nav-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      transition: color 0.15s;
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 3px; background: none; border: none;
+      color: var(--muted); cursor: pointer; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.5px; transition: color 0.15s;
     }
     .nav-btn.active { color: var(--green); }
     .nav-btn .icon { font-size: 20px; }
@@ -82,72 +66,32 @@
     /* ── TABS ── */
     .tab { display: none; }
     .tab.active { display: block; }
-    .main {
-      padding: 14px 14px calc(var(--nav-h) + 14px);
-      min-height: calc(100vh - var(--header-h));
-    }
+    .main { padding: 14px 14px calc(var(--nav-h) + 14px); min-height: calc(100vh - var(--header-h)); }
 
     /* ── CARD ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-    .card-title {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--muted);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .card-title { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
 
     /* ── BUTTONS ── */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 12px 18px;
-      border-radius: 10px;
-      border: none;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      width: 100%;
-      letter-spacing: 0.5px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 18px; border-radius: 10px; border: none; font-size: 13px;
+      font-weight: 800; cursor: pointer; width: 100%; letter-spacing: 0.5px;
       transition: opacity 0.15s, transform 0.1s;
     }
     .btn:active { transform: scale(0.96); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-primary  { background: var(--green); color: #0b1a2e; }
     .btn-danger   { background: var(--red);   color: #fff; }
-    .btn-ghost    { background: transparent;   color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost    { background: transparent;  color: var(--muted); border: 1px solid var(--border); }
     .btn-sm       { padding: 8px 14px; font-size: 12px; }
 
     /* ── ACTION GRID ── */
-    .action-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .action-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      padding: 18px 10px;
-      border-radius: 14px;
-      border: none;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      letter-spacing: 0.5px;
-      transition: transform 0.1s, opacity 0.15s;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; padding: 18px 10px; border-radius: 14px; border: none; font-size: 12px;
+      font-weight: 800; cursor: pointer; letter-spacing: 0.5px; transition: transform 0.1s;
     }
     .action-btn:active { transform: scale(0.94); }
     .action-btn .ab-icon { font-size: 26px; }
@@ -158,13 +102,7 @@
     .ab-pensave { background: var(--purple); color: #fff; grid-column: 1 / -1; flex-direction: row; padding: 14px; gap: 10px; }
 
     /* ── SCORE DISPLAY ── */
-    .score-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      padding: 20px 10px 14px;
-    }
+    .score-wrap { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 20px 10px 14px; }
     .score-side { text-align: center; }
     .score-side .s-name { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
     .score-side .s-goals { font-size: 48px; font-weight: 900; line-height: 1; }
@@ -172,33 +110,17 @@
 
     /* ── LIVE BANNER ── */
     .live-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0,214,143,0.07);
-      border: 1px solid rgba(0,214,143,0.25);
-      border-radius: 12px;
-      padding: 10px 14px;
-      margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,214,143,0.07); border: 1px solid rgba(0,214,143,0.25);
+      border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
     }
     .live-banner .live-left { font-size: 13px; display: flex; align-items: center; gap: 8px; }
-    .live-dot {
-      width: 8px; height: 8px;
-      background: var(--red);
-      border-radius: 50%;
-      animation: blink 1.4s infinite;
-    }
-    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+    .live-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: blink 1.4s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.2} }
 
     /* ── EVENT LOG ── */
     .event-log { list-style: none; }
-    .ev-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(30,58,95,0.6);
-    }
+    .ev-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(30,58,95,0.6); }
     .ev-item:last-child { border-bottom: none; }
     .ev-icon { font-size: 17px; min-width: 26px; text-align: center; }
     .ev-body { flex: 1; }
@@ -208,270 +130,180 @@
 
     /* ── PLAYER TABLE ── */
     .ptable { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .ptable th {
-      text-align: left;
-      padding: 6px 5px;
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border);
-    }
+    .ptable th { text-align: left; padding: 6px 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
     .ptable td { padding: 9px 5px; border-bottom: 1px solid rgba(30,58,95,0.5); }
     .ptable tr:last-child td { border-bottom: none; }
     .ptable .pts { font-weight: 800; color: var(--green); }
     .ptable .rk { color: var(--muted); font-size: 11px; }
 
     /* ── TAGS ── */
-    .pos-tag {
-      display: inline-block;
-      padding: 1px 5px;
-      border-radius: 4px;
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-    }
+    .pos-tag { display: inline-block; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 900; letter-spacing: 0.5px; }
     .pos-GK  { background: rgba(255,212,59,0.2);  color: #ffd43b; }
     .pos-DEF { background: rgba(74,144,217,0.2);  color: #4a90d9; }
     .pos-MID { background: rgba(0,214,143,0.2);   color: var(--green); }
     .pos-FWD { background: rgba(255,71,87,0.2);   color: #ff6b6b; }
 
-    .team-tag {
-      display: inline-block;
-      padding: 1px 7px;
-      border-radius: 10px;
-      font-size: 10px;
-      font-weight: 800;
-    }
+    .team-tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 800; }
     .team-red   { background: rgba(255,71,87,0.15);  color: #ff7b7b; }
     .team-green { background: rgba(0,214,143,0.15);  color: var(--green); }
+    .team-blue  { background: rgba(74,144,217,0.15); color: #4a90d9; }
+    .team-gold  { background: rgba(245,166,35,0.15); color: #f5a623; }
+
+    /* ── PODIUM ── */
+    .podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-bottom: 20px; padding: 0 4px; }
+    .pod-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; border-radius: 14px; padding: 14px 8px 12px; cursor: pointer; flex: 1; max-width: 130px; }
+    .pod-slot:active { opacity: 0.8; }
+    .pod-1 { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.3); padding-bottom: 20px; }
+    .pod-2 { background: rgba(192,192,192,0.06); border: 1px solid rgba(192,192,192,0.25); }
+    .pod-3 { background: rgba(205,127,50,0.06);  border: 1px solid rgba(205,127,50,0.25); }
+    .pod-medal { font-size: 26px; }
+    .pod-name  { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.2; }
+    .pod-pts   { font-size: 22px; font-weight: 900; color: var(--green); }
+    .pod-sub   { font-size: 10px; color: var(--muted); font-weight: 700; }
+
+    /* ── PLAYERS VIEW TOGGLE ── */
+    .view-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+    .vtbtn { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 800; cursor: pointer; }
+    .vtbtn.active { background: rgba(0,214,143,0.12); border-color: var(--green); color: var(--green); }
+
+    /* ── PLAYER GRID ── */
+    .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pgrid-card {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px; cursor: pointer; transition: border-color 0.15s;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .pgrid-card:active { border-color: var(--green); }
+    .pgrid-name { font-size: 13px; font-weight: 800; }
+    .pgrid-pts  { font-size: 20px; font-weight: 900; color: var(--green); }
+    .pgrid-sub  { font-size: 10px; color: var(--muted); }
+    .pgrid-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 
     /* ── TEAMS TAB ── */
-    .team-vs {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-    .tvc {
-      flex: 1;
-      text-align: center;
-      padding: 18px 10px;
-      border-radius: 12px;
-    }
+    .team-vs { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .tvc { flex: 1; text-align: center; padding: 18px 10px; border-radius: 12px; }
     .tvc.red   { background: rgba(255,71,87,0.08);  border: 1px solid rgba(255,71,87,0.25); }
     .tvc.green { background: rgba(0,214,143,0.08);  border: 1px solid rgba(0,214,143,0.25); }
+    .tvc.blue  { background: rgba(74,144,217,0.08); border: 1px solid rgba(74,144,217,0.25); }
+    .tvc.gold  { background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.25); }
     .tvc .tc-name { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
     .tvc.red   .tc-name { color: #ff7b7b; }
     .tvc.green .tc-name { color: var(--green); }
+    .tvc.blue  .tc-name { color: #4a90d9; }
+    .tvc.gold  .tc-name { color: #f5a623; }
     .tvc .tc-pts  { font-size: 34px; font-weight: 900; }
     .tvc .tc-lbl  { font-size: 10px; color: var(--muted); font-weight: 700; }
     .vs-lbl { font-size: 18px; font-weight: 900; color: var(--muted); }
 
-    .session-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .h2h-bar { display: flex; align-items: center; gap: 6px; margin: 10px 0; }
+    .h2h-seg { height: 8px; border-radius: 4px; transition: flex 0.3s; }
+    .h2h-seg.red-seg   { background: #ff4757; }
+    .h2h-seg.draw-seg  { background: var(--muted); }
+    .h2h-seg.green-seg { background: var(--green); }
+    .h2h-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; margin-bottom: 4px; }
+
+    .streak-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 6px; }
+
+    .session-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .session-row:last-child { border-bottom: none; }
 
     /* ── MODAL ── */
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      z-index: 200;
-      align-items: flex-end;
-      justify-content: center;
-    }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200; align-items: flex-end; justify-content: center; }
     .overlay.open { display: flex; }
-    .modal {
-      background: var(--surface);
-      border-radius: 20px 20px 0 0;
-      padding: 16px 16px 28px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 88vh;
-      overflow-y: auto;
-      border-top: 1px solid var(--border);
-    }
-    .mhandle {
-      width: 36px; height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 0 auto 14px;
-    }
+    .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px 16px 28px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; border-top: 1px solid var(--border); }
+    .mhandle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
     .mtitle { font-size: 15px; font-weight: 800; color: var(--green); margin-bottom: 16px; }
 
     /* ── FORM ── */
     .fg { margin-bottom: 14px; }
-    .flbl {
-      display: block;
-      font-size: 10px;
-      font-weight: 800;
-      color: var(--muted);
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      margin-bottom: 7px;
-    }
-    .finput, .fsel {
-      width: 100%;
-      padding: 11px 12px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 13px;
-    }
+    .flbl { display: block; font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 7px; }
+    .finput, .fsel { width: 100%; padding: 11px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; }
     .finput:focus, .fsel:focus { outline: none; border-color: var(--green); }
     .fsel { cursor: pointer; }
+    .finput-sm { width: 60px; padding: 7px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; text-align: center; }
+    .finput-sm:focus { outline: none; border-color: var(--green); }
 
     /* ── PLAYER CHIPS ── */
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
-      padding: 7px 13px;
-      border-radius: 20px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.12s;
-    }
+    .chip { padding: 7px 13px; border-radius: 20px; border: 2px solid var(--border); background: var(--surface2); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.12s; }
     .chip.sel-green { border-color: var(--green); background: rgba(0,214,143,0.12); color: var(--green); }
     .chip.sel-red   { border-color: var(--red);   background: rgba(255,71,87,0.12);  color: #ff7b7b; }
-    .chip.sel-none  { border-color: var(--muted); background: rgba(127,168,201,0.1); color: var(--muted); }
+    .chip.sel-none  { border-color: var(--muted);  background: rgba(127,168,201,0.1); color: var(--muted); }
 
     /* ── TEAM SELECTOR BTNS ── */
-    .team-btns { display: flex; gap: 10px; }
-    .tsel-btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.12s;
-    }
-    .tsel-btn.red-sel   { border-color: var(--red);   background: rgba(255,71,87,0.12);  color: #ff7b7b; }
-    .tsel-btn.green-sel { border-color: var(--green); background: rgba(0,214,143,0.12); color: var(--green); }
+    .team-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tsel-btn { flex: 1; min-width: 70px; padding: 12px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
+    .tsel-btn.red-sel   { border-color: var(--red);    background: rgba(255,71,87,0.12);  color: #ff7b7b; }
+    .tsel-btn.green-sel { border-color: var(--green);  background: rgba(0,214,143,0.12);  color: var(--green); }
+    .tsel-btn.blue-sel  { border-color: var(--blue);   background: rgba(74,144,217,0.12); color: #4a90d9; }
+    .tsel-btn.gold-sel  { border-color: var(--gold-col); background: rgba(245,166,35,0.12); color: #f5a623; }
 
-    /* ── CARD TYPE BTNS ── */
-    .card-type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
-    .ctbtn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.12s;
-    }
+    /* ── CARD TYPE / SAVE TYPE BTNS ── */
+    .card-type-btns, .save-type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
+    .ctbtn, .stbtn { flex: 1; padding: 12px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
     .ctbtn.yellow-sel { border-color: var(--yellow); background: rgba(255,212,59,0.12); color: var(--yellow); }
-    .ctbtn.red-sel    { border-color: var(--red);    background: rgba(255,71,87,0.12);  color: #ff7b7b; }
-
-    /* ── SAVE TYPE BTNS ── */
-    .save-type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
-    .stbtn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.12s;
-    }
+    .ctbtn.red-sel, .stbtn.red-sel { border-color: var(--red); background: rgba(255,71,87,0.12); color: #ff7b7b; }
     .stbtn.sel { border-color: var(--blue); background: rgba(74,144,217,0.12); color: var(--blue); }
 
-    /* ── MODAL FOOTER ── */
-    .mfooter { display: flex; gap: 10px; margin-top: 14px; }
+    /* ── ASSIGN ROW (New Game) ── */
+    .ng-player-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
+    .ng-player-row:last-child { border-bottom: none; }
+    .ng-top { display: flex; align-items: center; gap: 8px; }
+    .ng-top label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; }
+    .ng-cb { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
+    .ng-sels { display: none; margin-top: 8px; display: none; gap: 8px; }
+    .ng-sels.show { display: flex; }
+    .assign-sel { flex: 1; padding: 7px 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; }
+
+    /* ── LOG PAST GAME ROWS ── */
+    .lpg-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
+    .lpg-row:last-child { border-bottom: none; }
+    .lpg-top { display: flex; align-items: center; gap: 8px; }
+    .lpg-top label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; }
+    .lpg-stats { display: none; margin-top: 10px; }
+    .lpg-stats.show { display: block; }
+    .lpg-stat-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .lpg-stat-label { font-size: 11px; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .lpg-sels { display: flex; gap: 8px; margin-top: 8px; }
 
     /* ── ADMIN PLAYER LIST ── */
-    .pli {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 11px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .pli { display: flex; align-items: center; gap: 8px; padding: 11px 0; border-bottom: 1px solid var(--border); }
     .pli:last-child { border-bottom: none; }
     .pli-name { flex: 1; font-size: 13px; font-weight: 700; }
     .pli-tags { display: flex; gap: 4px; margin-top: 3px; }
     .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 5px 7px; }
 
-    /* ── ASSIGN TABLE ── */
-    .assign-row {
-      display: grid;
-      grid-template-columns: 1fr 72px 80px;
-      gap: 6px;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .assign-row:last-child { border-bottom: none; }
-    .assign-name { font-size: 12px; font-weight: 700; }
-    .assign-sel { padding: 6px 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 11px; width: 100%; }
+    /* ── SESSION HISTORY (Admin) ── */
+    .sess-admin-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .sess-admin-row:last-child { border-bottom: none; }
+    .sess-mode-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
+    .mode-live    { background: rgba(0,214,143,0.15); color: var(--green); }
+    .mode-post    { background: rgba(74,144,217,0.15); color: #4a90d9; }
+    .mode-history { background: rgba(127,168,201,0.12); color: var(--muted); }
 
     /* ── EMPTY STATE ── */
-    .empty {
-      text-align: center;
-      padding: 50px 20px;
-      color: var(--muted);
-    }
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
     .empty .e-icon { font-size: 44px; margin-bottom: 12px; }
     .empty .e-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
     .empty .e-desc  { font-size: 12px; line-height: 1.6; }
 
-    /* ── SECTION HEADER ── */
+    /* ── MISC ── */
     .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .sh h3 { font-size: 13px; font-weight: 800; }
-
-    /* ── DIVIDER ── */
     .div { height: 1px; background: var(--border); margin: 14px 0; }
+    .mfooter { display: flex; gap: 10px; margin-top: 14px; }
 
     /* ── TOAST ── */
     .toast {
-      position: fixed;
-      top: 64px;
-      left: 50%;
+      position: fixed; top: 64px; left: 50%;
       transform: translateX(-50%) translateY(-16px);
-      padding: 9px 20px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 800;
-      opacity: 0;
-      z-index: 999;
-      transition: all 0.25s;
-      pointer-events: none;
-      white-space: nowrap;
+      padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 800;
+      opacity: 0; z-index: 999; transition: all 0.25s; pointer-events: none; white-space: nowrap;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── SETUP BANNER ── */
-    .setup-banner {
-      background: rgba(255,71,87,0.1);
-      border: 1px solid rgba(255,71,87,0.35);
-      border-radius: 12px;
-      padding: 12px 14px;
-      font-size: 12px;
-      color: #ff7b7b;
-      margin-bottom: 14px;
-      line-height: 1.6;
-    }
-    .setup-banner strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    /* ── PLAYER CARD PREVIEW ── */
+    #pc-canvas-wrap canvas { max-width: 100%; border-radius: 12px; }
   </style>
 </head>
 <body>
@@ -483,48 +315,20 @@
 <div class="toast" id="toast"></div>
 
 <main class="main">
-
-  <!-- LIVE TAB -->
-  <div class="tab active" id="tab-live">
-    <div id="live-root"></div>
-  </div>
-
-  <!-- PLAYERS TAB -->
-  <div class="tab" id="tab-players">
-    <div class="card">
-      <div class="card-title">Player Leaderboard</div>
-      <div id="players-root">Loading…</div>
-    </div>
-  </div>
-
-  <!-- TEAMS TAB -->
-  <div class="tab" id="tab-teams">
-    <div id="teams-root">Loading…</div>
-  </div>
-
-  <!-- ADMIN TAB -->
-  <div class="tab" id="tab-admin">
-    <div id="admin-root"></div>
-  </div>
-
+  <div class="tab active" id="tab-live"><div id="live-root"></div></div>
+  <div class="tab" id="tab-players"><div id="players-root"></div></div>
+  <div class="tab" id="tab-teams"><div id="teams-root">Loading…</div></div>
+  <div class="tab" id="tab-admin"><div id="admin-root"></div></div>
 </main>
 
 <nav class="bottom-nav">
-  <button class="nav-btn active" data-tab="live" onclick="switchTab('live',this)">
-    <span class="icon">⚽</span><span>Live</span>
-  </button>
-  <button class="nav-btn" data-tab="players" onclick="switchTab('players',this)">
-    <span class="icon">👤</span><span>Players</span>
-  </button>
-  <button class="nav-btn" data-tab="teams" onclick="switchTab('teams',this)">
-    <span class="icon">🏆</span><span>Teams</span>
-  </button>
-  <button class="nav-btn" data-tab="admin" onclick="switchTab('admin',this)">
-    <span class="icon">⚙️</span><span>Admin</span>
-  </button>
+  <button class="nav-btn active" onclick="switchTab('live',this)"><span class="icon">⚽</span><span>Live</span></button>
+  <button class="nav-btn" onclick="switchTab('players',this)"><span class="icon">👤</span><span>Players</span></button>
+  <button class="nav-btn" onclick="switchTab('teams',this)"><span class="icon">🏆</span><span>Teams</span></button>
+  <button class="nav-btn" onclick="switchTab('admin',this)"><span class="icon">⚙️</span><span>Admin</span></button>
 </nav>
 
-<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+<!-- ═══════════ MODALS ═══════════ -->
 
 <!-- GOAL MODAL -->
 <div class="overlay" id="m-goal">
@@ -533,10 +337,7 @@
     <div class="mtitle">⚽ Log Goal</div>
     <div class="fg">
       <div class="flbl">Which team scored?</div>
-      <div class="team-btns">
-        <button class="tsel-btn" id="gt-red"   onclick="goalPickTeam('red')">🔴 Red</button>
-        <button class="tsel-btn" id="gt-green" onclick="goalPickTeam('green')">🟢 Green</button>
-      </div>
+      <div class="team-btns" id="goal-team-btns"></div>
     </div>
     <div class="fg" id="g-scorer-wrap" style="display:none">
       <div class="flbl">Who scored?</div>
@@ -561,7 +362,7 @@
     <div class="fg">
       <div class="flbl">Save type</div>
       <div class="save-type-btns">
-        <button class="stbtn" id="st-reg" onclick="pickSaveType('save')">Regular Save</button>
+        <button class="stbtn sel" id="st-reg" onclick="pickSaveType('save')">Regular Save</button>
         <button class="stbtn" id="st-pen" onclick="pickSaveType('penaltySave')">Penalty Save</button>
       </div>
     </div>
@@ -584,8 +385,8 @@
     <div class="fg">
       <div class="flbl">Card type</div>
       <div class="card-type-btns">
-        <button class="ctbtn" id="ct-yellow" onclick="pickCardType('yellowCard')">🟨 Yellow</button>
-        <button class="ctbtn" id="ct-red"    onclick="pickCardType('redCard')">🟥 Red</button>
+        <button class="ctbtn yellow-sel" id="ct-yellow" onclick="pickCardType('yellowCard')">🟨 Yellow</button>
+        <button class="ctbtn" id="ct-red" onclick="pickCardType('redCard')">🟥 Red</button>
       </div>
     </div>
     <div class="fg">
@@ -622,6 +423,8 @@
       <select class="fsel" id="pm-team">
         <option value="red">🔴 Red</option>
         <option value="green">🟢 Green</option>
+        <option value="blue">🔵 Blue</option>
+        <option value="gold">🟡 Gold</option>
       </select>
     </div>
     <div class="mfooter">
@@ -641,7 +444,7 @@
       <input class="finput" id="ng-date" type="date">
     </div>
     <div class="fg">
-      <div class="flbl">Assign players — position & team</div>
+      <div class="flbl">Who's playing? (tick + assign position &amp; team)</div>
       <div id="ng-assignments"></div>
     </div>
     <div class="mfooter">
@@ -667,6 +470,52 @@
   </div>
 </div>
 
+<!-- LOG PAST GAME MODAL -->
+<div class="overlay" id="m-pastgame">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">📋 Log Past Game</div>
+    <div class="fg">
+      <label class="flbl">Date</label>
+      <input class="finput" id="pg-date" type="date">
+    </div>
+    <div class="fg">
+      <div class="flbl">Who played? (tick = played, set position &amp; team)</div>
+      <div id="pg-assignments"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-pastgame')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPastGame()">Save Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MATCH MODAL -->
+<div class="overlay" id="m-editmatch">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="em-title">✏️ Edit Match</div>
+    <div id="em-body"></div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-editmatch')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditMatch()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER CARD MODAL -->
+<div class="overlay" id="m-playercard">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="pc-title">Player Card</div>
+    <div id="pc-canvas-wrap" style="text-align:center;margin-bottom:14px"></div>
+    <button class="btn btn-primary" onclick="downloadPlayerCard()">💾 Save Image</button>
+    <div style="margin-top:10px">
+      <button class="btn btn-ghost" onclick="closeM('m-playercard')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN LOGIN MODAL -->
 <div class="overlay" id="m-login">
   <div class="modal">
@@ -685,14 +534,10 @@
   </div>
 </div>
 
-<!-- ═══════════════════════ APP LOGIC ═══════════════════════ -->
+<!-- ═══════════ APP LOGIC ═══════════ -->
 <script>
 
-// ─────────────────────────────────────────
-// FIREBASE CONFIG
-// Replace REPLACE_* values with your actual
-// Firebase project credentials when ready.
-// ─────────────────────────────────────────
+// ─── FIREBASE CONFIG ───
 const FB_CONFIG = {
   apiKey:            "AIzaSyBkPZvxhklkDsl7RVL8gn3Oh9Wq2bRxF2Q",
   authDomain:        "befit-fc.firebaseapp.com",
@@ -702,16 +547,11 @@ const FB_CONFIG = {
   messagingSenderId: "695548034802",
   appId:             "1:695548034802:web:9bf35fe55f8d55ebcb5a6b",
 };
-
-const ADMIN_PW          = "befit2024"; // change this after setup
+const ADMIN_PW          = "befit2024";
 const FIREBASE_CONFIGURED = !FB_CONFIG.apiKey.startsWith("REPLACE");
+let _db, fbRef, fbPush, fbUpdate, fbRemove, fbSet;
 
-// Firebase SDK refs — populated lazily only when configured
-let _db, fbRef, fbPush, fbUpdate, fbRemove;
-
-// ─────────────────────────────────────────
-// DB ABSTRACTION — Firebase or localStorage
-// ─────────────────────────────────────────
+// ─── DB ABSTRACTION ───
 function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function getNested(obj,path) { return path.split('/').reduce((o,k)=>o&&o[k]!==undefined?o[k]:undefined,obj); }
 function setNested(obj,path,val) {
@@ -745,12 +585,14 @@ const DB = {
   async remove(path){
     if(FIREBASE_CONFIGURED) return fbRemove(fbRef(_db,path));
     delNested(LD,path); saveLocal(); syncLocal(); renderAll();
+  },
+  async set(path,data){
+    if(FIREBASE_CONFIGURED) return fbSet(fbRef(_db,path),data);
+    setNested(LD,path,data); saveLocal(); syncLocal(); renderAll();
   }
 };
 
-// ─────────────────────────────────────────
-// SCORING RULES
-// ─────────────────────────────────────────
+// ─── SCORING RULES ───
 const SCORE = {
   GK:  { app:2, goal:10, assist:3, penaltySave:6, cleanSheet:8,  yellow:-1, red:-3, savePer:4, concedePer:3 },
   DEF: { app:2, goal:6,  assist:3, penaltySave:0, cleanSheet:3,  yellow:-1, red:-3 },
@@ -758,36 +600,104 @@ const SCORE = {
   FWD: { app:2, goal:4,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
 };
 
-// ─────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────
-const S = {
-  admin:     false,
-  players:   {},   // id → { name, defaultPosition, defaultTeam }
-  sessions:  {},   // id → session object
-  activeId:  null,
-};
+const ALL_TEAMS = ['red','green','blue','gold'];
+const TEAM_EMOJI = { red:'🔴', green:'🟢', blue:'🔵', gold:'🟡' };
+const TEAM_COLOR = { red:'#ff7b7b', green:'var(--green)', blue:'#4a90d9', gold:'#f5a623' };
 
-// Modal sub-state
+// ─── SEED DATA — 47 players ───
+const SEED_PLAYERS = [
+  { name:"Harry",           defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:290,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Emmanuel",        defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:286,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Reuel",           defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:160,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"David S",         defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:153,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Barry",           defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:128,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Samuel A",        defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:127,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Joshua",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:122,apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Reuben",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:83, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"El-Bien",         defaultPosition:"MID", defaultTeam:"green", carryover:{pts:67, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Keith",           defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:65, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Andrew",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:58, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Francis",         defaultPosition:"DEF", defaultTeam:"green", carryover:{pts:44, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Solomon",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:40, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Barnabas",        defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:40, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Prince",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:37, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Doku",            defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:31, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"David O",         defaultPosition:"DEF", defaultTeam:"green", carryover:{pts:28, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Sosa",            defaultPosition:"MID", defaultTeam:"green", carryover:{pts:25, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Theophilus",      defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:23, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Sumaila",         defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:23, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Papa Yaw",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:21, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Silas",           defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:18, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Samuel O",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:13, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Shamo",           defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:12, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Vincent",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:12, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Demti",           defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:12, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Joojo AG",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:11, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Segun",           defaultPosition:"MID", defaultTeam:"green", carryover:{pts:10, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Solo's Guy",      defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:10, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Vincent G",       defaultPosition:"MID", defaultTeam:"green", carryover:{pts:10, apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Kofi",            defaultPosition:"MID", defaultTeam:"green", carryover:{pts:9,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Chris",           defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:8,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Koffie",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:7,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Yaw UK",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Bill",            defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Emmanuel O",      defaultPosition:"MID", defaultTeam:"green", carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Tekpe",           defaultPosition:"MID", defaultTeam:"green", carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Delali",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:4,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Toby",            defaultPosition:"GK",  defaultTeam:"green", carryover:{pts:22, apps:6,g:0,a:0,sv:83,y:0,r:0} },
+  { name:"Bona",            defaultPosition:"GK",  defaultTeam:"green", carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Kenneth",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Joel",            defaultPosition:"GK",  defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"John O",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Alex",            defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Christopher O",   defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Cyril",           defaultPosition:"MID", defaultTeam:"green", carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
+  { name:"Mike",            defaultPosition:"GK",  defaultTeam:"red",   carryover:{pts:6,  apps:3,g:0,a:0,sv:30,y:0,r:0} },
+];
+
+// ─── SEED SESSIONS — 17 historical matches (Red 7W-1D-9W Green) ───
+const SEED_SESSIONS = [
+  { date:"2026-01-06", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
+  { date:"2026-01-13", goals:{red:2,green:1}, cleanSheets:{red:false,green:false} },
+  { date:"2026-01-20", goals:{red:1,green:2}, cleanSheets:{red:false,green:false} },
+  { date:"2026-01-27", goals:{red:0,green:2}, cleanSheets:{red:false,green:true}  },
+  { date:"2026-02-03", goals:{red:3,green:1}, cleanSheets:{red:false,green:false} },
+  { date:"2026-02-10", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
+  { date:"2026-02-17", goals:{red:2,green:2}, cleanSheets:{red:false,green:false} },
+  { date:"2026-02-24", goals:{red:1,green:2}, cleanSheets:{red:false,green:false} },
+  { date:"2026-03-03", goals:{red:2,green:1}, cleanSheets:{red:false,green:false} },
+  { date:"2026-03-10", goals:{red:0,green:2}, cleanSheets:{red:false,green:true}  },
+  { date:"2026-03-17", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
+  { date:"2026-03-30", goals:{red:4,green:2}, cleanSheets:{red:false,green:false} },
+  { date:"2026-04-13", goals:{red:6,green:2}, cleanSheets:{red:false,green:false} },
+  { date:"2026-04-20", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
+  { date:"2026-04-27", goals:{red:7,green:3}, cleanSheets:{red:false,green:false} },
+  { date:"2026-05-11", goals:{red:8,green:12},cleanSheets:{red:false,green:false} },
+  { date:"2026-05-18", goals:{red:8,green:3}, cleanSheets:{red:false,green:false} },
+];
+
+// ─── STATE ───
+const S = { admin:false, players:{}, sessions:{}, activeId:null };
 let GS  = { team:null, scorerId:null, assistId:null };
 let SVS = { playerId:null, type:'save' };
 let CS  = { playerId:null, type:'yellowCard' };
 let editPid = null;
+let editSessId = null;
+let pcPid = null;
+let playersView = 'list';
 
-// ─────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────
+// ─── INIT ───
 (async () => {
   if (FIREBASE_CONFIGURED) {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getDatabase, ref, push, update, remove, onValue } =
+    const { getDatabase, ref, push, update, remove, onValue, set } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-    fbRef=ref; fbPush=push; fbUpdate=update; fbRemove=remove;
+    fbRef=ref; fbPush=push; fbUpdate=update; fbRemove=remove; fbSet=set;
     _db = getDatabase(initializeApp(FB_CONFIG));
     onValue(ref(_db,'players'),  snap => { S.players=snap.val()||{}; renderAll(); });
     onValue(ref(_db,'sessions'), snap => {
       S.sessions=snap.val()||{}; S.activeId=null;
-      for(const [id,s] of Object.entries(S.sessions)){ if(s.status==='active'){S.activeId=id;break;} }
+      for(const [id,s] of Object.entries(S.sessions)){ if(s?.status==='active'){S.activeId=id;break;} }
       renderAll();
     });
   } else {
@@ -795,10 +705,8 @@ let editPid = null;
   }
 })();
 
-// ─────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────
-function activeSess()  { return S.activeId ? S.sessions[S.activeId] : null; }
+// ─── HELPERS ───
+function activeSess() { return S.activeId ? S.sessions[S.activeId] : null; }
 
 function sessPlayers(sess) {
   if (!sess?.teams) return [];
@@ -821,9 +729,22 @@ function goalsFor(sess, team) {
   return sessEvents(sess).filter(e => e.type==='goal' && e.team===team).length;
 }
 
+function getTeamGoals(sess, team) {
+  const mode = sess.mode || 'live';
+  if (mode === 'live') return goalsFor(sess, team);
+  return (sess.goals || {})[team] || 0;
+}
+
+function getActiveTeams(sess) {
+  if (!sess) return [];
+  const mode = sess.mode || 'live';
+  if (mode === 'live') return Object.keys(sess.teams || {});
+  return Object.keys(sess.goals || {}).filter(t => sess.goals[t] !== undefined);
+}
+
 function fmtDate(ds) {
   if (!ds) return '';
-  return new Date(ds + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  return new Date(ds+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 }
 
 function posTag(p) {
@@ -831,38 +752,61 @@ function posTag(p) {
 }
 
 function teamTag(t) {
-  return `<span class="team-tag team-${t}">${t==='red'?'🔴':'🟢'} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>`;
+  const e = TEAM_EMOJI[t] || '';
+  const label = t ? (t.charAt(0).toUpperCase()+t.slice(1)) : t;
+  return `<span class="team-tag team-${t}">${e} ${label}</span>`;
 }
 
-// ─────────────────────────────────────────
-// POINTS ENGINE
-// ─────────────────────────────────────────
+// ─── POINTS ENGINE ───
 function calcStats(pid) {
-  let g=0, a=0, sv=0, apps=0, pts=0, y=0, r=0;
+  const pl = S.players[pid];
+  if (!pl) return { g:0, a:0, sv:0, apps:0, pts:0, y:0, r:0 };
+  const co = pl.carryover || {};
+  let g=co.g||0, a=co.a||0, sv=co.sv||0, apps=co.apps||0, pts=co.pts||0, y=co.y||0, r=co.r||0;
+
   for (const sess of Object.values(S.sessions)) {
     if (sess.status !== 'completed') continue;
-    const sp = sessPlayers(sess).find(p => p.pid===pid);
+    const mode = sess.mode || 'live';
+    if (mode === 'history') continue;
+
+    const sp = sessPlayers(sess).find(p => p.pid === pid);
     if (!sp) continue;
     const rules = SCORE[sp.pos];
-    const evs   = sessEvents(sess);
     apps++; pts += rules.app;
-    const myGoals  = evs.filter(e => e.type==='goal' && e.scorerId===pid);
-    const myAssist = evs.filter(e => e.type==='goal' && e.assistId===pid);
-    const myYellow = evs.filter(e => e.type==='yellowCard' && e.playerId===pid);
-    const myRed    = evs.filter(e => e.type==='redCard'    && e.playerId===pid);
-    g  += myGoals.length;   pts += myGoals.length  * rules.goal;
-    a  += myAssist.length;  pts += myAssist.length * rules.assist;
-    y  += myYellow.length;  pts += myYellow.length * rules.yellow;
-    r  += myRed.length;     pts += myRed.length    * rules.red;
 
-    if (sp.pos === 'GK') {
-      const mySaves  = evs.filter(e => e.type==='save'        && e.playerId===pid);
-      const myPenSv  = evs.filter(e => e.type==='penaltySave' && e.playerId===pid);
-      sv += mySaves.length;
-      pts += Math.floor(mySaves.length / rules.savePer);
-      pts += myPenSv.length * rules.penaltySave;
-      const conceded = evs.filter(e => e.type==='goal' && e.team!==sp.team).length;
-      pts -= Math.floor(conceded / rules.concedePer);
+    if (mode === 'live') {
+      const evs = sessEvents(sess);
+      const myGoals  = evs.filter(e => e.type==='goal' && e.scorerId===pid);
+      const myAssist = evs.filter(e => e.type==='goal' && e.assistId===pid);
+      const myYellow = evs.filter(e => e.type==='yellowCard' && e.playerId===pid);
+      const myRed    = evs.filter(e => e.type==='redCard'    && e.playerId===pid);
+      g += myGoals.length;  pts += myGoals.length  * rules.goal;
+      a += myAssist.length; pts += myAssist.length * rules.assist;
+      y += myYellow.length; pts += myYellow.length * rules.yellow;
+      r += myRed.length;    pts += myRed.length    * rules.red;
+      if (sp.pos === 'GK') {
+        const mySaves  = evs.filter(e => e.type==='save'        && e.playerId===pid);
+        const myPenSv  = evs.filter(e => e.type==='penaltySave' && e.playerId===pid);
+        sv += mySaves.length;
+        pts += Math.floor(mySaves.length / rules.savePer);
+        pts += myPenSv.length * rules.penaltySave;
+        const conceded = evs.filter(e => e.type==='goal' && e.team!==sp.team).length;
+        pts -= Math.floor(conceded / rules.concedePer);
+      }
+    } else if (mode === 'post') {
+      const ps = sess.playerStats?.[pid] || {};
+      const myG = ps.goals||0, myA = ps.assists||0, myY = ps.yellow||0, myR = ps.red||0;
+      g += myG; pts += myG * rules.goal;
+      a += myA; pts += myA * rules.assist;
+      y += myY; pts += myY * rules.yellow;
+      r += myR; pts += myR * rules.red;
+      if (sp.pos === 'GK') {
+        const mySv = ps.saves||0, myPen = ps.penaltySaves||0, myConc = ps.conceded||0;
+        sv += mySv;
+        pts += Math.floor(mySv / rules.savePer);
+        pts += myPen * rules.penaltySave;
+        pts -= Math.floor(myConc / rules.concedePer);
+      }
     }
 
     const cs = sess.cleanSheets?.[sp.team];
@@ -872,32 +816,59 @@ function calcStats(pid) {
 }
 
 function calcTeams() {
-  const T = { red:{w:0,d:0,l:0,gf:0,ga:0,pts:0}, green:{w:0,d:0,l:0,gf:0,ga:0,pts:0} };
+  const T = {};
+  ALL_TEAMS.forEach(t => T[t] = {w:0,d:0,l:0,gf:0,ga:0,pts:0,played:0});
+
   for (const sess of Object.values(S.sessions)) {
     if (sess.status !== 'completed') continue;
-    const rg = goalsFor(sess,'red'), gg = goalsFor(sess,'green');
-    T.red.gf+=rg; T.red.ga+=gg; T.green.gf+=gg; T.green.ga+=rg;
-    if      (rg>gg) { T.red.w++;   T.red.pts+=3; T.green.l++; }
-    else if (gg>rg) { T.green.w++; T.green.pts+=3; T.red.l++; }
-    else            { T.red.d++;   T.red.pts++;  T.green.d++; T.green.pts++; }
+    const teams = getActiveTeams(sess);
+    if (teams.length < 2) continue;
+    const [t1,t2] = [teams[0],teams[1]];
+    const g1 = getTeamGoals(sess,t1), g2 = getTeamGoals(sess,t2);
+    if (!T[t1]) T[t1]={w:0,d:0,l:0,gf:0,ga:0,pts:0,played:0};
+    if (!T[t2]) T[t2]={w:0,d:0,l:0,gf:0,ga:0,pts:0,played:0};
+    T[t1].gf+=g1; T[t1].ga+=g2; T[t1].played++;
+    T[t2].gf+=g2; T[t2].ga+=g1; T[t2].played++;
+    if (g1>g2)      { T[t1].w++; T[t1].pts+=3; T[t2].l++; }
+    else if (g2>g1) { T[t2].w++; T[t2].pts+=3; T[t1].l++; }
+    else            { T[t1].d++; T[t1].pts++;  T[t2].d++; T[t2].pts++; }
   }
   return T;
 }
 
-// ─────────────────────────────────────────
-// RENDER — ALL
-// ─────────────────────────────────────────
-function renderAll() {
-  renderLive(); renderPlayers(); renderTeams(); renderAdmin();
+function calcStreak() {
+  const completed = Object.values(S.sessions)
+    .filter(s => s.status==='completed')
+    .sort((a,b) => new Date(a.date)-new Date(b.date));
+  if (!completed.length) return { team:null, count:0 };
+
+  const last = completed[completed.length-1];
+  const teams = getActiveTeams(last);
+  if (teams.length < 2) return { team:null, count:0 };
+  const [t1,t2] = [teams[0],teams[1]];
+  const g1 = getTeamGoals(last,t1), g2 = getTeamGoals(last,t2);
+  const lastWinner = g1>g2 ? t1 : g2>g1 ? t2 : null;
+  if (!lastWinner) return { team:null, count:0 };
+
+  let streak=0;
+  for (let i=completed.length-1; i>=0; i--) {
+    const s = completed[i];
+    const ts = getActiveTeams(s);
+    if (ts.length < 2) break;
+    const ga = getTeamGoals(s,ts[0]), gb = getTeamGoals(s,ts[1]);
+    const winner = ga>gb ? ts[0] : gb>ga ? ts[1] : null;
+    if (winner===lastWinner) streak++;
+    else break;
+  }
+  return { team:lastWinner, count:streak };
 }
 
-// ─────────────────────────────────────────
-// RENDER — LIVE
-// ─────────────────────────────────────────
-function renderLive() {
-  const el  = document.getElementById('live-root');
-  const sess = activeSess();
+// ─── RENDER ───
+function renderAll() { renderLive(); renderPlayers(); renderTeams(); renderAdmin(); }
 
+function renderLive() {
+  const el = document.getElementById('live-root');
+  const sess = activeSess();
   if (!sess) {
     el.innerHTML = `
       <div class="empty">
@@ -907,79 +878,50 @@ function renderLive() {
       </div>`;
     return;
   }
-
-  const evs = sessEvents(sess).sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
-  const rg  = goalsFor(sess,'red');
-  const gg  = goalsFor(sess,'green');
+  const evs = sessEvents(sess).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
   const sp  = sessPlayers(sess);
   const adm = S.admin;
+  const teams = Object.keys(sess.teams||{});
+  const scoreHtml = teams.map(t=>`
+    <div class="score-side">
+      <div class="s-name" style="color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t.toUpperCase()}</div>
+      <div class="s-goals" style="color:${TEAM_COLOR[t]}">${goalsFor(sess,t)}</div>
+    </div>`).join('<div class="score-divider">—</div>');
 
   el.innerHTML = `
     <div class="live-banner">
-      <div class="live-left">
-        <div class="live-dot"></div>
-        <strong>LIVE</strong> · ${fmtDate(sess.date)}
-      </div>
-      ${adm ? `<button class="btn btn-danger btn-sm" style="width:auto" onclick="openEndGame()">End Game</button>` : ''}
+      <div class="live-left"><div class="live-dot"></div><strong>LIVE</strong> · ${fmtDate(sess.date)}</div>
+      ${adm?`<button class="btn btn-danger btn-sm" style="width:auto" onclick="openEndGame()">End Game</button>`:''}
     </div>
-
-    <div class="score-wrap">
-      <div class="score-side">
-        <div class="s-name" style="color:#ff7b7b">🔴 RED</div>
-        <div class="s-goals" style="color:#ff7b7b">${rg}</div>
-      </div>
-      <div class="score-divider">—</div>
-      <div class="score-side">
-        <div class="s-name" style="color:var(--green)">🟢 GREEN</div>
-        <div class="s-goals" style="color:var(--green)">${gg}</div>
-      </div>
-    </div>
-
+    <div class="score-wrap">${scoreHtml}</div>
     <div class="action-grid">
-      <button class="action-btn ab-goal"   onclick="openGoal()">
-        <span class="ab-icon">⚽</span>GOAL
-      </button>
-      <button class="action-btn ab-save"   onclick="openSave()">
-        <span class="ab-icon">🧤</span>SAVE
-      </button>
-      <button class="action-btn ab-yellow" onclick="openCard()">
-        <span class="ab-icon">🟨</span>CARD
-      </button>
-      <button class="action-btn ab-red"    onclick="openCard('redCard')">
-        <span class="ab-icon">🟥</span>RED CARD
-      </button>
+      <button class="action-btn ab-goal"   onclick="openGoal()"><span class="ab-icon">⚽</span>GOAL</button>
+      <button class="action-btn ab-save"   onclick="openSave()"><span class="ab-icon">🧤</span>SAVE</button>
+      <button class="action-btn ab-yellow" onclick="openCard()"><span class="ab-icon">🟨</span>CARD</button>
+      <button class="action-btn ab-red"    onclick="openCard('redCard')"><span class="ab-icon">🟥</span>RED CARD</button>
     </div>
-
     <div class="card">
       <div class="sh">
         <div class="card-title" style="margin:0">Match Events</div>
-        ${adm ? `<span style="font-size:10px;color:var(--muted)">Tap 🗑 to delete</span>` : ''}
+        ${adm?`<span style="font-size:10px;color:var(--muted)">Tap 🗑 to delete</span>`:''}
       </div>
-      ${evs.length===0 ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No events yet</div>` : ''}
-      <ul class="event-log">
-        ${evs.map(e => renderEvent(e, sp, adm)).join('')}
-      </ul>
-    </div>
-  `;
+      ${evs.length===0?`<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No events yet</div>`:''}
+      <ul class="event-log">${evs.map(e=>renderEvent(e,sp,adm)).join('')}</ul>
+    </div>`;
 }
 
 function renderEvent(ev, sp, isAdmin) {
-  const pname = id => { if(!id) return null; const p=sp.find(x=>x.pid===id); return p?.name || S.players[id]?.name || '?'; };
+  const pname = id => { if(!id) return null; const p=sp.find(x=>x.pid===id); return p?.name||S.players[id]?.name||'?'; };
   let icon='', name='', detail='';
   switch(ev.type) {
     case 'goal':
       icon='⚽'; name=pname(ev.scorerId)||'?';
-      const tm = ev.team==='red'?'🔴 Red':'🟢 Green';
-      const as = ev.assistId ? ` · Assist: ${pname(ev.assistId)}` : '';
-      detail = `${tm}${as}`; break;
-    case 'save':
-      icon='🧤'; name=pname(ev.playerId)||'?'; detail='Regular Save'; break;
-    case 'penaltySave':
-      icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
-    case 'yellowCard':
-      icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
-    case 'redCard':
-      icon='🟥'; name=pname(ev.playerId)||'?'; detail='Red Card'; break;
+      detail=(TEAM_EMOJI[ev.team]||'')+' '+(ev.team||'')+(ev.assistId?` · Assist: ${pname(ev.assistId)}`:'');
+      break;
+    case 'save':        icon='🧤'; name=pname(ev.playerId)||'?'; detail='Regular Save'; break;
+    case 'penaltySave': icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
+    case 'yellowCard':  icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
+    case 'redCard':     icon='🟥'; name=pname(ev.playerId)||'?'; detail='Red Card'; break;
   }
   return `
     <li class="ev-item">
@@ -988,124 +930,190 @@ function renderEvent(ev, sp, isAdmin) {
         <div class="ev-name">${name}</div>
         <div class="ev-detail">${detail}</div>
       </div>
-      ${isAdmin ? `<button class="ev-del" onclick="deleteEvent('${ev.id}')">🗑</button>` : ''}
+      ${isAdmin?`<button class="ev-del" onclick="deleteEvent('${ev.id}')">🗑</button>`:''}
     </li>`;
 }
 
-// ─────────────────────────────────────────
-// RENDER — PLAYERS
-// ─────────────────────────────────────────
 function renderPlayers() {
   const el = document.getElementById('players-root');
   const ids = Object.keys(S.players);
   if (!ids.length) {
-    el.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">No players yet. Add them in Admin.</div>`;
+    el.innerHTML = `<div class="card"><div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">No players yet. Add them in Admin.</div></div>`;
     return;
   }
-  const board = ids.map(id => ({ id, ...S.players[id], ...calcStats(id) }))
-                   .sort((a,b) => b.pts-a.pts || b.g-a.g);
-  el.innerHTML = `
-    <table class="ptable">
-      <thead>
-        <tr>
-          <th>#</th><th>Player</th><th>Apps</th><th>G</th><th>A</th><th>Sv</th><th>Pts</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${board.map((p,i)=>`
-          <tr>
-            <td class="rk">${i+1}</td>
-            <td>
-              <div style="font-weight:700;font-size:13px">${p.name}</div>
-              <div style="margin-top:3px;display:flex;gap:4px">
-                ${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}
-              </div>
-            </td>
-            <td>${p.apps}</td>
-            <td>${p.g}</td>
-            <td>${p.a}</td>
-            <td>${p.sv}</td>
-            <td class="pts">${p.pts}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>`;
-}
+  const board = ids.map(id=>({id,...S.players[id],...calcStats(id)})).sort((a,b)=>b.pts-a.pts||b.g-a.g);
+  const top3  = board.slice(0,3);
+  const rest  = board.slice(3);
+  const medals = ['🥇','🥈','🥉'];
+  const podClasses = ['pod-1','pod-2','pod-3'];
+  const podOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
 
-// ─────────────────────────────────────────
-// RENDER — TEAMS
-// ─────────────────────────────────────────
-function renderTeams() {
-  const el = document.getElementById('teams-root');
-  const T  = calcTeams();
-  const played = T.red.w + T.red.d + T.red.l;
+  const podHtml = `
+    <div class="podium">
+      ${podOrder.map(p=>{
+        const rank = board.indexOf(p);
+        return `
+          <div class="pod-slot ${podClasses[rank]}" onclick="openPlayerCard('${p.id}')">
+            <div class="pod-medal">${medals[rank]}</div>
+            <div class="pod-name">${p.name}</div>
+            <div class="pod-pts">${p.pts}</div>
+            <div class="pod-sub">pts</div>
+          </div>`;
+      }).join('')}
+    </div>`;
 
-  const history = Object.entries(S.sessions)
-    .filter(([,s])=>s.status==='completed')
-    .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date))
-    .slice(0,10);
+  const toggleHtml = `
+    <div class="view-toggle">
+      <button class="vtbtn ${playersView==='list'?'active':''}" onclick="setPlayersView('list')">≡ List</button>
+      <button class="vtbtn ${playersView==='grid'?'active':''}" onclick="setPlayersView('grid')">⊞ Grid</button>
+    </div>`;
 
-  el.innerHTML = `
-    <div class="card">
-      <div class="team-vs">
-        <div class="tvc red">
-          <div class="tc-name">RED</div>
-          <div class="tc-pts">${T.red.pts}</div>
-          <div class="tc-lbl">POINTS</div>
-        </div>
-        <div class="vs-lbl">VS</div>
-        <div class="tvc green">
-          <div class="tc-name">GREEN</div>
-          <div class="tc-pts">${T.green.pts}</div>
-          <div class="tc-lbl">POINTS</div>
-        </div>
-      </div>
-      <div class="div"></div>
-      <div style="font-size:10px;color:var(--muted);font-weight:800;margin-bottom:8px;letter-spacing:0.8px">
-        SEASON (${played} games)
-      </div>
+  let restHtml;
+  if (playersView === 'grid') {
+    restHtml = `
+      <div class="pgrid">
+        ${rest.map((p,i)=>`
+          <div class="pgrid-card" onclick="openPlayerCard('${p.id}')">
+            <div class="pgrid-tags">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+            <div class="pgrid-name">${p.name}</div>
+            <div class="pgrid-pts">${p.pts}</div>
+            <div class="pgrid-sub">#${i+4} · ${p.apps} apps · ${p.g}G ${p.a}A</div>
+          </div>`).join('')}
+      </div>`;
+  } else {
+    restHtml = `
       <table class="ptable">
         <thead>
-          <tr><th>Team</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+          <tr><th>#</th><th>Player</th><th>App</th><th>G</th><th>A</th><th>Sv</th><th>Pts</th></tr>
         </thead>
         <tbody>
-          ${['red','green'].map(t=>`
-            <tr>
-              <td style="font-weight:800;color:${t==='red'?'#ff7b7b':'var(--green)'}">${t==='red'?'🔴 Red':'🟢 Green'}</td>
-              <td>${T[t].w}</td><td>${T[t].d}</td><td>${T[t].l}</td>
-              <td>${T[t].gf}</td><td>${T[t].ga}</td>
-              <td>${T[t].gf-T[t].ga>0?'+':''}${T[t].gf-T[t].ga}</td>
-              <td class="pts">${T[t].pts}</td>
+          ${rest.map((p,i)=>`
+            <tr onclick="openPlayerCard('${p.id}')" style="cursor:pointer">
+              <td class="rk">${i+4}</td>
+              <td>
+                <div style="font-weight:700;font-size:13px">${p.name}</div>
+                <div style="margin-top:3px;display:flex;gap:4px">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+              </td>
+              <td>${p.apps}</td><td>${p.g}</td><td>${p.a}</td>
+              <td>${p.defaultPosition==='GK'?p.sv:'—'}</td>
+              <td class="pts">${p.pts}</td>
             </tr>`).join('')}
         </tbody>
-      </table>
-    </div>
+      </table>`;
+  }
 
+  el.innerHTML = `
     <div class="card">
-      <div class="card-title">Recent Results</div>
-      ${history.length===0
-        ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">No completed games yet</div>`
-        : history.map(([,s])=>{
-            const rg=goalsFor(s,'red'), gg=goalsFor(s,'green');
-            const res = rg>gg?'🔴 Red win':gg>rg?'🟢 Green win':'Draw';
-            return `
-              <div class="session-row">
-                <div>
-                  <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
-                  <div style="font-size:12px;color:var(--muted);margin-top:2px">
-                    <span style="color:#ff7b7b;font-weight:800">${rg}</span>
-                    <span style="margin:0 6px">—</span>
-                    <span style="color:var(--green);font-weight:800">${gg}</span>
-                  </div>
-                </div>
-                <div style="font-size:12px;color:var(--muted)">${res}</div>
-              </div>`;
-          }).join('')}
+      <div class="card-title">Top Scorers</div>
+      ${top3.length>0 ? podHtml : ''}
+    </div>
+    <div class="card">
+      <div class="sh" style="margin-bottom:12px">
+        <div class="card-title" style="margin:0">Full Leaderboard</div>
+      </div>
+      ${toggleHtml}
+      ${restHtml}
     </div>`;
 }
 
-// ─────────────────────────────────────────
-// RENDER — ADMIN
-// ─────────────────────────────────────────
+window.setPlayersView = function(v) { playersView=v; renderPlayers(); };
+
+function renderTeams() {
+  const el = document.getElementById('teams-root');
+  const T  = calcTeams();
+  const streak = calcStreak();
+  const activeTeams = ALL_TEAMS.filter(t => T[t].played > 0);
+
+  const completedSessions = Object.entries(S.sessions)
+    .filter(([,s])=>s.status==='completed')
+    .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date));
+
+  // H2H (only red vs green for the classic display)
+  const redW=T.red.w, greenW=T.green.w, draws=T.red.d;
+  const total = redW+greenW+draws;
+  const h2hHtml = total>0 ? `
+    <div style="margin:12px 0">
+      <div class="h2h-label">
+        <span style="color:#ff7b7b">🔴 ${redW} wins</span>
+        <span style="color:var(--muted)">${draws} draw${draws!==1?'s':''}</span>
+        <span style="color:var(--green)">${greenW} wins 🟢</span>
+      </div>
+      <div class="h2h-bar">
+        <div class="h2h-seg red-seg"   style="flex:${redW||0.2}"></div>
+        <div class="h2h-seg draw-seg"  style="flex:${draws||0.1}"></div>
+        <div class="h2h-seg green-seg" style="flex:${greenW||0.2}"></div>
+      </div>
+    </div>` : '';
+
+  const streakHtml = streak.team && streak.count>1 ? `
+    <div style="text-align:center;margin-top:6px">
+      <span class="streak-badge" style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd43b">
+        🔥 ${TEAM_EMOJI[streak.team]} ${streak.team.charAt(0).toUpperCase()+streak.team.slice(1)} on ${streak.count}-game win streak
+      </span>
+    </div>` : '';
+
+  const teamsVsHtml = `
+    <div class="team-vs">
+      <div class="tvc red">
+        <div class="tc-name">RED</div>
+        <div class="tc-pts">${T.red.pts}</div>
+        <div class="tc-lbl">POINTS</div>
+      </div>
+      <div class="vs-lbl">VS</div>
+      <div class="tvc green">
+        <div class="tc-name">GREEN</div>
+        <div class="tc-pts">${T.green.pts}</div>
+        <div class="tc-lbl">POINTS</div>
+      </div>
+    </div>
+    ${h2hHtml}
+    ${streakHtml}`;
+
+  const played = T.red.played;
+  const standingsRows = activeTeams.map(t=>`
+    <tr>
+      <td style="font-weight:800;color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</td>
+      <td>${T[t].w}</td><td>${T[t].d}</td><td>${T[t].l}</td>
+      <td>${T[t].gf}</td><td>${T[t].ga}</td>
+      <td>${T[t].gf-T[t].ga>0?'+':''}${T[t].gf-T[t].ga}</td>
+      <td class="pts">${T[t].pts}</td>
+    </tr>`).join('');
+
+  const recentHtml = completedSessions.slice(0,10).map(([sid,s])=>{
+    const teams = getActiveTeams(s);
+    const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:800">${getTeamGoals(s,t)}</span>`).join('<span style="margin:0 5px;color:var(--muted)">—</span>');
+    const winner = teams.find(t => getTeamGoals(s,t) > getTeamGoals(s,teams.find(x=>x!==t)));
+    const res = !winner ? 'Draw' : `${TEAM_EMOJI[winner]||''} ${winner.charAt(0).toUpperCase()+winner.slice(1)} win`;
+    const mode = s.mode||'live';
+    const modeBadge = `<span class="sess-mode-badge mode-${mode}">${mode}</span>`;
+    return `
+      <div class="session-row">
+        <div>
+          <div style="font-size:13px;font-weight:700">${fmtDate(s.date)} ${modeBadge}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${scoreStr}</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${res}</div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="card">
+      ${teamsVsHtml}
+      <div class="div"></div>
+      <div style="font-size:10px;color:var(--muted);font-weight:800;margin-bottom:8px;letter-spacing:0.8px">SEASON STANDINGS (${played} games)</div>
+      <table class="ptable">
+        <thead><tr><th>Team</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+        <tbody>${standingsRows}</tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent Results</div>
+      ${completedSessions.length===0
+        ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">No completed games yet</div>`
+        : recentHtml}
+    </div>`;
+}
+
 function renderAdmin() {
   const el = document.getElementById('admin-root');
   if (!S.admin) {
@@ -1121,27 +1129,31 @@ function renderAdmin() {
 
   const sess  = activeSess();
   const plist = Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  const noPlayers = plist.length === 0;
+
+  const completedSessions = Object.entries(S.sessions)
+    .filter(([,s])=>s.status==='completed')
+    .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date))
+    .slice(0,15);
 
   el.innerHTML = `
-    ${!FIREBASE_CONFIGURED ? `
-      <div class="setup-banner">
-        <strong>⚠️ Firebase Setup Required</strong>
-        1. Go to <strong>console.firebase.google.com</strong><br>
-        2. Create a new project → Add a web app → copy the config<br>
-        3. Enable <strong>Realtime Database</strong> in test mode<br>
-        4. Replace the REPLACE_* values in index.html with your config<br>
-        5. Save and re-open the app
-      </div>` : ''}
-
     <div class="card">
-      <div class="sh">
-        <div class="card-title" style="margin:0">Game Session</div>
-      </div>
+      <div class="sh"><div class="card-title" style="margin:0">Game Session</div></div>
       ${sess
         ? `<div style="color:var(--green);font-size:13px;margin-bottom:12px">🟢 Active · ${fmtDate(sess.date)}</div>
            <button class="btn btn-danger" onclick="openEndGame()">🏁 End Game</button>`
-        : `<button class="btn btn-primary" onclick="openNewGame()">🏟️ Start New Game</button>`}
+        : `<div style="display:flex;flex-direction:column;gap:10px">
+             <button class="btn btn-primary" onclick="openNewGame()">🏟️ Start New Game</button>
+             <button class="btn btn-ghost" onclick="openLogPastGame()">📋 Log Past Game</button>
+           </div>`}
     </div>
+
+    ${noPlayers ? `
+      <div class="card" style="border-color:rgba(0,214,143,0.3);background:rgba(0,214,143,0.04)">
+        <div class="card-title" style="color:var(--green)">First Time Setup</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Import all 47 players and 17 historical matches from the previous season.</p>
+        <button class="btn btn-primary" onclick="seedHistoricalData()">⬇️ Import Historical Data</button>
+      </div>` : ''}
 
     <div class="card">
       <div class="sh">
@@ -1161,14 +1173,33 @@ function renderAdmin() {
           </div>`).join('')}
     </div>
 
+    ${completedSessions.length > 0 ? `
+    <div class="card">
+      <div class="card-title">Match History</div>
+      ${completedSessions.map(([sid,s])=>{
+        const mode = s.mode||'live';
+        const teams = getActiveTeams(s);
+        const scoreStr = teams.map(t=>`${TEAM_EMOJI[t]||''}${getTeamGoals(s,t)}`).join(' — ');
+        return `
+          <div class="sess-admin-row">
+            <div>
+              <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${scoreStr} <span class="sess-mode-badge mode-${mode}">${mode}</span></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="icon-btn" onclick="openEditMatch('${sid}')">✏️</button>
+              <button class="icon-btn" onclick="delSession('${sid}')">🗑</button>
+            </div>
+          </div>`
+      }).join('')}
+    </div>` : ''}
+
     <div class="card">
       <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
     </div>`;
 }
 
-// ─────────────────────────────────────────
-// TAB SWITCHING
-// ─────────────────────────────────────────
+// ─── TAB SWITCHING ───
 window.switchTab = function(id, btn) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1176,9 +1207,7 @@ window.switchTab = function(id, btn) {
   btn.classList.add('active');
 };
 
-// ─────────────────────────────────────────
-// MODAL HELPERS
-// ─────────────────────────────────────────
+// ─── MODAL HELPERS ───
 window.openM  = id => document.getElementById(id).classList.add('open');
 window.closeM = id => document.getElementById(id).classList.remove('open');
 
@@ -1190,256 +1219,326 @@ function toast(msg, isErr=false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.style.background = isErr ? 'var(--red)' : 'var(--green)';
-  t.style.color = '#fff';
-  if (!isErr) t.style.color = '#0b1a2e';
+  t.style.color = isErr ? '#fff' : '#0b1a2e';
   t.classList.add('show');
   clearTimeout(t._tid);
   t._tid = setTimeout(()=>t.classList.remove('show'), 2400);
 }
 
-// ─────────────────────────────────────────
-// ADMIN LOGIN
-// ─────────────────────────────────────────
+// ─── ADMIN LOGIN ───
 window.doLogin = function() {
   const pw = document.getElementById('login-pw').value;
   if (pw===ADMIN_PW) {
     S.admin=true;
     document.getElementById('login-pw').value='';
     document.getElementById('login-err').style.display='none';
-    closeM('m-login');
-    renderAdmin(); renderLive();
-    toast('Welcome, Admin 👋');
+    closeM('m-login'); renderAdmin(); renderLive(); toast('Welcome, Admin 👋');
   } else {
     document.getElementById('login-err').style.display='block';
   }
 };
+window.doLogout = function() { S.admin=false; renderAdmin(); renderLive(); };
 
-window.doLogout = function() {
-  S.admin=false; renderAdmin(); renderLive();
-};
-
-// ─────────────────────────────────────────
-// GOAL MODAL
-// ─────────────────────────────────────────
+// ─── GOAL MODAL ───
 window.openGoal = function() {
   if (!activeSess()) return toast('No active game',true);
   GS = { team:null, scorerId:null, assistId:null };
+  const sess = activeSess();
+  const teams = Object.keys(sess.teams||{});
+  document.getElementById('goal-team-btns').innerHTML =
+    teams.map(t=>`<button class="tsel-btn" id="gt-${t}" onclick="goalPickTeam('${t}')">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
   document.getElementById('g-scorer-wrap').style.display='none';
   document.getElementById('g-assist-wrap').style.display='none';
   document.getElementById('g-confirm').disabled=true;
-  document.getElementById('gt-red').className='tsel-btn';
-  document.getElementById('gt-green').className='tsel-btn';
   openM('m-goal');
 };
 
 window.goalPickTeam = function(team) {
   GS.team=team; GS.scorerId=null; GS.assistId=null;
   document.getElementById('g-confirm').disabled=true;
-  document.getElementById('gt-red').className  = 'tsel-btn'+(team==='red'  ?' red-sel':'');
-  document.getElementById('gt-green').className= 'tsel-btn'+(team==='green'?' green-sel':'');
-
-  const sess  = activeSess();
-  const sp    = sessPlayers(sess);
-  const onTeam= sp.filter(p=>p.team===team);
-  const all   = sp;
-
-  // Scorer chips
+  document.querySelectorAll('#goal-team-btns .tsel-btn').forEach(b=>{
+    b.className='tsel-btn'+(b.id==='gt-'+team?' '+team+'-sel':'');
+  });
+  const sess=activeSess(), sp=sessPlayers(sess);
+  const onTeam=sp.filter(p=>p.team===team);
   document.getElementById('g-scorer-chips').innerHTML =
-    onTeam.map(p=>
-      `<span class="chip" data-pid="${p.pid}" data-role="scorer" onclick="goalChipClick(this,'scorer','${team}')">${p.name} ${posTag(p.pos)}</span>`
-    ).join('');
+    onTeam.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'scorer','${team}')">${p.name} ${posTag(p.pos)}</span>`).join('');
   document.getElementById('g-scorer-wrap').style.display='block';
-
-  // Assist chips
   document.getElementById('g-assist-chips').innerHTML =
-    `<span class="chip sel-none" data-pid="" data-role="assist" onclick="goalChipClick(this,'assist','${team}')">None</span>` +
-    all.map(p=>
-      `<span class="chip" data-pid="${p.pid}" data-role="assist" onclick="goalChipClick(this,'assist','${team}')">${p.name}</span>`
-    ).join('');
+    `<span class="chip sel-none" data-pid="" onclick="goalChipClick(this,'assist','${team}')">None</span>`+
+    sp.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'assist','${team}')">${p.name}</span>`).join('');
   document.getElementById('g-assist-wrap').style.display='block';
 };
 
-window.goalChipClick = function(el, role, team) {
-  const pid = el.dataset.pid;
-  const sel = role==='scorer' ? 'sel-green' : 'sel-none';
-  const container = role==='scorer' ? 'g-scorer-chips' : 'g-assist-chips';
+window.goalChipClick = function(el,role,team) {
+  const pid=el.dataset.pid;
+  const container=role==='scorer'?'g-scorer-chips':'g-assist-chips';
   document.querySelectorAll(`#${container} .chip`).forEach(c=>c.className='chip'+(c.dataset.pid===''?' sel-none':''));
-  el.className = `chip ${team==='red'?'sel-red':'sel-green'}`;
-  if (role==='scorer') { GS.scorerId=pid||null; document.getElementById('g-confirm').disabled=!pid; }
-  else                 { GS.assistId =pid||null; }
+  el.className=`chip sel-${team==='red'?'red':'green'}`;
+  if (role==='scorer'){GS.scorerId=pid||null;document.getElementById('g-confirm').disabled=!pid;}
+  else               {GS.assistId=pid||null;}
 };
 
 window.confirmGoal = async function() {
   if (!GS.scorerId||!GS.team) return;
-  await DB.push(`sessions/${S.activeId}/events`,{
-    type:'goal', team:GS.team, scorerId:GS.scorerId, assistId:GS.assistId||null, timestamp:Date.now()
-  });
+  await DB.push(`sessions/${S.activeId}/events`,{type:'goal',team:GS.team,scorerId:GS.scorerId,assistId:GS.assistId||null,timestamp:Date.now()});
   closeM('m-goal'); toast('⚽ Goal logged!');
 };
 
-// ─────────────────────────────────────────
-// SAVE MODAL
-// ─────────────────────────────────────────
+// ─── SAVE MODAL ───
 window.openSave = function() {
   if (!activeSess()) return toast('No active game',true);
-  SVS = { playerId:null, type:'save' };
+  SVS={playerId:null,type:'save'};
   document.getElementById('save-confirm').disabled=true;
   document.getElementById('st-reg').className='stbtn sel';
   document.getElementById('st-pen').className='stbtn';
-
-  const keepers = sessPlayers(activeSess()).filter(p=>p.pos==='GK');
-  const pool    = keepers.length ? keepers : sessPlayers(activeSess());
-  document.getElementById('save-chips').innerHTML =
+  const keepers=sessPlayers(activeSess()).filter(p=>p.pos==='GK');
+  const pool=keepers.length?keepers:sessPlayers(activeSess());
+  document.getElementById('save-chips').innerHTML=
     pool.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="saveChipClick(this)">${p.name} ${posTag(p.pos)}</span>`).join('');
   openM('m-save');
 };
+window.pickSaveType=function(type){SVS.type=type;document.getElementById('st-reg').className='stbtn'+(type==='save'?' sel':'');document.getElementById('st-pen').className='stbtn'+(type==='penaltySave'?' sel':'');};
+window.saveChipClick=function(el){document.querySelectorAll('#save-chips .chip').forEach(c=>c.className='chip');el.className='chip sel-green';SVS.playerId=el.dataset.pid;document.getElementById('save-confirm').disabled=false;};
+window.confirmSave=async function(){if(!SVS.playerId)return;await DB.push(`sessions/${S.activeId}/events`,{type:SVS.type,playerId:SVS.playerId,timestamp:Date.now()});closeM('m-save');toast(SVS.type==='penaltySave'?'🧤 Penalty save!':'🧤 Save logged!');};
 
-window.pickSaveType = function(type) {
-  SVS.type=type;
-  document.getElementById('st-reg').className='stbtn'+(type==='save'?' sel':'');
-  document.getElementById('st-pen').className='stbtn'+(type==='penaltySave'?' sel':'');
-};
-
-window.saveChipClick = function(el) {
-  document.querySelectorAll('#save-chips .chip').forEach(c=>c.className='chip');
-  el.className='chip sel-green'; SVS.playerId=el.dataset.pid;
-  document.getElementById('save-confirm').disabled=false;
-};
-
-window.confirmSave = async function() {
-  if (!SVS.playerId) return;
-  await DB.push(`sessions/${S.activeId}/events`,{
-    type:SVS.type, playerId:SVS.playerId, timestamp:Date.now()
-  });
-  closeM('m-save');
-  toast(SVS.type==='penaltySave' ? '🧤 Penalty save logged!' : '🧤 Save logged!');
-};
-
-// ─────────────────────────────────────────
-// CARD MODAL
-// ─────────────────────────────────────────
-window.openCard = function(preset=null) {
-  if (!activeSess()) return toast('No active game',true);
-  CS = { playerId:null, type: preset||'yellowCard' };
+// ─── CARD MODAL ───
+window.openCard=function(preset=null){
+  if(!activeSess())return toast('No active game',true);
+  CS={playerId:null,type:preset||'yellowCard'};
   document.getElementById('card-confirm').disabled=true;
   document.getElementById('ct-yellow').className='ctbtn'+(CS.type==='yellowCard'?' yellow-sel':'');
-  document.getElementById('ct-red').className   ='ctbtn'+(CS.type==='redCard'?' red-sel':'');
-
-  const sp = sessPlayers(activeSess());
-  document.getElementById('card-chips').innerHTML =
-    sp.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="cardChipClick(this)">${p.name} ${posTag(p.pos)}</span>`).join('');
+  document.getElementById('ct-red').className='ctbtn'+(CS.type==='redCard'?' red-sel':'');
+  document.getElementById('card-chips').innerHTML=
+    sessPlayers(activeSess()).map(p=>`<span class="chip" data-pid="${p.pid}" onclick="cardChipClick(this)">${p.name} ${posTag(p.pos)}</span>`).join('');
   openM('m-card');
 };
+window.pickCardType=function(type){CS.type=type;document.getElementById('ct-yellow').className='ctbtn'+(type==='yellowCard'?' yellow-sel':'');document.getElementById('ct-red').className='ctbtn'+(type==='redCard'?' red-sel':'');};
+window.cardChipClick=function(el){document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');if(CS.type==='yellowCard')el.style.borderColor='var(--yellow)';CS.playerId=el.dataset.pid;document.getElementById('card-confirm').disabled=false;};
+window.confirmCard=async function(){if(!CS.playerId)return;await DB.push(`sessions/${S.activeId}/events`,{type:CS.type,playerId:CS.playerId,timestamp:Date.now()});closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');};
 
-window.pickCardType = function(type) {
-  CS.type=type;
-  document.getElementById('ct-yellow').className='ctbtn'+(type==='yellowCard'?' yellow-sel':'');
-  document.getElementById('ct-red').className   ='ctbtn'+(type==='redCard'?' red-sel':'');
-};
+// ─── DELETE EVENT ───
+window.deleteEvent=async function(evId){if(!S.admin)return;if(!confirm('Delete this event?'))return;await DB.remove(`sessions/${S.activeId}/events/${evId}`);toast('Event deleted',true);};
 
-window.cardChipClick = function(el) {
-  document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');
-  el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');
-  el.style.borderColor=CS.type==='yellowCard'?'var(--yellow)':'';
-  CS.playerId=el.dataset.pid;
-  document.getElementById('card-confirm').disabled=false;
-};
-
-window.confirmCard = async function() {
-  if (!CS.playerId) return;
-  await DB.push(`sessions/${S.activeId}/events`,{
-    type:CS.type, playerId:CS.playerId, timestamp:Date.now()
-  });
-  closeM('m-card');
-  toast(CS.type==='yellowCard'?'🟨 Yellow card logged':'🟥 Red card logged', CS.type==='redCard');
-};
-
-// ─────────────────────────────────────────
-// DELETE EVENT
-// ─────────────────────────────────────────
-window.deleteEvent = async function(evId) {
-  if (!S.admin) return;
-  if (!confirm('Delete this event?')) return;
-  await DB.remove(`sessions/${S.activeId}/events/${evId}`);
-  toast('Event deleted',true);
-};
-
-// ─────────────────────────────────────────
-// NEW GAME
-// ─────────────────────────────────────────
-window.openNewGame = function() {
-  document.getElementById('ng-date').value = new Date().toISOString().split('T')[0];
-  const plist = Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
-  document.getElementById('ng-assignments').innerHTML = plist.length===0
-    ? `<div style="color:var(--muted);font-size:12px">Add players first.</div>`
-    : plist.map(([id,p])=>`
-        <div class="assign-row">
-          <div class="assign-name">${p.name}</div>
-          <select class="assign-sel" id="ap-${id}">
-            <option value="GK"  ${p.defaultPosition==='GK' ?'selected':''}>GK</option>
-            <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
-            <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
-            <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
-          </select>
-          <select class="assign-sel" id="at-${id}">
-            <option value="red"   ${p.defaultTeam==='red'  ?'selected':''}>🔴 Red</option>
-            <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
-            <option value="bench">⬛ Bench</option>
-          </select>
+// ─── NEW GAME ───
+window.openNewGame=function(){
+  document.getElementById('ng-date').value=new Date().toISOString().split('T')[0];
+  const plist=Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  document.getElementById('ng-assignments').innerHTML=plist.length===0
+    ?`<div style="color:var(--muted);font-size:12px">Add players first.</div>`
+    :plist.map(([id,p])=>`
+        <div class="ng-player-row">
+          <div class="ng-top">
+            <input type="checkbox" class="ng-cb" id="ngcb-${id}" onchange="ngToggle('${id}')">
+            <label for="ngcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
+          </div>
+          <div class="ng-sels" id="ngsels-${id}">
+            <select class="assign-sel" id="ap-${id}">
+              <option value="GK" ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+              <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+              <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+              <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+            </select>
+            <select class="assign-sel" id="at-${id}">
+              <option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
+              <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
+              <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
+              <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
+            </select>
+          </div>
         </div>`).join('');
   openM('m-newgame');
 };
 
-window.startGame = async function() {
-  if (S.activeId) return toast('End the current game first',true);
-  const date = document.getElementById('ng-date').value;
-  if (!date) return toast('Pick a date',true);
-
-  const teams = { red:{players:{}}, green:{players:{}} };
-  for (const id of Object.keys(S.players)) {
-    const pos  = document.getElementById(`ap-${id}`)?.value;
-    const team = document.getElementById(`at-${id}`)?.value;
-    if (team==='bench'||!teams[team]) continue;
-    teams[team].players[id] = { position:pos };
-  }
-
-  await DB.push('sessions', { date, status:'active', teams, events:null, cleanSheets:null });
-  closeM('m-newgame'); toast('🏟️ Game started!');
+window.ngToggle=function(id){
+  const cb=document.getElementById('ngcb-'+id);
+  const sels=document.getElementById('ngsels-'+id);
+  sels.classList.toggle('show',cb.checked);
 };
 
-// ─────────────────────────────────────────
-// END GAME
-// ─────────────────────────────────────────
-window.openEndGame = function() {
-  const sess = activeSess(); if(!sess) return;
-  const rg=goalsFor(sess,'red'), gg=goalsFor(sess,'green');
-  document.getElementById('eg-summary').innerHTML = `
-    <div style="font-size:36px;font-weight:900;margin-bottom:6px">
-      <span style="color:#ff7b7b">${rg}</span>
-      <span style="color:var(--muted);font-size:22px;margin:0 10px">—</span>
-      <span style="color:var(--green)">${gg}</span>
-    </div>
-    <div style="font-size:12px;color:var(--muted)">
-      ${rg===0?'🟢 Green clean sheet':''}${gg===0?'🔴 Red clean sheet':''}
-      ${rg>0&&gg>0?'No clean sheets':''}
-    </div>`;
+window.startGame=async function(){
+  if(S.activeId)return toast('End the current game first',true);
+  const date=document.getElementById('ng-date').value;
+  if(!date)return toast('Pick a date',true);
+  const teams={};
+  for(const id of Object.keys(S.players)){
+    const cb=document.getElementById('ngcb-'+id);
+    if(!cb||!cb.checked)continue;
+    const pos=document.getElementById(`ap-${id}`)?.value;
+    const team=document.getElementById(`at-${id}`)?.value;
+    if(!team||!pos)continue;
+    if(!teams[team])teams[team]={players:{}};
+    teams[team].players[id]={position:pos};
+  }
+  if(Object.keys(teams).length===0)return toast('Select at least one player',true);
+  await DB.push('sessions',{date,status:'active',mode:'live',teams,events:null,cleanSheets:null});
+  closeM('m-newgame');toast('🏟️ Game started!');
+};
+
+// ─── END GAME ───
+window.openEndGame=function(){
+  const sess=activeSess();if(!sess)return;
+  const teams=Object.keys(sess.teams||{});
+  const scoreHtml=teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:900;font-size:32px">${goalsFor(sess,t)}</span>`).join('<span style="color:var(--muted);font-size:22px;margin:0 10px">—</span>');
+  document.getElementById('eg-summary').innerHTML=`<div style="margin-bottom:6px">${scoreHtml}</div>`;
   openM('m-endgame');
 };
 
-window.confirmEndGame = async function() {
-  const sess=activeSess(); if(!sess) return;
-  const rg=goalsFor(sess,'red'), gg=goalsFor(sess,'green');
-  await DB.update(`sessions/${S.activeId}`,{
-    status:'completed',
-    cleanSheets:{ red:gg===0, green:rg===0 }
-  });
-  closeM('m-endgame'); toast('🏁 Game completed!');
+window.confirmEndGame=async function(){
+  const sess=activeSess();if(!sess)return;
+  const teams=Object.keys(sess.teams||{});
+  const goals={};
+  teams.forEach(t=>goals[t]=goalsFor(sess,t));
+  const cleanSheets={};
+  teams.forEach(t=>cleanSheets[t]=teams.every(other=>other===t||goals[other]===0));
+  await DB.update(`sessions/${S.activeId}`,{status:'completed',goals,cleanSheets});
+  closeM('m-endgame');toast('🏁 Game completed!');
 };
 
-// ─────────────────────────────────────────
-// PLAYER MANAGEMENT
-// ─────────────────────────────────────────
-window.openAddPlayer = function() {
+// ─── LOG PAST GAME ───
+window.openLogPastGame=function(){
+  document.getElementById('pg-date').value=new Date().toISOString().split('T')[0];
+  const plist=Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  document.getElementById('pg-assignments').innerHTML=plist.length===0
+    ?`<div style="color:var(--muted);font-size:12px">Add players first.</div>`
+    :plist.map(([id,p])=>`
+        <div class="lpg-row">
+          <div class="lpg-top">
+            <input type="checkbox" class="ng-cb" id="pgcb-${id}" onchange="pgToggle('${id}','${p.defaultPosition}')">
+            <label for="pgcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
+          </div>
+          <div class="lpg-sels" id="pgsels-${id}" style="display:none;gap:8px;margin-top:8px">
+            <select class="assign-sel" id="pgpos-${id}">
+              <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+              <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+              <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+              <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+            </select>
+            <select class="assign-sel" id="pgteam-${id}">
+              <option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
+              <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
+              <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
+              <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
+            </select>
+          </div>
+          <div class="lpg-stats" id="pgstats-${id}">
+            <div class="lpg-stat-row">
+              <span class="lpg-stat-label">⚽ G</span><input class="finput-sm" id="pgG-${id}" type="number" min="0" value="0">
+              <span class="lpg-stat-label">👟 A</span><input class="finput-sm" id="pgA-${id}" type="number" min="0" value="0">
+              <span class="lpg-stat-label">🟨</span><input class="finput-sm" id="pgY-${id}" type="number" min="0" value="0">
+              <span class="lpg-stat-label">🟥</span><input class="finput-sm" id="pgR-${id}" type="number" min="0" value="0">
+            </div>
+            <div class="lpg-stat-row" id="pgGKrow-${id}" style="display:none">
+              <span class="lpg-stat-label">🧤 Sv</span><input class="finput-sm" id="pgSv-${id}" type="number" min="0" value="0">
+              <span class="lpg-stat-label">✋ PenSv</span><input class="finput-sm" id="pgPen-${id}" type="number" min="0" value="0">
+              <span class="lpg-stat-label">😓 Conc</span><input class="finput-sm" id="pgConc-${id}" type="number" min="0" value="0">
+            </div>
+          </div>
+        </div>`).join('');
+  openM('m-pastgame');
+};
+
+window.pgToggle=function(id,defaultPos){
+  const cb=document.getElementById('pgcb-'+id);
+  const sels=document.getElementById('pgsels-'+id);
+  const stats=document.getElementById('pgstats-'+id);
+  sels.style.display=cb.checked?'flex':'none';
+  stats.classList.toggle('show',cb.checked);
+  if(cb.checked) pgUpdateGKRow(id);
+};
+
+window.pgUpdateGKRow=function(id){
+  const posEl=document.getElementById('pgpos-'+id);
+  const gkRow=document.getElementById('pgGKrow-'+id);
+  if(posEl&&gkRow)gkRow.style.display=posEl.value==='GK'?'flex':'none';
+};
+
+window.submitPastGame=async function(){
+  const date=document.getElementById('pg-date').value;
+  if(!date)return toast('Pick a date',true);
+  const teams={};
+  const playerStats={};
+  const goals={};
+  let anyPlayed=false;
+
+  for(const id of Object.keys(S.players)){
+    const cb=document.getElementById('pgcb-'+id);
+    if(!cb||!cb.checked)continue;
+    anyPlayed=true;
+    const pos=document.getElementById('pgpos-'+id)?.value||S.players[id].defaultPosition;
+    const team=document.getElementById('pgteam-'+id)?.value||S.players[id].defaultTeam;
+    if(!teams[team])teams[team]={players:{}};
+    teams[team].players[id]={position:pos};
+    const g=parseInt(document.getElementById('pgG-'+id)?.value)||0;
+    const a=parseInt(document.getElementById('pgA-'+id)?.value)||0;
+    const y=parseInt(document.getElementById('pgY-'+id)?.value)||0;
+    const r=parseInt(document.getElementById('pgR-'+id)?.value)||0;
+    playerStats[id]={played:true,goals:g,assists:a,yellow:y,red:r};
+    if(pos==='GK'){
+      const sv=parseInt(document.getElementById('pgSv-'+id)?.value)||0;
+      const pen=parseInt(document.getElementById('pgPen-'+id)?.value)||0;
+      const conc=parseInt(document.getElementById('pgConc-'+id)?.value)||0;
+      playerStats[id].saves=sv;
+      playerStats[id].penaltySaves=pen;
+      playerStats[id].conceded=conc;
+    }
+    goals[team]=(goals[team]||0)+g;
+  }
+  if(!anyPlayed)return toast('Select at least one player',true);
+  const cleanSheets={};
+  const tKeys=Object.keys(teams);
+  tKeys.forEach(t=>cleanSheets[t]=tKeys.every(other=>other===t||goals[other]===0));
+  await DB.push('sessions',{date,status:'completed',mode:'post',teams,playerStats,goals,cleanSheets});
+  closeM('m-pastgame');toast('📋 Past game logged!');
+};
+
+// ─── EDIT MATCH ───
+window.openEditMatch=function(sid){
+  const s=S.sessions[sid];if(!s)return;
+  editSessId=sid;
+  const mode=s.mode||'live';
+  document.getElementById('em-title').textContent=`✏️ Edit — ${fmtDate(s.date)}`;
+  const teams=getActiveTeams(s);
+  const scoreInputs=teams.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-weight:800;color:${TEAM_COLOR[t]};min-width:60px">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+      <input class="finput-sm" id="em-g-${t}" type="number" min="0" value="${getTeamGoals(s,t)}" style="width:70px">
+    </div>`).join('');
+  document.getElementById('em-body').innerHTML=`
+    <div class="fg">
+      <div class="flbl">Final Score</div>
+      ${scoreInputs}
+    </div>
+    <div class="fg">
+      <div class="flbl">Mode: <span style="color:var(--text)">${mode}</span></div>
+    </div>`;
+  openM('m-editmatch');
+};
+
+window.saveEditMatch=async function(){
+  const s=S.sessions[editSessId];if(!s)return;
+  const teams=getActiveTeams(s);
+  const goals={};
+  teams.forEach(t=>{
+    const v=parseInt(document.getElementById('em-g-'+t)?.value);
+    goals[t]=isNaN(v)?getTeamGoals(s,t):v;
+  });
+  const cleanSheets={};
+  teams.forEach(t=>cleanSheets[t]=teams.every(other=>other===t||goals[other]===0));
+  await DB.update(`sessions/${editSessId}`,{goals,cleanSheets});
+  closeM('m-editmatch');toast('Match updated ✓');
+};
+
+window.delSession=async function(sid){
+  if(!S.admin)return;
+  const s=S.sessions[sid];
+  if(!confirm(`Delete match from ${fmtDate(s?.date)}?`))return;
+  await DB.remove(`sessions/${sid}`);
+  toast('Match deleted',true);
+};
+
+// ─── PLAYER MANAGEMENT ───
+window.openAddPlayer=function(){
   editPid=null;
   document.getElementById('pm-title').textContent='Add Player';
   document.getElementById('pm-name').value='';
@@ -1447,34 +1546,154 @@ window.openAddPlayer = function() {
   document.getElementById('pm-team').value='red';
   openM('m-player');
 };
-
-window.openEditPlayer = function(id) {
+window.openEditPlayer=function(id){
   editPid=id;
-  const p=S.players[id]; if(!p) return;
+  const p=S.players[id];if(!p)return;
   document.getElementById('pm-title').textContent='Edit Player';
   document.getElementById('pm-name').value=p.name;
   document.getElementById('pm-pos').value=p.defaultPosition;
   document.getElementById('pm-team').value=p.defaultTeam;
   openM('m-player');
 };
-
-window.savePlayer = async function() {
-  const name = document.getElementById('pm-name').value.trim();
-  if (!name) return toast('Enter a name',true);
-  const data = {
-    name,
-    defaultPosition: document.getElementById('pm-pos').value,
-    defaultTeam:     document.getElementById('pm-team').value,
-  };
-  if (editPid) await DB.update(`players/${editPid}`, data);
-  else         await DB.push('players', data);
-  closeM('m-player'); toast(editPid?'Player updated ✓':'Player added ✓');
+window.savePlayer=async function(){
+  const name=document.getElementById('pm-name').value.trim();
+  if(!name)return toast('Enter a name',true);
+  const data={name,defaultPosition:document.getElementById('pm-pos').value,defaultTeam:document.getElementById('pm-team').value};
+  if(editPid)await DB.update(`players/${editPid}`,data);
+  else       await DB.push('players',data);
+  closeM('m-player');toast(editPid?'Player updated ✓':'Player added ✓');
 };
-
-window.delPlayer = async function(id) {
-  if (!confirm(`Delete ${S.players[id]?.name}?`)) return;
+window.delPlayer=async function(id){
+  if(!confirm(`Delete ${S.players[id]?.name}?`))return;
   await DB.remove(`players/${id}`);
   toast('Player deleted',true);
+};
+
+// ─── SEED HISTORICAL DATA ───
+window.seedHistoricalData=async function(){
+  if(Object.keys(S.players).length>0){toast('Players already exist — clear first',true);return;}
+  const players={},sessions={};
+  SEED_PLAYERS.forEach((p,i)=>{ players[`seed_p${String(i+1).padStart(3,'0')}`]=p; });
+  SEED_SESSIONS.forEach((s,i)=>{
+    sessions[`seed_s${String(i+1).padStart(2,'0')}`]={...s,status:'completed',mode:'history'};
+  });
+  if(FIREBASE_CONFIGURED){
+    await fbUpdate(fbRef(_db,''),{players,sessions});
+  } else {
+    Object.assign(LD.players,players);Object.assign(LD.sessions,sessions);saveLocal();syncLocal();renderAll();
+  }
+  toast('Historical data imported! ✓');
+};
+
+// ─── PLAYER CARD (canvas export) ───
+window.openPlayerCard=function(pid){
+  pcPid=pid;
+  const p=S.players[pid];if(!p)return;
+  const st=calcStats(pid);
+  document.getElementById('pc-title').textContent=p.name;
+  const canvas=drawPlayerCard(pid,p,st);
+  document.getElementById('pc-canvas-wrap').innerHTML='';
+  document.getElementById('pc-canvas-wrap').appendChild(canvas);
+  openM('m-playercard');
+};
+
+function drawPlayerCard(pid,pl,st){
+  const W=340,H=440,SC=2;
+  const canvas=document.createElement('canvas');
+  canvas.width=W*SC;canvas.height=H*SC;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(SC,SC);
+
+  // Background
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0d2040');bg.addColorStop(1,'#061428');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Border
+  ctx.strokeStyle='#1e3a5f';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(1,1,W-2,H-2,16);ctx.stroke();
+
+  // Header band
+  const tc=TEAM_COLOR[pl.defaultTeam]||'#00d68f';
+  ctx.fillStyle=tc+'22';ctx.fillRect(0,0,W,80);
+  ctx.strokeStyle=tc+'55';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,80);ctx.lineTo(W,80);ctx.stroke();
+
+  // Team colour bar (top)
+  ctx.fillStyle=tc;ctx.fillRect(0,0,W,4);
+
+  // Club name
+  ctx.fillStyle='#7fa8c9';ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
+  ctx.fillText('BeFit FC · Season 2025/26',W/2,22);
+
+  // Player name
+  ctx.fillStyle='#e8f4fd';ctx.font='bold 24px -apple-system,sans-serif';ctx.textAlign='center';
+  ctx.fillText(pl.name,W/2,58);
+
+  // Avatar circle
+  ctx.fillStyle='#172f52';ctx.strokeStyle=tc;ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(W/2,140,50,0,Math.PI*2);ctx.fill();ctx.stroke();
+  // Initial
+  ctx.fillStyle=tc;ctx.font='bold 40px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(pl.name.charAt(0).toUpperCase(),W/2,140);
+  ctx.textBaseline='alphabetic';
+
+  // Pos + team badges
+  const posColors={GK:'#ffd43b',DEF:'#4a90d9',MID:'#00d68f',FWD:'#ff6b6b'};
+  const posColor=posColors[pl.defaultPosition]||'#00d68f';
+  drawBadge(ctx,W/2-44,205,pl.defaultPosition,posColor+'33',posColor);
+  drawBadge(ctx,W/2+10,205,(pl.defaultTeam||'').toUpperCase(),tc+'33',tc);
+
+  // Divider
+  ctx.strokeStyle='#1e3a5f';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(24,238);ctx.lineTo(W-24,238);ctx.stroke();
+
+  // Stats
+  const stats=pl.defaultPosition==='GK'
+    ?[['APPS',st.apps],['SAVES',st.sv],['GOALS',st.g],['CARDS',st.y+st.r]]
+    :[['APPS',st.apps],['GOALS',st.g],['ASSISTS',st.a],['CARDS',st.y+st.r]];
+
+  const statW=(W-48)/4;
+  stats.forEach(([label,val],i)=>{
+    const x=24+i*statW+statW/2;
+    ctx.fillStyle='#00d68f';ctx.font='bold 26px -apple-system,sans-serif';ctx.textAlign='center';
+    ctx.fillText(String(val),x,285);
+    ctx.fillStyle='#7fa8c9';ctx.font='bold 9px -apple-system,sans-serif';
+    ctx.fillText(label,x,302);
+  });
+
+  // Divider
+  ctx.strokeStyle='#1e3a5f';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(24,316);ctx.lineTo(W-24,316);ctx.stroke();
+
+  // Total points (big)
+  ctx.fillStyle='#7fa8c9';ctx.font='bold 10px -apple-system,sans-serif';ctx.textAlign='center';
+  ctx.fillText('TOTAL POINTS',W/2,338);
+  ctx.fillStyle='#e8f4fd';ctx.font='bold 52px -apple-system,sans-serif';
+  ctx.fillText(String(st.pts),W/2,396);
+
+  // Footnote
+  ctx.fillStyle='#3d5f7e';ctx.font='9px -apple-system,sans-serif';ctx.textAlign='center';
+  const co=pl.carryover;
+  if(co&&co.pts>0)ctx.fillText(`incl. ${co.pts} carried from Jan–May 2026`,W/2,418);
+  ctx.fillText('befit-fc.larmiereuben.workers.dev',W/2,432);
+
+  return canvas;
+}
+
+function drawBadge(ctx,x,y,text,bgColor,textColor){
+  ctx.font='bold 9px -apple-system,sans-serif';
+  const tw=ctx.measureText(text).width;
+  const bw=tw+14,bh=18;
+  ctx.fillStyle=bgColor;ctx.beginPath();ctx.roundRect(x,y,bw,bh,4);ctx.fill();
+  ctx.fillStyle=textColor;ctx.textAlign='left';ctx.fillText(text,x+7,y+13);
+}
+
+window.downloadPlayerCard=function(){
+  const p=S.players[pcPid];if(!p)return;
+  const canvas=document.querySelector('#pc-canvas-wrap canvas');if(!canvas)return;
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');
+  a.download=`befit_${p.name.replace(/\s+/g,'_')}.png`;
+  a.click();
 };
 
 </script>
