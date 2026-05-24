@@ -503,6 +503,22 @@
   </div>
 </div>
 
+<!-- SUB ON MODAL -->
+<div class="overlay" id="m-subon">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">➕ Sub On</div>
+    <div class="fg">
+      <div class="flbl">Who's coming on? (tick + assign position &amp; team)</div>
+      <div id="subon-players"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-subon')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmSubOn()">Add to Game</button>
+    </div>
+  </div>
+</div>
+
 <!-- PLAYER CARD MODAL -->
 <div class="overlay" id="m-playercard">
   <div class="modal">
@@ -891,8 +907,11 @@ function renderLive() {
   el.innerHTML = `
     <div class="live-banner">
       <div class="live-left"><div class="live-dot"></div><strong>LIVE</strong> · ${fmtDate(sess.date)}</div>
-      ${adm?`<button class="btn btn-danger btn-sm" style="width:auto" onclick="openEndGame()">End Game</button>`:''}
     </div>
+    ${adm?`<div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openSubOn()">➕ Sub On</button>
+      <button class="btn btn-danger btn-sm" style="flex:1" onclick="openEndGame()">🏁 End Game</button>
+    </div>`:''}
     <div class="score-wrap">${scoreHtml}</div>
     <div class="action-grid">
       <button class="action-btn ab-goal"   onclick="openGoal()"><span class="ab-icon">⚽</span>GOAL</button>
@@ -1081,8 +1100,9 @@ function renderTeams() {
 
   const recentHtml = completedSessions.slice(0,10).map(([sid,s])=>{
     const teams = getActiveTeams(s);
-    const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:800">${getTeamGoals(s,t)}</span>`).join('<span style="margin:0 5px;color:var(--muted)">—</span>');
-    const winner = teams.find(t => getTeamGoals(s,t) > getTeamGoals(s,teams.find(x=>x!==t)));
+    const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:800">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)} ${getTeamGoals(s,t)}</span>`).join('<span style="margin:0 8px;color:var(--muted)">—</span>');
+    const winner = teams.length===2 && getTeamGoals(s,teams[0])!==getTeamGoals(s,teams[1])
+      ? (getTeamGoals(s,teams[0])>getTeamGoals(s,teams[1]) ? teams[0] : teams[1]) : null;
     const res = !winner ? 'Draw' : `${TEAM_EMOJI[winner]||''} ${winner.charAt(0).toUpperCase()+winner.slice(1)} win`;
     const mode = s.mode||'live';
     const modeBadge = `<span class="sess-mode-badge mode-${mode}">${mode}</span>`;
@@ -1090,9 +1110,9 @@ function renderTeams() {
       <div class="session-row">
         <div>
           <div style="font-size:13px;font-weight:700">${fmtDate(s.date)} ${modeBadge}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">${scoreStr}</div>
+          <div style="font-size:12px;margin-top:4px">${scoreStr}</div>
         </div>
-        <div style="font-size:12px;color:var(--muted)">${res}</div>
+        <div style="font-size:12px;color:var(--muted);text-align:right">${res}</div>
       </div>`;
   }).join('');
 
@@ -1178,7 +1198,7 @@ function renderAdmin() {
       ${completedSessions.map(([sid,s])=>{
         const mode = s.mode||'live';
         const teams = getActiveTeams(s);
-        const scoreStr = teams.map(t=>`${TEAM_EMOJI[t]||''}${getTeamGoals(s,t)}`).join(' — ');
+        const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:700">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)} ${getTeamGoals(s,t)}</span>`).join(' <span style="color:var(--muted)">—</span> ');
         return `
           <div class="sess-admin-row">
             <div>
@@ -1491,41 +1511,154 @@ window.submitPastGame=async function(){
   closeM('m-pastgame');toast('📋 Past game logged!');
 };
 
-// ─── EDIT MATCH ───
+// ─── EDIT MATCH (full) ───
+let emPickedTeam=null, emPickedPid=null;
+
 window.openEditMatch=function(sid){
   const s=S.sessions[sid];if(!s)return;
-  editSessId=sid;
+  editSessId=sid; emPickedTeam=null; emPickedPid=null;
   const mode=s.mode||'live';
   document.getElementById('em-title').textContent=`✏️ Edit — ${fmtDate(s.date)}`;
   const teams=getActiveTeams(s);
   const scoreInputs=teams.map(t=>`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="font-weight:800;color:${TEAM_COLOR[t]};min-width:60px">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
-      <input class="finput-sm" id="em-g-${t}" type="number" min="0" value="${getTeamGoals(s,t)}" style="width:70px">
+      <span style="font-weight:800;color:${TEAM_COLOR[t]};min-width:70px">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+      <input class="finput-sm" id="em-g-${t}" type="number" min="0" value="${getTeamGoals(s,t)}">
+      <span style="font-size:11px;color:var(--muted)">goals</span>
     </div>`).join('');
+
+  let extraHtml='';
+  if(mode==='live'){
+    const evs=sessEvents(s).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+    const pname=id=>S.players[id]?.name||'?';
+    const evRows=evs.map(ev=>{
+      let desc='';
+      switch(ev.type){
+        case 'goal':        desc=`⚽ ${pname(ev.scorerId)}${ev.assistId?' → '+pname(ev.assistId):''} (${TEAM_EMOJI[ev.team]||ev.team})`; break;
+        case 'save':        desc=`🧤 ${pname(ev.playerId)} — Save`; break;
+        case 'penaltySave': desc=`🧤 ${pname(ev.playerId)} — Pen Save`; break;
+        case 'yellowCard':  desc=`🟨 ${pname(ev.playerId)}`; break;
+        case 'redCard':     desc=`🟥 ${pname(ev.playerId)}`; break;
+      }
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px">${desc}</span>
+        <button class="icon-btn" onclick="deleteEventFromEdit('${sid}','${ev.id}')">🗑</button>
+      </div>`;
+    }).join('');
+    const sp=sessPlayers(s);
+    const playerChips=sp.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="emChipClick(this)">${p.name}</span>`).join('');
+    const teamBtns=teams.map(t=>`<button class="tsel-btn" id="emgt-${t}" onclick="emPickTeam('${t}')">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
+    extraHtml=`
+      <div class="fg">
+        <div class="flbl">Events <span style="font-weight:400;color:var(--muted)">(tap 🗑 to remove)</span></div>
+        ${evs.length===0?'<div style="color:var(--muted);font-size:12px;padding:6px 0">No events</div>':evRows}
+      </div>
+      <div class="fg">
+        <div class="flbl">Add Correction</div>
+        <select class="fsel" id="em-ev-type" style="margin-bottom:10px">
+          <option value="goal">⚽ Goal</option>
+          <option value="save">🧤 Save</option>
+          <option value="penaltySave">🧤 Penalty Save</option>
+          <option value="yellowCard">🟨 Yellow Card</option>
+          <option value="redCard">🟥 Red Card</option>
+        </select>
+        <div style="margin-bottom:10px">
+          <div class="flbl">Team (goals only)</div>
+          <div class="team-btns">${teamBtns}</div>
+        </div>
+        <div class="flbl">Player</div>
+        <div class="chips" id="em-player-chips">${playerChips}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addEditEvent('${sid}')">+ Add Event</button>
+      </div>`;
+  } else if(mode==='post'){
+    const sp=sessPlayers(s);
+    const rows=sp.map(p=>{
+      const ps=s.playerStats?.[p.pid]||{};
+      const isGK=p.pos==='GK';
+      return `
+        <div style="border-bottom:1px solid var(--border);padding:10px 0">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px">${p.name} ${posTag(p.pos)} ${teamTag(p.team)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <span style="font-size:11px;color:var(--muted)">⚽G</span><input class="finput-sm" id="ems-g-${p.pid}"   type="number" min="0" value="${ps.goals||0}">
+            <span style="font-size:11px;color:var(--muted)">👟A</span><input class="finput-sm" id="ems-a-${p.pid}"   type="number" min="0" value="${ps.assists||0}">
+            <span style="font-size:11px;color:var(--muted)">🟨</span><input class="finput-sm" id="ems-y-${p.pid}"   type="number" min="0" value="${ps.yellow||0}">
+            <span style="font-size:11px;color:var(--muted)">🟥</span><input class="finput-sm" id="ems-r-${p.pid}"   type="number" min="0" value="${ps.red||0}">
+            ${isGK?`
+            <span style="font-size:11px;color:var(--muted)">🧤Sv</span><input class="finput-sm" id="ems-sv-${p.pid}"  type="number" min="0" value="${ps.saves||0}">
+            <span style="font-size:11px;color:var(--muted)">PenSv</span><input class="finput-sm" id="ems-pen-${p.pid}" type="number" min="0" value="${ps.penaltySaves||0}">
+            <span style="font-size:11px;color:var(--muted)">Conc</span><input class="finput-sm" id="ems-conc-${p.pid}" type="number" min="0" value="${ps.conceded||0}">
+            `:''}
+          </div>
+        </div>`;
+    }).join('');
+    extraHtml=`<div class="fg"><div class="flbl">Player Stats</div>${rows||'<div style="color:var(--muted);font-size:12px">No player data</div>'}</div>`;
+  }
+
   document.getElementById('em-body').innerHTML=`
-    <div class="fg">
-      <div class="flbl">Final Score</div>
-      ${scoreInputs}
-    </div>
-    <div class="fg">
-      <div class="flbl">Mode: <span style="color:var(--text)">${mode}</span></div>
-    </div>`;
+    <div class="fg"><div class="flbl">Score</div>${scoreInputs}</div>
+    ${extraHtml}`;
   openM('m-editmatch');
 };
 
 window.saveEditMatch=async function(){
   const s=S.sessions[editSessId];if(!s)return;
+  const mode=s.mode||'live';
   const teams=getActiveTeams(s);
   const goals={};
-  teams.forEach(t=>{
-    const v=parseInt(document.getElementById('em-g-'+t)?.value);
-    goals[t]=isNaN(v)?getTeamGoals(s,t):v;
-  });
+  teams.forEach(t=>{const v=parseInt(document.getElementById('em-g-'+t)?.value);goals[t]=isNaN(v)?getTeamGoals(s,t):v;});
   const cleanSheets={};
-  teams.forEach(t=>cleanSheets[t]=teams.every(other=>other===t||goals[other]===0));
-  await DB.update(`sessions/${editSessId}`,{goals,cleanSheets});
+  teams.forEach(t=>cleanSheets[t]=teams.every(o=>o===t||goals[o]===0));
+  const updates={goals,cleanSheets};
+  if(mode==='post'){
+    const sp=sessPlayers(s);
+    const playerStats={...(s.playerStats||{})};
+    sp.forEach(p=>{
+      const pid=p.pid;
+      playerStats[pid]={...(playerStats[pid]||{}),played:true,
+        goals:parseInt(document.getElementById(`ems-g-${pid}`)?.value)||0,
+        assists:parseInt(document.getElementById(`ems-a-${pid}`)?.value)||0,
+        yellow:parseInt(document.getElementById(`ems-y-${pid}`)?.value)||0,
+        red:parseInt(document.getElementById(`ems-r-${pid}`)?.value)||0,
+      };
+      if(p.pos==='GK'){
+        playerStats[pid].saves=parseInt(document.getElementById(`ems-sv-${pid}`)?.value)||0;
+        playerStats[pid].penaltySaves=parseInt(document.getElementById(`ems-pen-${pid}`)?.value)||0;
+        playerStats[pid].conceded=parseInt(document.getElementById(`ems-conc-${pid}`)?.value)||0;
+      }
+    });
+    updates.playerStats=playerStats;
+  }
+  await DB.update(`sessions/${editSessId}`,updates);
   closeM('m-editmatch');toast('Match updated ✓');
+};
+
+window.deleteEventFromEdit=async function(sid,evId){
+  if(!confirm('Delete this event?'))return;
+  await DB.remove(`sessions/${sid}/events/${evId}`);
+  openEditMatch(sid);
+};
+window.emPickTeam=function(t){
+  emPickedTeam=t;
+  document.querySelectorAll('[id^="emgt-"]').forEach(b=>b.className='tsel-btn');
+  const el=document.getElementById('emgt-'+t);if(el)el.className='tsel-btn '+t+'-sel';
+};
+window.emChipClick=function(el){
+  document.querySelectorAll('#em-player-chips .chip').forEach(c=>c.className='chip');
+  el.className='chip sel-green'; emPickedPid=el.dataset.pid;
+};
+window.addEditEvent=async function(sid){
+  if(!emPickedPid)return toast('Pick a player',true);
+  const type=document.getElementById('em-ev-type')?.value;if(!type)return;
+  const evData={type,timestamp:Date.now()};
+  if(type==='goal'){
+    if(!emPickedTeam)return toast('Pick a team for the goal',true);
+    evData.team=emPickedTeam; evData.scorerId=emPickedPid;
+  } else {
+    evData.playerId=emPickedPid;
+  }
+  await DB.push(`sessions/${sid}/events`,evData);
+  emPickedPid=null; emPickedTeam=null;
+  openEditMatch(sid);
 };
 
 window.delSession=async function(sid){
@@ -1534,6 +1667,57 @@ window.delSession=async function(sid){
   if(!confirm(`Delete match from ${fmtDate(s?.date)}?`))return;
   await DB.remove(`sessions/${sid}`);
   toast('Match deleted',true);
+};
+
+// ─── SUB ON ───
+window.openSubOn=function(){
+  if(!S.activeId)return;
+  const sess=activeSess();
+  const inGame=new Set(sessPlayers(sess).map(p=>p.pid));
+  const available=Object.entries(S.players)
+    .filter(([id])=>!inGame.has(id))
+    .sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  const teams=Object.keys(sess.teams||{});
+  const teamOpts=teams.map(t=>`<option value="${t}" ${t===teams[0]?'selected':''}>${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+  document.getElementById('subon-players').innerHTML=available.length===0
+    ?`<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">All players are already in the game</div>`
+    :available.map(([id,p])=>`
+        <div class="ng-player-row">
+          <div class="ng-top">
+            <input type="checkbox" class="ng-cb" id="subcb-${id}" onchange="subToggle('${id}')">
+            <label for="subcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
+          </div>
+          <div class="ng-sels" id="subsels-${id}">
+            <select class="assign-sel" id="subpos-${id}">
+              <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+              <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+              <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+              <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+            </select>
+            <select class="assign-sel" id="subteam-${id}">${teamOpts}</select>
+          </div>
+        </div>`).join('');
+  openM('m-subon');
+};
+window.subToggle=function(id){
+  const cb=document.getElementById('subcb-'+id);
+  document.getElementById('subsels-'+id).classList.toggle('show',cb.checked);
+};
+window.confirmSubOn=async function(){
+  if(!S.activeId)return;
+  let added=0;
+  for(const id of Object.keys(S.players)){
+    const cb=document.getElementById('subcb-'+id);
+    if(!cb||!cb.checked)continue;
+    const pos=document.getElementById('subpos-'+id)?.value||'MID';
+    const team=document.getElementById('subteam-'+id)?.value;
+    if(!team)continue;
+    await DB.update(`sessions/${S.activeId}/teams/${team}/players/${id}`,{position:pos});
+    added++;
+  }
+  if(added===0)return toast('Tick at least one player',true);
+  closeM('m-subon');
+  toast(`✓ ${added} player${added>1?'s':''} added to game`);
 };
 
 // ─── PLAYER MANAGEMENT ───
