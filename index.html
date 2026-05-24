@@ -620,55 +620,55 @@ const ALL_TEAMS = ['red','green','blue','gold'];
 const TEAM_EMOJI = { red:'🔴', green:'🟢', blue:'🔵', gold:'🟡' };
 const TEAM_COLOR = { red:'#ff7b7b', green:'var(--green)', blue:'#4a90d9', gold:'#f5a623' };
 
-// ─── SEED DATA — 47 players ───
+// ─── SEED DATA — 47 players (carryover from Jan–May 2026 season) ───
 const SEED_PLAYERS = [
-  { name:"Harry",           defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:290,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Emmanuel",        defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:286,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Reuel",           defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:160,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"David S",         defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:153,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Barry",           defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:128,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Samuel A",        defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:127,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Joshua",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:122,apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Reuben",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:83, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"El-Bien",         defaultPosition:"MID", defaultTeam:"green", carryover:{pts:67, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Keith",           defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:65, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Andrew",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:58, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Francis",         defaultPosition:"DEF", defaultTeam:"green", carryover:{pts:44, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Solomon",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:40, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Barnabas",        defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:40, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Prince",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:37, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Doku",            defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:31, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"David O",         defaultPosition:"DEF", defaultTeam:"green", carryover:{pts:28, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Sosa",            defaultPosition:"MID", defaultTeam:"green", carryover:{pts:25, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Theophilus",      defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:23, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Sumaila",         defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:23, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Papa Yaw",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:21, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Silas",           defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:18, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Samuel O",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:13, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Shamo",           defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:12, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Vincent",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:12, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Demti",           defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:12, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Joojo AG",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:11, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Segun",           defaultPosition:"MID", defaultTeam:"green", carryover:{pts:10, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Solo's Guy",      defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:10, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Vincent G",       defaultPosition:"MID", defaultTeam:"green", carryover:{pts:10, apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Kofi",            defaultPosition:"MID", defaultTeam:"green", carryover:{pts:9,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Chris",           defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:8,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Koffie",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:7,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Yaw UK",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Bill",            defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Emmanuel O",      defaultPosition:"MID", defaultTeam:"green", carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Tekpe",           defaultPosition:"MID", defaultTeam:"green", carryover:{pts:5,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Delali",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:4,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Toby",            defaultPosition:"GK",  defaultTeam:"green", carryover:{pts:22, apps:6,g:0,a:0,sv:83,y:0,r:0} },
-  { name:"Bona",            defaultPosition:"GK",  defaultTeam:"green", carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Kenneth",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Joel",            defaultPosition:"GK",  defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"John O",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Alex",            defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Christopher O",   defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Cyril",           defaultPosition:"MID", defaultTeam:"green", carryover:{pts:0,  apps:0,g:0,a:0,sv:0,y:0,r:0} },
-  { name:"Mike",            defaultPosition:"GK",  defaultTeam:"red",   carryover:{pts:6,  apps:3,g:0,a:0,sv:30,y:0,r:0} },
+  { name:"Harry",         defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:290,apps:15,g:37,a:25,sv:0, y:0,r:0} },
+  { name:"Emmanuel",      defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:286,apps:14,g:36,a:26,sv:0, y:0,r:0} },
+  { name:"Reuel",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:160,apps:14,g:18,a:14,sv:0, y:0,r:0} },
+  { name:"David S",       defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:153,apps:13,g:17,a:14,sv:0, y:0,r:0} },
+  { name:"Barry",         defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:128,apps:11,g:22,a:6, sv:0, y:0,r:0} },
+  { name:"Samuel A",      defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:127,apps:14,g:24,a:1, sv:0, y:0,r:0} },
+  { name:"Joshua",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:122,apps:14,g:15,a:8, sv:0, y:2,r:1} },
+  { name:"Reuben",        defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:83, apps:11,g:8, a:7, sv:0, y:0,r:0} },
+  { name:"El-Bien",       defaultPosition:"MID", defaultTeam:"green", carryover:{pts:67, apps:6, g:10,a:2, sv:0, y:1,r:0} },
+  { name:"Keith",         defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:65, apps:8, g:10,a:3, sv:0, y:0,r:0} },
+  { name:"Andrew",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:58, apps:10,g:4, a:5, sv:0, y:1,r:0} },
+  { name:"Francis",       defaultPosition:"DEF", defaultTeam:"green", carryover:{pts:44, apps:7, g:4, a:2, sv:0, y:0,r:0} },
+  { name:"Solomon",       defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:40, apps:5, g:3, a:4, sv:0, y:0,r:0} },
+  { name:"Barnabas",      defaultPosition:"FWD", defaultTeam:"green", carryover:{pts:40, apps:4, g:4, a:4, sv:0, y:0,r:0} },
+  { name:"Prince",        defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:37, apps:3, g:5, a:2, sv:0, y:0,r:0} },
+  { name:"Doku",          defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:31, apps:9, g:2, a:1, sv:0, y:0,r:0} },
+  { name:"David O",       defaultPosition:"DEF", defaultTeam:"green", carryover:{pts:28, apps:2, g:3, a:2, sv:0, y:0,r:0} },
+  { name:"Sosa",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:25, apps:1, g:5, a:1, sv:0, y:0,r:0} },
+  { name:"Theophilus",    defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:23, apps:3, g:4, a:1, sv:0, y:2,r:0} },
+  { name:"Sumaila",       defaultPosition:"DEF", defaultTeam:"red",   carryover:{pts:23, apps:2, g:2, a:3, sv:0, y:0,r:0} },
+  { name:"Papa Yaw",      defaultPosition:"MID", defaultTeam:"green", carryover:{pts:21, apps:4, g:2, a:1, sv:0, y:0,r:0} },
+  { name:"Silas",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:18, apps:4, g:2, a:0, sv:0, y:0,r:0} },
+  { name:"Samuel O",      defaultPosition:"MID", defaultTeam:"green", carryover:{pts:13, apps:2, g:1, a:1, sv:0, y:0,r:0} },
+  { name:"Shamo",         defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:12, apps:3, g:0, a:2, sv:0, y:0,r:0} },
+  { name:"Vincent",       defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:12, apps:1, g:2, a:0, sv:0, y:0,r:0} },
+  { name:"Demti",         defaultPosition:"FWD", defaultTeam:"red",   carryover:{pts:12, apps:1, g:2, a:0, sv:0, y:0,r:0} },
+  { name:"Joojo AG",      defaultPosition:"MID", defaultTeam:"green", carryover:{pts:11, apps:2, g:1, a:1, sv:0, y:0,r:0} },
+  { name:"Segun",         defaultPosition:"MID", defaultTeam:"green", carryover:{pts:10, apps:1, g:2, a:0, sv:0, y:0,r:0} },
+  { name:"Solo's Guy",    defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:10, apps:2, g:1, a:0, sv:0, y:0,r:0} },
+  { name:"Vincent G",     defaultPosition:"MID", defaultTeam:"green", carryover:{pts:10, apps:1, g:1, a:1, sv:0, y:0,r:0} },
+  { name:"Kofi",          defaultPosition:"MID", defaultTeam:"green", carryover:{pts:9,  apps:2, g:1, a:0, sv:0, y:0,r:0} },
+  { name:"Chris",         defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:8,  apps:4, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Koffie",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:7,  apps:1, g:1, a:0, sv:0, y:0,r:0} },
+  { name:"Yaw UK",        defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:5,  apps:1, g:0, a:1, sv:0, y:0,r:0} },
+  { name:"Bill",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:5,  apps:1, g:0, a:1, sv:0, y:0,r:0} },
+  { name:"Emmanuel O",    defaultPosition:"MID", defaultTeam:"green", carryover:{pts:5,  apps:1, g:0, a:1, sv:0, y:0,r:0} },
+  { name:"Tekpe",         defaultPosition:"MID", defaultTeam:"green", carryover:{pts:5,  apps:1, g:0, a:1, sv:0, y:0,r:0} },
+  { name:"Delali",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:4,  apps:2, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Toby",          defaultPosition:"GK",  defaultTeam:"green", carryover:{pts:22, apps:6, g:0, a:0, sv:83,y:0,r:0} },
+  { name:"Bona",          defaultPosition:"GK",  defaultTeam:"green", carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Kenneth",       defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Joel",          defaultPosition:"GK",  defaultTeam:"red",   carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"John O",        defaultPosition:"MID", defaultTeam:"green", carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Alex",          defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Christopher O", defaultPosition:"MID", defaultTeam:"red",   carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Cyril",         defaultPosition:"MID", defaultTeam:"green", carryover:{pts:0,  apps:0, g:0, a:0, sv:0, y:0,r:0} },
+  { name:"Mike",          defaultPosition:"GK",  defaultTeam:"red",   carryover:{pts:6,  apps:3, g:0, a:0, sv:30,y:0,r:0} },
 ];
 
 // ─── SEED SESSIONS — 17 historical matches (Red 7W-1D-9W Green) ───
@@ -1170,8 +1170,10 @@ function renderAdmin() {
 
     <div class="card" style="border-color:rgba(0,214,143,0.3);background:rgba(0,214,143,0.04)">
       <div class="card-title" style="color:var(--green)">Historical Data</div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Import all 47 players + 17 historical matches. Safe to run — won't overwrite existing players.</p>
-      <button class="btn btn-primary" onclick="seedHistoricalData()">⬇️ Import Historical Data</button>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6">Import all 47 players + 17 historical matches. Safe to run — won't overwrite existing players.</p>
+      <button class="btn btn-primary" style="margin-bottom:10px" onclick="seedHistoricalData()">⬇️ Import Historical Data</button>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6">Sync goals, assists, apps &amp; cards for all 47 players from the Jan–May 2026 records.</p>
+      <button class="btn btn-ghost" onclick="syncCarryoverStats()">🔄 Sync Player Stats</button>
     </div>
 
     <div class="card">
@@ -1750,6 +1752,30 @@ window.delPlayer=async function(id){
   if(!confirm(`Delete ${S.players[id]?.name}?`))return;
   await DB.remove(`players/${id}`);
   toast('Player deleted',true);
+};
+
+// ─── SYNC CARRYOVER STATS ───
+window.syncCarryoverStats=async function(){
+  toast('Syncing stats… please wait');
+  try {
+    if(FIREBASE_CONFIGURED){
+      const updates={};
+      SEED_PLAYERS.forEach((p,i)=>{
+        updates[`seed_p${String(i+1).padStart(3,'0')}/carryover`]=p.carryover;
+      });
+      await fbUpdate(fbRef(_db,'players'),updates);
+    } else {
+      SEED_PLAYERS.forEach((p,i)=>{
+        const key=`seed_p${String(i+1).padStart(3,'0')}`;
+        if(LD.players[key]) LD.players[key].carryover=p.carryover;
+      });
+      saveLocal(); syncLocal(); renderAll();
+    }
+    toast('✓ Player stats synced!');
+  } catch(e){
+    console.error('Sync error:',e);
+    toast('Sync failed: '+e.message,true);
+  }
 };
 
 // ─── SEED HISTORICAL DATA ───
