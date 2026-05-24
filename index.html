@@ -1571,17 +1571,24 @@ window.delPlayer=async function(id){
 // ─── SEED HISTORICAL DATA ───
 window.seedHistoricalData=async function(){
   if(S.players['seed_p001']){toast('Historical data already imported',true);return;}
+  toast('Importing… please wait');
   const players={},sessions={};
   SEED_PLAYERS.forEach((p,i)=>{ players[`seed_p${String(i+1).padStart(3,'0')}`]=p; });
   SEED_SESSIONS.forEach((s,i)=>{
     sessions[`seed_s${String(i+1).padStart(2,'0')}`]={...s,status:'completed',mode:'history'};
   });
-  if(FIREBASE_CONFIGURED){
-    await fbUpdate(fbRef(_db,''),{players,sessions});
-  } else {
-    Object.assign(LD.players,players);Object.assign(LD.sessions,sessions);saveLocal();syncLocal();renderAll();
+  try {
+    if(FIREBASE_CONFIGURED){
+      await fbUpdate(fbRef(_db,'players'),players);
+      await fbUpdate(fbRef(_db,'sessions'),sessions);
+    } else {
+      Object.assign(LD.players,players);Object.assign(LD.sessions,sessions);saveLocal();syncLocal();renderAll();
+    }
+    toast('✓ 47 players + 17 matches imported!');
+  } catch(e) {
+    console.error('Seed error:',e);
+    toast('Import failed: '+e.message,true);
   }
-  toast('Historical data imported! ✓');
 };
 
 // ─── PLAYER CARD (canvas export) ───
