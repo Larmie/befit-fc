@@ -1181,49 +1181,45 @@ function renderLive() {
   const sess = activeSess();
   if (!sess) {
     el.innerHTML = `
-      <div style="position:relative;min-height:460px">
-        <div style="opacity:0.15;pointer-events:none;user-select:none">
-          <div class="live-banner">
-            <div class="live-left">
-              <div class="live-dot" style="animation:none;background:var(--muted)"></div>
-              <strong>LIVE</strong> · Waiting
-            </div>
-          </div>
-          <div class="score-wrap">
-            <div class="score-side">
-              <div class="s-name" style="color:#ff4757">🔴 RED</div>
-              <div class="s-goals" style="color:#ff4757">0</div>
-            </div>
-            <div class="score-divider">—</div>
-            <div class="score-side">
-              <div class="s-name" style="color:#2ed573">🟢 GREEN</div>
-              <div class="s-goals" style="color:#2ed573">0</div>
-            </div>
-          </div>
-          <div class="action-grid">
-            <button class="action-btn ab-goal"><span class="ab-icon">⚽</span>GOAL</button>
-            <button class="action-btn ab-save"><span class="ab-icon">🧤</span>SAVE</button>
-            <button class="action-btn ab-yellow"><span class="ab-icon">🟨</span>CARD</button>
-            <button class="action-btn ab-red"><span class="ab-icon">🟥</span>RED CARD</button>
-          </div>
-          <div class="card">
-            <div class="sh">
-              <div class="card-title" style="margin:0">Match Events</div>
-            </div>
-            <ul class="event-log">
-              <li class="ev-item"><span class="ev-icon">⚽</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">🔴 Red</div></div></li>
-              <li class="ev-item"><span class="ev-icon">🧤</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">Regular Save</div></div></li>
-              <li class="ev-item"><span class="ev-icon">🟨</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">Yellow Card</div></div></li>
-            </ul>
+      <div id="live-start-wrap" style="padding:0 4px;margin-bottom:16px">
+        <div style="text-align:center;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);letter-spacing:0.3px">No Active Game · Ready to kick off?</div>
+        </div>
+        <button class="btn btn-primary" onclick="liveStartGame()">🏟️ Start New Game</button>
+      </div>
+      <div style="opacity:0.2;pointer-events:none;user-select:none">
+        <div class="live-banner">
+          <div class="live-left">
+            <div class="live-dot" style="animation:none;background:var(--muted)"></div>
+            <strong>LIVE</strong> · Waiting
           </div>
         </div>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-          <div id="live-start-wrap" style="text-align:center;background:rgba(8,15,30,0.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:28px 32px;border-radius:20px;border:1px solid rgba(0,214,143,0.18);box-shadow:0 8px 48px rgba(0,0,0,0.5);width:calc(100% - 48px);max-width:340px">
-            <div style="font-size:36px;margin-bottom:10px">⚽</div>
-            <div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:6px">No Active Game</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:22px">Ready to kick off?</div>
-            <button class="btn btn-primary" onclick="liveStartGame()">🏟️ Start New Game</button>
+        <div class="score-wrap">
+          <div class="score-side">
+            <div class="s-name" style="color:#ff4757">🔴 RED</div>
+            <div class="s-goals" style="color:#ff4757">0</div>
           </div>
+          <div class="score-divider">—</div>
+          <div class="score-side">
+            <div class="s-name" style="color:#2ed573">🟢 GREEN</div>
+            <div class="s-goals" style="color:#2ed573">0</div>
+          </div>
+        </div>
+        <div class="action-grid">
+          <button class="action-btn ab-goal"><span class="ab-icon">⚽</span>GOAL</button>
+          <button class="action-btn ab-save"><span class="ab-icon">🧤</span>SAVE</button>
+          <button class="action-btn ab-yellow"><span class="ab-icon">🟨</span>CARD</button>
+          <button class="action-btn ab-red"><span class="ab-icon">🟥</span>RED CARD</button>
+        </div>
+        <div class="card">
+          <div class="sh">
+            <div class="card-title" style="margin:0">Match Events</div>
+          </div>
+          <ul class="event-log">
+            <li class="ev-item"><span class="ev-icon">⚽</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">🔴 Red</div></div></li>
+            <li class="ev-item"><span class="ev-icon">🧤</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">Regular Save</div></div></li>
+            <li class="ev-item"><span class="ev-icon">🟨</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">Yellow Card</div></div></li>
+          </ul>
         </div>
       </div>`;
     return;
