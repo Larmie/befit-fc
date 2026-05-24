@@ -189,6 +189,9 @@
     .pod-name  { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.2; }
     .pod-pts   { font-size: 22px; font-weight: 900; color: var(--green); }
     .pod-sub   { font-size: 10px; color: var(--muted); font-weight: 700; }
+    .pod-stats { font-size: 9px; color: var(--muted); font-weight: 700; text-align: center; margin-top: 4px; line-height: 1.6; letter-spacing: 0.3px; }
+    /* team section header in modals */
+    .team-section-hdr { font-size: 10px; font-weight: 800; letter-spacing: 1px; padding: 14px 0 8px; text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
 
     /* ── PLAYERS VIEW TOGGLE ── */
     .view-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -1118,12 +1121,17 @@ function renderPlayers() {
     <div class="podium">
       ${podOrder.map(p=>{
         const rank = board.indexOf(p);
+        const isGK = p.defaultPosition === 'GK';
+        const statLine = isGK
+          ? `${p.apps}app · ${p.sv}sv · ${p.g}g`
+          : `${p.apps}app · ${p.g}g · ${p.a}a`;
         return `
           <div class="pod-slot ${podClasses[rank]}" onclick="openPlayerCard('${p.id}')">
             <div class="pod-medal">${medals[rank]}</div>
             <div class="pod-name">${p.name}</div>
             <div class="pod-pts">${p.pts}</div>
             <div class="pod-sub">pts</div>
+            <div class="pod-stats">${statLine}</div>
           </div>`;
       }).join('')}
     </div>`;
@@ -1498,13 +1506,26 @@ window.confirmCard=async function(){if(!CS.playerId)return;await DB.push(`sessio
 // ─── DELETE EVENT ───
 window.deleteEvent=async function(evId){if(!S.admin)return;if(!confirm('Delete this event?'))return;await DB.remove(`sessions/${S.activeId}/events/${evId}`);toast('Event deleted',true);};
 
+// ─── TEAM GROUPING HELPER ───
+function groupPlayersByTeam(plist) {
+  const grouped = {};
+  plist.forEach(([id,p]) => { const t=p.defaultTeam||'red'; (grouped[t]=grouped[t]||[]).push([id,p]); });
+  return ALL_TEAMS.filter(t => grouped[t]?.length).map(t => ({t, players: grouped[t]}));
+}
+function teamHdr(t) {
+  return `<div class="team-section-hdr" style="color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]} ${t.charAt(0).toUpperCase()+t.slice(1)} Team</div>`;
+}
+
 // ─── NEW GAME ───
 window.openNewGame=function(){
   document.getElementById('ng-date').value=new Date().toISOString().split('T')[0];
   const plist=Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  const groups=groupPlayersByTeam(plist);
   document.getElementById('ng-assignments').innerHTML=plist.length===0
     ?`<div style="color:var(--muted);font-size:12px">Add players first.</div>`
-    :plist.map(([id,p])=>`
+    :groups.map(({t,players})=>`
+      ${teamHdr(t)}
+      ${players.map(([id,p])=>`
         <div class="ng-player-row">
           <div class="ng-top">
             <input type="checkbox" class="ng-cb" id="ngcb-${id}" onchange="ngToggle('${id}')">
@@ -1524,7 +1545,8 @@ window.openNewGame=function(){
               <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
             </select>
           </div>
-        </div>`).join('');
+        </div>`).join('')}
+    `).join('');
   openM('m-newgame');
 };
 
@@ -1577,9 +1599,12 @@ window.confirmEndGame=async function(){
 window.openLogPastGame=function(){
   document.getElementById('pg-date').value=new Date().toISOString().split('T')[0];
   const plist=Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  const groups=groupPlayersByTeam(plist);
   document.getElementById('pg-assignments').innerHTML=plist.length===0
     ?`<div style="color:var(--muted);font-size:12px">Add players first.</div>`
-    :plist.map(([id,p])=>`
+    :groups.map(({t,players})=>`
+      ${teamHdr(t)}
+      ${players.map(([id,p])=>`
         <div class="lpg-row">
           <div class="lpg-top">
             <input type="checkbox" class="ng-cb" id="pgcb-${id}" onchange="pgToggle('${id}','${p.defaultPosition}')">
@@ -1612,7 +1637,8 @@ window.openLogPastGame=function(){
               <span class="lpg-stat-label">😓 Conc</span><input class="finput-sm" id="pgConc-${id}" type="number" min="0" value="0">
             </div>
           </div>
-        </div>`).join('');
+        </div>`).join('')}
+    `).join('');
   openM('m-pastgame');
 };
 
@@ -1838,9 +1864,12 @@ window.openSubOn=function(){
     .sort(([,a],[,b])=>a.name.localeCompare(b.name));
   const teams=Object.keys(sess.teams||{});
   const teamOpts=teams.map(t=>`<option value="${t}" ${t===teams[0]?'selected':''}>${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+  const groups=groupPlayersByTeam(available);
   document.getElementById('subon-players').innerHTML=available.length===0
     ?`<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">All players are already in the game</div>`
-    :available.map(([id,p])=>`
+    :groups.map(({t,players})=>`
+      ${teamHdr(t)}
+      ${players.map(([id,p])=>`
         <div class="ng-player-row">
           <div class="ng-top">
             <input type="checkbox" class="ng-cb" id="subcb-${id}" onchange="subToggle('${id}')">
@@ -1855,7 +1884,8 @@ window.openSubOn=function(){
             </select>
             <select class="assign-sel" id="subteam-${id}">${teamOpts}</select>
           </div>
-        </div>`).join('');
+        </div>`).join('')}
+    `).join('');
   openM('m-subon');
 };
 window.subToggle=function(id){
