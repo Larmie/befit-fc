@@ -699,6 +699,7 @@
       <div style="font-size:22px;font-weight:900;color:var(--green);letter-spacing:0.5px">BE Fit Club</div>
       <div style="font-size:13px;color:var(--muted);margin-top:8px">Season 2025/26 · Who are you?</div>
     </div>
+    <input id="welcome-search" class="search-bar" type="text" placeholder="Search your name..." oninput="filterWelcome(this.value)" autocomplete="off" style="margin-bottom:12px">
     <div id="welcome-list" style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto"></div>
     <button class="btn btn-ghost btn-sm" style="margin-top:16px;font-size:11px" onclick="selectViewer(null)">Just browsing</button>
   </div>
@@ -1104,10 +1105,11 @@ function checkViewer() {
   openWelcome();
 }
 
-function openWelcome() {
+function renderWelcomeList(filter) {
+  const q = (filter||'').toLowerCase();
   const pids = Object.keys(S.players).sort((a,b) => S.players[a].name.localeCompare(S.players[b].name));
-  if (!pids.length) return;
-  document.getElementById('welcome-list').innerHTML = pids.map(pid => {
+  const filtered = q ? pids.filter(pid => S.players[pid].name.toLowerCase().includes(q)) : pids;
+  document.getElementById('welcome-list').innerHTML = filtered.map(pid => {
     const p = S.players[pid];
     const tc = TEAM_COLOR[p.defaultTeam] || 'var(--muted)';
     return `<button class="wplayer-btn" onclick="selectViewer('${pid}')">
@@ -1115,9 +1117,19 @@ function openWelcome() {
       <span>${p.name}</span>
       <span style="margin-left:auto;font-size:10px;color:${tc};font-weight:800">${(p.defaultTeam||'').toUpperCase()}</span>
     </button>`;
-  }).join('');
-  document.getElementById('m-welcome').classList.add('open');
+  }).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 4px">No players found</div>';
 }
+
+function openWelcome() {
+  if (!Object.keys(S.players).length) return;
+  const searchEl = document.getElementById('welcome-search');
+  if (searchEl) searchEl.value = '';
+  renderWelcomeList('');
+  document.getElementById('m-welcome').classList.add('open');
+  setTimeout(() => { if (searchEl) searchEl.focus(); }, 120);
+}
+
+window.filterWelcome = function(v) { renderWelcomeList(v); };
 
 window.selectViewer = function(pid) {
   viewerPid = pid;
