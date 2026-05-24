@@ -99,14 +99,34 @@
 
     /* ── CARD ── */
     .card {
-      background: rgba(17,34,64,0.55);
+      background: linear-gradient(180deg, rgba(23,47,82,0.5) 0%, rgba(17,34,64,0.55) 100%);
       backdrop-filter: var(--blur);
       -webkit-backdrop-filter: var(--blur);
       border: 1px solid var(--border);
       border-radius: 16px; padding: 16px; margin-bottom: 14px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
     }
-    .card-title { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+    /* Primary card — elevated, green accent for hero content */
+    .card-primary {
+      background: linear-gradient(180deg, rgba(0,214,143,0.06) 0%, rgba(17,34,64,0.6) 100%);
+      border-color: rgba(0,214,143,0.2);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(0,214,143,0.15), 0 0 0 1px rgba(0,214,143,0.05);
+      position: relative;
+    }
+    .card-primary::before {
+      content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      border-radius: 2px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 900; color: var(--muted);
+      letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::before {
+      content: ''; width: 3px; height: 12px; background: var(--green);
+      border-radius: 2px; box-shadow: 0 0 8px rgba(0,214,143,0.6);
+    }
 
     /* ── BUTTONS ── */
     .btn {
@@ -126,23 +146,78 @@
     .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .action-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 5px; padding: 20px 10px; border-radius: 16px; border: none; font-size: 12px;
-      font-weight: 800; cursor: pointer; letter-spacing: 0.5px; transition: transform 0.1s;
+      gap: 9px; padding: 22px 10px; border-radius: 16px; border: 1px solid transparent;
+      font-size: 11px; font-weight: 900; letter-spacing: 1.6px; text-transform: uppercase;
+      cursor: pointer; transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
+      position: relative; overflow: hidden;
     }
-    .action-btn:active { transform: scale(0.94); }
-    .action-btn .ab-icon { font-size: 28px; }
-    .ab-goal    { background: linear-gradient(135deg, #00d68f, #00a870); color: #051020; box-shadow: 0 4px 16px rgba(0,214,143,0.25); }
-    .ab-save    { background: linear-gradient(135deg, #4a90d9, #3470b8); color: #fff; box-shadow: 0 4px 12px rgba(74,144,217,0.25); }
-    .ab-yellow  { background: linear-gradient(135deg, #ffd43b, #e8be20); color: #0b1a2e; box-shadow: 0 4px 12px rgba(255,212,59,0.2); }
-    .ab-red     { background: linear-gradient(135deg, #ff4757, #e03347); color: #fff; box-shadow: 0 4px 12px rgba(255,71,87,0.25); }
+    .action-btn:active { transform: scale(0.96); }
+    .action-btn svg { width: 30px; height: 30px; stroke-width: 2.2; }
+    .action-btn::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      opacity: 0.9;
+    }
+    /* Primary: GOAL — hero green */
+    .ab-goal {
+      background: linear-gradient(135deg, #00e69a 0%, #009d6e 100%);
+      color: #051020;
+      box-shadow: 0 8px 32px rgba(0,214,143,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+      border-color: rgba(0,255,170,0.35);
+    }
+    .ab-goal::before { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); }
+    /* Secondary: dark with colored accent */
+    .ab-save, .ab-yellow, .ab-red {
+      background: linear-gradient(135deg, rgba(23,47,82,0.7), rgba(11,22,40,0.92));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .ab-save  { box-shadow: 0 4px 24px rgba(74,144,217,0.15); }
+    .ab-save  svg { color: #5aa5ee; filter: drop-shadow(0 0 10px rgba(74,144,217,0.55)); }
+    .ab-save::before  { background: linear-gradient(90deg, transparent, #4a90d9 50%, transparent); }
+    .ab-yellow { box-shadow: 0 4px 24px rgba(255,212,59,0.12); }
+    .ab-yellow svg { color: #ffd43b; filter: drop-shadow(0 0 10px rgba(255,212,59,0.5)); }
+    .ab-yellow::before { background: linear-gradient(90deg, transparent, #ffd43b 50%, transparent); }
+    .ab-red    { box-shadow: 0 4px 24px rgba(255,71,87,0.15); }
+    .ab-red    svg { color: #ff5e6d; filter: drop-shadow(0 0 10px rgba(255,71,87,0.55)); }
+    .ab-red::before    { background: linear-gradient(90deg, transparent, #ff4757 50%, transparent); }
     .ab-pensave { background: linear-gradient(135deg, #a855f7, #9333e0); color: #fff; grid-column: 1 / -1; flex-direction: row; padding: 14px; gap: 10px; box-shadow: 0 4px 12px rgba(168,85,247,0.2); }
 
     /* ── SCORE DISPLAY ── */
-    .score-wrap { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 20px 10px 14px; }
-    .score-side { text-align: center; }
-    .score-side .s-name { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
-    .score-side .s-goals { font-size: 48px; font-weight: 900; line-height: 1; }
-    .score-divider { font-size: 22px; font-weight: 900; color: var(--muted); }
+    .score-wrap {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      padding: 24px 16px 22px; margin-bottom: 14px;
+      background: linear-gradient(180deg, rgba(0,214,143,0.06) 0%, rgba(17,34,64,0.4) 100%);
+      border: 1px solid rgba(0,214,143,0.14);
+      border-radius: 18px;
+      position: relative; overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .score-wrap::before {
+      content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,214,143,0.5), transparent);
+    }
+    .score-wrap::after {
+      content: ''; position: absolute; bottom: 0; left: 25%; right: 25%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,214,143,0.2), transparent);
+    }
+    .score-side { text-align: center; flex: 1; }
+    .score-side .s-name {
+      font-size: 11px; font-weight: 900; letter-spacing: 2.2px;
+      text-transform: uppercase; margin-bottom: 10px;
+      opacity: 0.9;
+    }
+    .score-side .s-goals {
+      font-size: 64px; font-weight: 900; line-height: 1;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 32px currentColor;
+      filter: brightness(1.08);
+    }
+    .score-divider {
+      font-size: 26px; font-weight: 900; color: var(--muted);
+      opacity: 0.35; align-self: center;
+    }
 
     /* ── LIVE BANNER ── */
     .live-banner {
@@ -370,10 +445,26 @@
     #pc-canvas-wrap canvas { max-width: 100%; border-radius: 12px; }
 
     /* ── TAB ANIMATION ── */
-    .tab.active { animation: tabFadeIn 0.2s ease forwards; }
+    .tab.active { animation: tabFadeIn 0.28s ease forwards; }
     @keyframes tabFadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+    /* Stagger action button entrance */
+    .tab.active .action-btn { animation: btnPop 0.4s cubic-bezier(.34,1.56,.64,1) backwards; }
+    .tab.active .action-btn:nth-child(1) { animation-delay: 0.05s; }
+    .tab.active .action-btn:nth-child(2) { animation-delay: 0.1s; }
+    .tab.active .action-btn:nth-child(3) { animation-delay: 0.15s; }
+    .tab.active .action-btn:nth-child(4) { animation-delay: 0.2s; }
+    @keyframes btnPop {
+      from { opacity: 0; transform: scale(0.9) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    /* Score numbers entrance */
+    .tab.active .s-goals { animation: scorePop 0.5s cubic-bezier(.34,1.56,.64,1) backwards; animation-delay: 0.15s; }
+    @keyframes scorePop {
+      from { opacity: 0; transform: scale(0.7); filter: brightness(2); }
+      to   { opacity: 1; transform: scale(1); filter: brightness(1.08); }
     }
 
     /* ── BUTTON RIPPLE ── */
@@ -1226,10 +1317,10 @@ function renderLive() {
           </div>
         </div>
         <div class="action-grid">
-          <button class="action-btn ab-goal"><span class="ab-icon">⚽</span>GOAL</button>
-          <button class="action-btn ab-save"><span class="ab-icon">🧤</span>SAVE</button>
-          <button class="action-btn ab-yellow"><span class="ab-icon">🟨</span>CARD</button>
-          <button class="action-btn ab-red"><span class="ab-icon">🟥</span>RED CARD</button>
+          <button class="action-btn ab-goal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,6.5 16,9.3 14.5,14 9.5,14 8,9.3" fill="currentColor"/></svg>GOAL</button>
+          <button class="action-btn ab-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>SAVE</button>
+          <button class="action-btn ab-yellow"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
+          <button class="action-btn ab-red"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
         </div>
         <div class="card">
           <div class="sh">
@@ -1264,12 +1355,12 @@ function renderLive() {
     </div>`:''}
     <div class="score-wrap">${scoreHtml}</div>
     <div class="action-grid">
-      <button class="action-btn ab-goal"   onclick="openGoal()"><span class="ab-icon">⚽</span>GOAL</button>
-      <button class="action-btn ab-save"   onclick="openSave()"><span class="ab-icon">🧤</span>SAVE</button>
-      <button class="action-btn ab-yellow" onclick="openCard()"><span class="ab-icon">🟨</span>CARD</button>
-      <button class="action-btn ab-red"    onclick="openCard('redCard')"><span class="ab-icon">🟥</span>RED CARD</button>
+      <button class="action-btn ab-goal"   onclick="openGoal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,6.5 16,9.3 14.5,14 9.5,14 8,9.3" fill="currentColor"/></svg>GOAL</button>
+      <button class="action-btn ab-save"   onclick="openSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>SAVE</button>
+      <button class="action-btn ab-yellow" onclick="openCard()"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
+      <button class="action-btn ab-red"    onclick="openCard('redCard')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
     </div>
-    <div class="card">
+    <div class="card card-primary">
       <div class="sh">
         <div class="card-title" style="margin:0">Match Events</div>
         ${adm?`<span style="font-size:10px;color:var(--muted)">Tap 🗑 to delete</span>`:''}
@@ -1425,7 +1516,7 @@ function renderPlayers() {
   }
 
   el.innerHTML = `
-    <div class="card">
+    <div class="card card-primary">
       <div class="card-title">Top Scorers</div>
       ${top3.length>0 ? podHtml : ''}
     </div>
