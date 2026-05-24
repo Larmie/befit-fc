@@ -438,6 +438,29 @@
     .history-result { font-size: 11px; font-weight: 900; min-width: 18px; text-align: center; }
     .history-pts { font-size: 13px; font-weight: 800; color: var(--green); }
     .profile-section-lbl { font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+
+    /* ── TEAM ACCORDION (New Game / Add Player / Past Game) ── */
+    .ng-team-section { margin-bottom: 6px; }
+    .ng-team-toggle {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 14px; background: rgba(23,47,82,0.45); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 14px; font-weight: 800;
+      cursor: pointer; text-align: left; transition: border-color 0.15s, border-radius 0.15s;
+    }
+    .ng-team-toggle.is-open { border-radius: 10px 10px 0 0; }
+    .ng-chev { font-size: 18px; font-weight: 400; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+    .ng-team-toggle.is-open .ng-chev { transform: rotate(90deg); }
+    .ng-sel-badge {
+      font-size: 11px; font-weight: 700; color: var(--muted); padding: 2px 8px;
+      background: rgba(127,168,201,0.1); border-radius: 8px; transition: all 0.15s;
+    }
+    .ng-sel-badge.has-sel { color: var(--green); background: rgba(0,214,143,0.12); }
+    .ng-team-body {
+      display: none; border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 10px 10px; padding: 4px 4px 8px;
+      background: rgba(17,34,64,0.3);
+    }
+    .ng-team-body.is-open { display: block; }
   </style>
 </head>
 <body>
@@ -1688,37 +1711,81 @@ function teamHdr(t) {
 }
 
 // ─── NEW GAME ───
+function buildAccordionRow(id, p, cbId, cbChange, selPrefix, teamOpts) {
+  return `
+    <div class="ng-player-row">
+      <div class="ng-top">
+        <input type="checkbox" class="ng-cb" id="${cbId}" onchange="${cbChange}">
+        <label for="${cbId}">${p.name} ${posTag(p.defaultPosition)}</label>
+      </div>
+      <div class="ng-sels" id="ngsels-${id}">
+        <select class="assign-sel" id="${selPrefix}pos-${id}">
+          <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+          <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+          <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+          <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+        </select>
+        ${teamOpts ? `<select class="assign-sel" id="${selPrefix}team-${id}">${teamOpts}</select>` : ''}
+      </div>
+    </div>`;
+}
+
+function buildTeamAccordion(groups, prefix, cbChangeFn, selPrefix, teamOptsFn) {
+  return groups.map(({t, players}) => {
+    const tc = TEAM_COLOR[t];
+    const rows = players.map(([id,p]) => {
+      const cbId = `${prefix}cb-${id}`;
+      const teamOpts = teamOptsFn ? teamOptsFn(p, t) : null;
+      return buildAccordionRow(id, p, cbId, `${cbChangeFn}('${id}','${t}')`, selPrefix, teamOpts);
+    }).join('');
+    return `
+      <div class="ng-team-section">
+        <button class="ng-team-toggle" id="${prefix}togg-${t}" onclick="${prefix}ToggleTeam('${t}')"
+          style="border-left: 3px solid ${tc}">
+          <span style="display:flex;align-items:center;gap:10px">
+            <span>${TEAM_EMOJI[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+            <span class="ng-sel-badge" id="${prefix}badge-${t}">0 / ${players.length}</span>
+          </span>
+          <span class="ng-chev">›</span>
+        </button>
+        <div class="ng-team-body" id="${prefix}body-${t}">${rows}</div>
+      </div>`;
+  }).join('');
+}
+
 window.openNewGame=function(){
   document.getElementById('ng-date').value=new Date().toISOString().split('T')[0];
   const plist=Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
   const groups=groupPlayersByTeam(plist);
-  document.getElementById('ng-assignments').innerHTML=plist.length===0
-    ?`<div style="color:var(--muted);font-size:12px">Add players first.</div>`
-    :groups.map(({t,players})=>`
-      ${teamHdr(t)}
-      ${players.map(([id,p])=>`
-        <div class="ng-player-row">
-          <div class="ng-top">
-            <input type="checkbox" class="ng-cb" id="ngcb-${id}" onchange="ngToggle('${id}')">
-            <label for="ngcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
-          </div>
-          <div class="ng-sels" id="ngsels-${id}">
-            <select class="assign-sel" id="ap-${id}">
-              <option value="GK" ${p.defaultPosition==='GK'?'selected':''}>GK</option>
-              <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
-              <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
-              <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
-            </select>
-            <select class="assign-sel" id="at-${id}">
-              <option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
-              <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
-              <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
-              <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
-            </select>
-          </div>
-        </div>`).join('')}
-    `).join('');
+  const defaultTeamOpts = (p) =>
+    `<option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
+     <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
+     <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
+     <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>`;
+  document.getElementById('ng-assignments').innerHTML = plist.length===0
+    ? `<div style="color:var(--muted);font-size:12px">Add players first.</div>`
+    : buildTeamAccordion(groups, 'ng', 'ngCbChange', 'a', defaultTeamOpts);
   openM('m-newgame');
+};
+
+window.ngToggleTeam = function(t) {
+  const togg = document.getElementById('ngtogg-'+t);
+  const body = document.getElementById('ngbody-'+t);
+  if (!togg||!body) return;
+  const open = body.classList.toggle('is-open');
+  togg.classList.toggle('is-open', open);
+};
+
+window.ngCbChange = function(id, t) {
+  const cb = document.getElementById('ngcb-'+id);
+  document.getElementById('ngsels-'+id).classList.toggle('show', cb.checked);
+  const body   = document.getElementById('ngbody-'+t);
+  const badge  = document.getElementById('ngbadge-'+t);
+  if (!body||!badge) return;
+  const sel   = body.querySelectorAll('.ng-cb:checked').length;
+  const total = body.querySelectorAll('.ng-cb').length;
+  badge.textContent = `${sel} / ${total}`;
+  badge.classList.toggle('has-sel', sel > 0);
 };
 
 window.ngToggle=function(id){
@@ -1735,8 +1802,8 @@ window.startGame=async function(){
   for(const id of Object.keys(S.players)){
     const cb=document.getElementById('ngcb-'+id);
     if(!cb||!cb.checked)continue;
-    const pos=document.getElementById(`ap-${id}`)?.value;
-    const team=document.getElementById(`at-${id}`)?.value;
+    const pos=document.getElementById(`apos-${id}`)?.value;
+    const team=document.getElementById(`ateam-${id}`)?.value;
     if(!team||!pos)continue;
     if(!teams[team])teams[team]={players:{}};
     teams[team].players[id]={position:pos};
@@ -1774,43 +1841,75 @@ window.openLogPastGame=function(){
   document.getElementById('pg-assignments').innerHTML=plist.length===0
     ?`<div style="color:var(--muted);font-size:12px">Add players first.</div>`
     :groups.map(({t,players})=>`
-      ${teamHdr(t)}
-      ${players.map(([id,p])=>`
-        <div class="lpg-row">
-          <div class="lpg-top">
-            <input type="checkbox" class="ng-cb" id="pgcb-${id}" onchange="pgToggle('${id}','${p.defaultPosition}')">
-            <label for="pgcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
-          </div>
-          <div class="lpg-sels" id="pgsels-${id}" style="display:none;gap:8px;margin-top:8px">
-            <select class="assign-sel" id="pgpos-${id}">
-              <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
-              <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
-              <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
-              <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
-            </select>
-            <select class="assign-sel" id="pgteam-${id}">
-              <option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
-              <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
-              <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
-              <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
-            </select>
-          </div>
-          <div class="lpg-stats" id="pgstats-${id}">
-            <div class="lpg-stat-row">
-              <span class="lpg-stat-label">⚽ G</span><input class="finput-sm" id="pgG-${id}" type="number" min="0" value="0">
-              <span class="lpg-stat-label">👟 A</span><input class="finput-sm" id="pgA-${id}" type="number" min="0" value="0">
-              <span class="lpg-stat-label">🟨</span><input class="finput-sm" id="pgY-${id}" type="number" min="0" value="0">
-              <span class="lpg-stat-label">🟥</span><input class="finput-sm" id="pgR-${id}" type="number" min="0" value="0">
-            </div>
-            <div class="lpg-stat-row" id="pgGKrow-${id}" style="display:none">
-              <span class="lpg-stat-label">🧤 Sv</span><input class="finput-sm" id="pgSv-${id}" type="number" min="0" value="0">
-              <span class="lpg-stat-label">✋ PenSv</span><input class="finput-sm" id="pgPen-${id}" type="number" min="0" value="0">
-              <span class="lpg-stat-label">😓 Conc</span><input class="finput-sm" id="pgConc-${id}" type="number" min="0" value="0">
-            </div>
-          </div>
-        </div>`).join('')}
-    `).join('');
+      <div class="ng-team-section">
+        <button class="ng-team-toggle" id="pgtogg-${t}" onclick="pgToggleTeam('${t}')"
+          style="border-left:3px solid ${TEAM_COLOR[t]}">
+          <span style="display:flex;align-items:center;gap:10px">
+            <span>${TEAM_EMOJI[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+            <span class="ng-sel-badge" id="pgbadge-${t}">0 / ${players.length}</span>
+          </span>
+          <span class="ng-chev">›</span>
+        </button>
+        <div class="ng-team-body" id="pgbody-${t}">
+          ${players.map(([id,p])=>`
+            <div class="lpg-row">
+              <div class="lpg-top">
+                <input type="checkbox" class="ng-cb" id="pgcb-${id}" onchange="pgCbChange('${id}','${p.defaultPosition}','${t}')">
+                <label for="pgcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
+              </div>
+              <div class="lpg-sels" id="pgsels-${id}" style="display:none;gap:8px;margin-top:8px">
+                <select class="assign-sel" id="pgpos-${id}" onchange="pgUpdateGKRow('${id}')">
+                  <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+                  <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+                  <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+                  <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+                </select>
+                <select class="assign-sel" id="pgteam-${id}">
+                  <option value="red"   ${p.defaultTeam==='red'?'selected':''}>🔴 Red</option>
+                  <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
+                  <option value="blue"  ${p.defaultTeam==='blue'?'selected':''}>🔵 Blue</option>
+                  <option value="gold"  ${p.defaultTeam==='gold'?'selected':''}>🟡 Gold</option>
+                </select>
+              </div>
+              <div class="lpg-stats" id="pgstats-${id}">
+                <div class="lpg-stat-row">
+                  <span class="lpg-stat-label">⚽ G</span><input class="finput-sm" id="pgG-${id}" type="number" min="0" value="0">
+                  <span class="lpg-stat-label">👟 A</span><input class="finput-sm" id="pgA-${id}" type="number" min="0" value="0">
+                  <span class="lpg-stat-label">🟨</span><input class="finput-sm" id="pgY-${id}" type="number" min="0" value="0">
+                  <span class="lpg-stat-label">🟥</span><input class="finput-sm" id="pgR-${id}" type="number" min="0" value="0">
+                </div>
+                <div class="lpg-stat-row" id="pgGKrow-${id}" style="display:none">
+                  <span class="lpg-stat-label">🧤 Sv</span><input class="finput-sm" id="pgSv-${id}" type="number" min="0" value="0">
+                  <span class="lpg-stat-label">✋ PenSv</span><input class="finput-sm" id="pgPen-${id}" type="number" min="0" value="0">
+                  <span class="lpg-stat-label">😓 Conc</span><input class="finput-sm" id="pgConc-${id}" type="number" min="0" value="0">
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
   openM('m-pastgame');
+};
+
+window.pgToggleTeam=function(t){
+  const togg=document.getElementById('pgtogg-'+t);
+  const body=document.getElementById('pgbody-'+t);
+  if(!togg||!body)return;
+  const open=body.classList.toggle('is-open');
+  togg.classList.toggle('is-open',open);
+};
+
+window.pgCbChange=function(id,defaultPos,t){
+  const cb=document.getElementById('pgcb-'+id);
+  document.getElementById('pgsels-'+id).style.display=cb.checked?'flex':'none';
+  document.getElementById('pgstats-'+id).classList.toggle('show',cb.checked);
+  if(cb.checked) pgUpdateGKRow(id);
+  const body=document.getElementById('pgbody-'+t);
+  const badge=document.getElementById('pgbadge-'+t);
+  if(!body||!badge)return;
+  const sel=body.querySelectorAll('.ng-cb:checked').length;
+  const total=body.querySelectorAll('.ng-cb').length;
+  badge.textContent=`${sel} / ${total}`;
+  badge.classList.toggle('has-sel',sel>0);
 };
 
 window.pgToggle=function(id,defaultPos){
@@ -2033,31 +2132,59 @@ window.openSubOn=function(){
   const available=Object.entries(S.players)
     .filter(([id])=>!inGame.has(id))
     .sort(([,a],[,b])=>a.name.localeCompare(b.name));
-  const teams=Object.keys(sess.teams||{});
-  const teamOpts=teams.map(t=>`<option value="${t}" ${t===teams[0]?'selected':''}>${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+  const gameTeams=Object.keys(sess.teams||{});
+  const teamOpts=gameTeams.map(t=>`<option value="${t}" ${t===gameTeams[0]?'selected':''}>${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
   const groups=groupPlayersByTeam(available);
   document.getElementById('subon-players').innerHTML=available.length===0
     ?`<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">All players are already in the game</div>`
     :groups.map(({t,players})=>`
-      ${teamHdr(t)}
-      ${players.map(([id,p])=>`
-        <div class="ng-player-row">
-          <div class="ng-top">
-            <input type="checkbox" class="ng-cb" id="subcb-${id}" onchange="subToggle('${id}')">
-            <label for="subcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
-          </div>
-          <div class="ng-sels" id="subsels-${id}">
-            <select class="assign-sel" id="subpos-${id}">
-              <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
-              <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
-              <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
-              <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
-            </select>
-            <select class="assign-sel" id="subteam-${id}">${teamOpts}</select>
-          </div>
-        </div>`).join('')}
-    `).join('');
+      <div class="ng-team-section">
+        <button class="ng-team-toggle" id="subtogg-${t}" onclick="subToggleTeam('${t}')"
+          style="border-left:3px solid ${TEAM_COLOR[t]}">
+          <span style="display:flex;align-items:center;gap:10px">
+            <span>${TEAM_EMOJI[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>
+            <span class="ng-sel-badge" id="subbadge-${t}">0 / ${players.length}</span>
+          </span>
+          <span class="ng-chev">›</span>
+        </button>
+        <div class="ng-team-body" id="subbody-${t}">
+          ${players.map(([id,p])=>`
+            <div class="ng-player-row">
+              <div class="ng-top">
+                <input type="checkbox" class="ng-cb" id="subcb-${id}" onchange="subCbChange('${id}','${t}')">
+                <label for="subcb-${id}">${p.name} ${posTag(p.defaultPosition)}</label>
+              </div>
+              <div class="ng-sels" id="subsels-${id}">
+                <select class="assign-sel" id="subpos-${id}">
+                  <option value="GK"  ${p.defaultPosition==='GK'?'selected':''}>GK</option>
+                  <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+                  <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+                  <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+                </select>
+                <select class="assign-sel" id="subteam-${id}">${teamOpts}</select>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
   openM('m-subon');
+};
+window.subToggleTeam=function(t){
+  const togg=document.getElementById('subtogg-'+t);
+  const body=document.getElementById('subbody-'+t);
+  if(!togg||!body)return;
+  const open=body.classList.toggle('is-open');
+  togg.classList.toggle('is-open',open);
+};
+window.subCbChange=function(id,t){
+  const cb=document.getElementById('subcb-'+id);
+  document.getElementById('subsels-'+id).classList.toggle('show',cb.checked);
+  const body=document.getElementById('subbody-'+t);
+  const badge=document.getElementById('subbadge-'+t);
+  if(!body||!badge)return;
+  const sel=body.querySelectorAll('.ng-cb:checked').length;
+  const total=body.querySelectorAll('.ng-cb').length;
+  badge.textContent=`${sel} / ${total}`;
+  badge.classList.toggle('has-sel',sel>0);
 };
 window.subToggle=function(id){
   const cb=document.getElementById('subcb-'+id);
