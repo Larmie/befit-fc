@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>BeFit FC</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #0b1a2e;
+      --surface: #112240;
+      --surface2: #172f52;
+      --border: #1e3a5f;
+      --green: #00d68f;
+      --red: #ff4757;
+      --yellow: #ffd43b;
+      --blue: #4a90d9;
+      --purple: #a855f7;
+      --text: #e8f4fd;
+      --muted: #7fa8c9;
+      --nav-h: 64px;
+      --header-h: 54px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .app-header h1 { font-size: 17px; font-weight: 800; color: var(--green); letter-spacing: 1.5px; }
+
+    /* ── NAV ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 50;
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      transition: color 0.15s;
+    }
+    .nav-btn.active { color: var(--green); }
+    .nav-btn .icon { font-size: 20px; }
+
+    /* ── TABS ── */
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .main {
+      padding: 14px 14px calc(var(--nav-h) + 14px);
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      letter-spacing: 0.5px;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary  { background: var(--green); color: #0b1a2e; }
+    .btn-danger   { background: var(--red);   color: #fff; }
+    .btn-ghost    { background: transparent;   color: var(--muted); border: 1px solid var(--border); }
+    .btn-sm       { padding: 8px 14px; font-size: 12px; }
+
+    /* ── ACTION GRID ── */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 18px 10px;
+      border-radius: 14px;
+      border: none;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+    .action-btn:active { transform: scale(0.94); }
+    .action-btn .ab-icon { font-size: 26px; }
+    .ab-goal    { background: var(--green);  color: #0b1a2e; }
+    .ab-save    { background: var(--blue);   color: #fff; }
+    .ab-yellow  { background: var(--yellow); color: #0b1a2e; }
+    .ab-red     { background: var(--red);    color: #fff; }
+    .ab-pensave { background: var(--purple); color: #fff; grid-column: 1 / -1; flex-direction: row; padding: 14px; gap: 10px; }
+
+    /* ── SCORE DISPLAY ── */
+    .score-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 20px 10px 14px;
+    }
+    .score-side { text-align: center; }
+    .score-side .s-name { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
+    .score-side .s-goals { font-size: 48px; font-weight: 900; line-height: 1; }
+    .score-divider { font-size: 22px; font-weight: 900; color: var(--muted); }
+
+    /* ── LIVE BANNER ── */
+    .live-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,214,143,0.07);
+      border: 1px solid rgba(0,214,143,0.25);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .live-banner .live-left { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .live-dot {
+      width: 8px; height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+      animation: blink 1.4s infinite;
+    }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+
+    /* ── EVENT LOG ── */
+    .event-log { list-style: none; }
+    .ev-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(30,58,95,0.6);
+    }
+    .ev-item:last-child { border-bottom: none; }
+    .ev-icon { font-size: 17px; min-width: 26px; text-align: center; }
+    .ev-body { flex: 1; }
+    .ev-body .ev-name { font-size: 13px; font-weight: 700; }
+    .ev-body .ev-detail { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .ev-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px 6px; }
+
+    /* ── PLAYER TABLE ── */
+    .ptable { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .ptable th {
+      text-align: left;
+      padding: 6px 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ptable td { padding: 9px 5px; border-bottom: 1px solid rgba(30,58,95,0.5); }
+    .ptable tr:last-child td { border-bottom: none; }
+    .ptable .pts { font-weight: 800; color: var(--green); }
+    .ptable .rk { color: var(--muted); font-size: 11px; }
+
+    /* ── TAGS ── */
+    .pos-tag {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+    .pos-GK  { background: rgba(255,212,59,0.2);  color: #ffd43b; }
+    .pos-DEF { background: rgba(74,144,217,0.2);  color: #4a90d9; }
+    .pos-MID { background: rgba(0,214,143,0.2);   color: var(--green); }
+    .pos-FWD { background: rgba(255,71,87,0.2);   color: #ff6b6b; }
+
+    .team-tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .team-red   { background: rgba(255,71,87,0.15);  color: #ff7b7b; }
+    .team-green { background: rgba(0,214,143,0.15);  color: var(--green); }
+
+    /* ── TEAMS TAB ── */
+    .team-vs {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .tvc {
+      flex: 1;
+      text-align: center;
+      padding: 18px 10px;
+      border-radius: 12px;
+    }
+    .tvc.red   { background: rgba(255,71,87,0.08);  border: 1px solid rgba(255,71,87,0.25); }
+    .tvc.green { background: rgba(0,214,143,0.08);  border: 1px solid rgba(0,214,143,0.25); }
+    .tvc .tc-name { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+    .tvc.red   .tc-name { color: #ff7b7b; }
+    .tvc.green .tc-name { color: var(--green); }
+    .tvc .tc-pts  { font-size: 34px; font-weight: 900; }
+    .tvc .tc-lbl  { font-size: 10px; color: var(--muted); font-weight: 700; }
+    .vs-lbl { font-size: 18px; font-weight: 900; color: var(--muted); }
+
+    .session-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .session-row:last-child { border-bottom: none; }
+
+    /* ── MODAL ── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 16px 16px 28px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 88vh;
+      overflow-y: auto;
+      border-top: 1px solid var(--border);
+    }
+    .mhandle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 14px;
+    }
+    .mtitle { font-size: 15px; font-weight: 800; color: var(--green); margin-bottom: 16px; }
+
+    /* ── FORM ── */
+    .fg { margin-bottom: 14px; }
+    .flbl {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .finput, .fsel {
+      width: 100%;
+      padding: 11px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .finput:focus, .fsel:focus { outline: none; border-color: var(--green); }
+    .fsel { cursor: pointer; }
+
+    /* ── PLAYER CHIPS ── */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 7px 13px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .chip.sel-green { border-color: var(--green); background: rgba(0,214,143,0.12); color: var(--green); }
+    .chip.sel-red   { border-color: var(--red);   background: rgba(255,71,87,0.12);  color: #ff7b7b; }
+    .chip.sel-none  { border-color: var(--muted); background: rgba(127,168,201,0.1); color: var(--muted); }
+
+    /* ── TEAM SELECTOR BTNS ── */
+    .team-btns { display: flex; gap: 10px; }
+    .tsel-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .tsel-btn.red-sel   { border-color: var(--red);   background: rgba(255,71,87,0.12);  color: #ff7b7b; }
+    .tsel-btn.green-sel { border-color: var(--green); background: rgba(0,214,143,0.12); color: var(--green); }
+
+    /* ── CARD TYPE BTNS ── */
+    .card-type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
+    .ctbtn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .ctbtn.yellow-sel { border-color: var(--yellow); background: rgba(255,212,59,0.12); color: var(--yellow); }
+    .ctbtn.red-sel    { border-color: var(--red);    background: rgba(255,71,87,0.12);  color: #ff7b7b; }
+
+    /* ── SAVE TYPE BTNS ── */
+    .save-type-btns { display: flex; gap: 10px; margin-bottom: 14px; }
+    .stbtn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .stbtn.sel { border-color: var(--blue); background: rgba(74,144,217,0.12); color: var(--blue); }
+
+    /* ── MODAL FOOTER ── */
+    .mfooter { display: flex; gap: 10px; margin-top: 14px; }
+
+    /* ── ADMIN PLAYER LIST ── */
+    .pli {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .pli:last-child { border-bottom: none; }
+    .pli-name { flex: 1; font-size: 13px; font-weight: 700; }
+    .pli-tags { display: flex; gap: 4px; margin-top: 3px; }
+    .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 5px 7px; }
+
+    /* ── ASSIGN TABLE ── */
+    .assign-row {
+      display: grid;
+      grid-template-columns: 1fr 72px 80px;
+      gap: 6px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .assign-row:last-child { border-bottom: none; }
+    .assign-name { font-size: 12px; font-weight: 700; }
+    .assign-sel { padding: 6px 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 11px; width: 100%; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--muted);
+    }
+    .empty .e-icon { font-size: 44px; margin-bottom: 12px; }
+    .empty .e-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .empty .e-desc  { font-size: 12px; line-height: 1.6; }
+
+    /* ── SECTION HEADER ── */
+    .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .sh h3 { font-size: 13px; font-weight: 800; }
+
+    /* ── DIVIDER ── */
+    .div { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-16px);
+      padding: 9px 20px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      opacity: 0;
+      z-index: 999;
+      transition: all 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── SETUP BANNER ── */
+    .setup-banner {
+      background: rgba(255,71,87,0.1);
+      border: 1px solid rgba(255,71,87,0.35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #ff7b7b;
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+    .setup-banner strong { display: block; margin-bottom: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>⚽ BeFit FC</h1>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<main class="main">
+
+  <!-- LIVE TAB -->
+  <div class="tab active" id="tab-live">
+    <div id="live-root"></div>
+  </div>
+
+  <!-- PLAYERS TAB -->
+  <div class="tab" id="tab-players">
+    <div class="card">
+      <div class="card-title">Player Leaderboard</div>
+      <div id="players-root">Loading…</div>
+    </div>
+  </div>
+
+  <!-- TEAMS TAB -->
+  <div class="tab" id="tab-teams">
+    <div id="teams-root">Loading…</div>
+  </div>
+
+  <!-- ADMIN TAB -->
+  <div class="tab" id="tab-admin">
+    <div id="admin-root"></div>
+  </div>
+
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="live" onclick="switchTab('live',this)">
+    <span class="icon">⚽</span><span>Live</span>
+  </button>
+  <button class="nav-btn" data-tab="players" onclick="switchTab('players',this)">
+    <span class="icon">👤</span><span>Players</span>
+  </button>
+  <button class="nav-btn" data-tab="teams" onclick="switchTab('teams',this)">
+    <span class="icon">🏆</span><span>Teams</span>
+  </button>
+  <button class="nav-btn" data-tab="admin" onclick="switchTab('admin',this)">
+    <span class="icon">⚙️</span><span>Admin</span>
+  </button>
+</nav>
+
+<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+
+<!-- GOAL MODAL -->
+<div class="overlay" id="m-goal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">⚽ Log Goal</div>
+    <div class="fg">
+      <div class="flbl">Which team scored?</div>
+      <div class="team-btns">
+        <button class="tsel-btn" id="gt-red"   onclick="goalPickTeam('red')">🔴 Red</button>
+        <button class="tsel-btn" id="gt-green" onclick="goalPickTeam('green')">🟢 Green</button>
+      </div>
+    </div>
+    <div class="fg" id="g-scorer-wrap" style="display:none">
+      <div class="flbl">Who scored?</div>
+      <div class="chips" id="g-scorer-chips"></div>
+    </div>
+    <div class="fg" id="g-assist-wrap" style="display:none">
+      <div class="flbl">Assist? (optional)</div>
+      <div class="chips" id="g-assist-chips"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-goal')">Cancel</button>
+      <button class="btn btn-primary" id="g-confirm" disabled onclick="confirmGoal()">Log Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE MODAL -->
+<div class="overlay" id="m-save">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🧤 Log Save</div>
+    <div class="fg">
+      <div class="flbl">Save type</div>
+      <div class="save-type-btns">
+        <button class="stbtn" id="st-reg" onclick="pickSaveType('save')">Regular Save</button>
+        <button class="stbtn" id="st-pen" onclick="pickSaveType('penaltySave')">Penalty Save</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">Which goalkeeper?</div>
+      <div class="chips" id="save-chips"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-save')">Cancel</button>
+      <button class="btn btn-primary" id="save-confirm" disabled onclick="confirmSave()">Log Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CARD MODAL -->
+<div class="overlay" id="m-card">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🟨 Log Card</div>
+    <div class="fg">
+      <div class="flbl">Card type</div>
+      <div class="card-type-btns">
+        <button class="ctbtn" id="ct-yellow" onclick="pickCardType('yellowCard')">🟨 Yellow</button>
+        <button class="ctbtn" id="ct-red"    onclick="pickCardType('redCard')">🟥 Red</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">Which player?</div>
+      <div class="chips" id="card-chips"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-card')">Cancel</button>
+      <button class="btn btn-primary" id="card-confirm" disabled onclick="confirmCard()">Log Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT PLAYER MODAL -->
+<div class="overlay" id="m-player">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="pm-title">Add Player</div>
+    <div class="fg">
+      <label class="flbl">Name</label>
+      <input class="finput" id="pm-name" type="text" placeholder="e.g. Kwame" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="flbl">Default Position</label>
+      <select class="fsel" id="pm-pos">
+        <option value="GK">GK — Goalkeeper</option>
+        <option value="DEF">DEF — Defender</option>
+        <option value="MID" selected>MID — Midfielder</option>
+        <option value="FWD">FWD — Forward</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="flbl">Default Team</label>
+      <select class="fsel" id="pm-team">
+        <option value="red">🔴 Red</option>
+        <option value="green">🟢 Green</option>
+      </select>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-player')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePlayer()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW GAME MODAL -->
+<div class="overlay" id="m-newgame">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🏟️ New Game Session</div>
+    <div class="fg">
+      <label class="flbl">Date</label>
+      <input class="finput" id="ng-date" type="date">
+    </div>
+    <div class="fg">
+      <div class="flbl">Assign players — position & team</div>
+      <div id="ng-assignments"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-newgame')">Cancel</button>
+      <button class="btn btn-primary" onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- END GAME MODAL -->
+<div class="overlay" id="m-endgame">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🏁 End Game</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">
+      This finalises the session — appearance points and clean sheets will be recorded. Cannot be undone.
+    </p>
+    <div id="eg-summary" style="margin-bottom:14px;text-align:center"></div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-endgame')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmEndGame()">End Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="overlay" id="m-login">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🔐 Admin Login</div>
+    <div class="fg">
+      <label class="flbl">Password</label>
+      <input class="finput" id="login-pw" type="password" placeholder="Enter password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-err" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none">Incorrect password.</div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-login')">Cancel</button>
+      <button class="btn btn-primary" onclick="doLogin()">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP LOGIC ═══════════════════════ -->
+<script>
+
+// ─────────────────────────────────────────
+// FIREBASE CONFIG
+// Replace REPLACE_* values with your actual
+// Firebase project credentials when ready.
+// ─────────────────────────────────────────
+const FB_CONFIG = {
+  apiKey:            "AIzaSyBkPZvxhklkDsl7RVL8gn3Oh9Wq2bRxF2Q",
+  authDomain:        "befit-fc.firebaseapp.com",
+  databaseURL:       "https://befit-fc-default-rtdb.firebaseio.com",
+  projectId:         "befit-fc",
+  storageBucket:     "befit-fc.firebasestorage.app",
+  messagingSenderId: "695548034802",
+  appId:             "1:695548034802:web:9bf35fe55f8d55ebcb5a6b",
+};
+
+const ADMIN_PW          = "befit2024"; // change this after setup
+const FIREBASE_CONFIGURED = !FB_CONFIG.apiKey.startsWith("REPLACE");
+
+// Firebase SDK refs — populated lazily only when configured
+let _db, fbRef, fbPush, fbUpdate, fbRemove;
+
+// ─────────────────────────────────────────
+// DB ABSTRACTION — Firebase or localStorage
+// ─────────────────────────────────────────
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function getNested(obj,path) { return path.split('/').reduce((o,k)=>o&&o[k]!==undefined?o[k]:undefined,obj); }
+function setNested(obj,path,val) {
+  const ks=path.split('/'); let c=obj;
+  for(let i=0;i<ks.length-1;i++){if(!c[ks[i]])c[ks[i]]={};c=c[ks[i]];}
+  c[ks[ks.length-1]]=val;
+}
+function delNested(obj,path) {
+  const ks=path.split('/'); let c=obj;
+  for(let i=0;i<ks.length-1;i++){if(!c[ks[i]])return;c=c[ks[i]];}
+  delete c[ks[ks.length-1]];
+}
+const LD = { players:{}, sessions:{} };
+function loadLocal(){ try{const d=localStorage.getItem('befit_fc');if(d)Object.assign(LD,JSON.parse(d));}catch(e){} }
+function saveLocal(){ try{localStorage.setItem('befit_fc',JSON.stringify(LD));}catch(e){} }
+function syncLocal(){
+  S.players  = JSON.parse(JSON.stringify(LD.players  ||{}));
+  S.sessions = JSON.parse(JSON.stringify(LD.sessions ||{}));
+  S.activeId = null;
+  for(const [id,s] of Object.entries(S.sessions)){ if(s?.status==='active'){S.activeId=id;break;} }
+}
+const DB = {
+  async push(path,data){
+    if(FIREBASE_CONFIGURED) return fbPush(fbRef(_db,path),data);
+    setNested(LD,path+'/'+genId(),data); saveLocal(); syncLocal(); renderAll();
+  },
+  async update(path,data){
+    if(FIREBASE_CONFIGURED) return fbUpdate(fbRef(_db,path),data);
+    setNested(LD,path,{...(getNested(LD,path)||{}),...data}); saveLocal(); syncLocal(); renderAll();
+  },
+  async remove(path){
+    if(FIREBASE_CONFIGURED) return fbRemove(fbRef(_db,path));
+    delNested(LD,path); saveLocal(); syncLocal(); renderAll();
+  }
+};
+
+// ─────────────────────────────────────────
+// SCORING RULES
+// ─────────────────────────────────────────
+const SCORE = {
+  GK:  { app:2, goal:10, assist:3, penaltySave:6, cleanSheet:8,  yellow:-1, red:-3, savePer:4, concedePer:3 },
+  DEF: { app:2, goal:6,  assist:3, penaltySave:0, cleanSheet:3,  yellow:-1, red:-3 },
+  MID: { app:2, goal:5,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
+  FWD: { app:2, goal:4,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
+};
+
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+const S = {
+  admin:     false,
+  players:   {},   // id → { name, defaultPosition, defaultTeam }
+  sessions:  {},   // id → session object
+  activeId:  null,
+};
+
+// Modal sub-state
+let GS  = { team:null, scorerId:null, assistId:null };
+let SVS = { playerId:null, type:'save' };
+let CS  = { playerId:null, type:'yellowCard' };
+let editPid = null;
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+(async () => {
+  if (FIREBASE_CONFIGURED) {
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getDatabase, ref, push, update, remove, onValue } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    fbRef=ref; fbPush=push; fbUpdate=update; fbRemove=remove;
+    _db = getDatabase(initializeApp(FB_CONFIG));
+    onValue(ref(_db,'players'),  snap => { S.players=snap.val()||{}; renderAll(); });
+    onValue(ref(_db,'sessions'), snap => {
+      S.sessions=snap.val()||{}; S.activeId=null;
+      for(const [id,s] of Object.entries(S.sessions)){ if(s.status==='active'){S.activeId=id;break;} }
+      renderAll();
+    });
+  } else {
+    loadLocal(); syncLocal(); renderAll();
+  }
+})();
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+function activeSess()  { return S.activeId ? S.sessions[S.activeId] : null; }
+
+function sessPlayers(sess) {
+  if (!sess?.teams) return [];
+  const out = [];
+  for (const [team, td] of Object.entries(sess.teams)) {
+    for (const [pid, pd] of Object.entries(td?.players || {})) {
+      const pl = S.players[pid];
+      if (pl) out.push({ pid, name:pl.name, pos:pd.position, team });
+    }
+  }
+  return out;
+}
+
+function sessEvents(sess) {
+  if (!sess?.events) return [];
+  return Object.entries(sess.events).map(([id,e]) => ({id,...e}));
+}
+
+function goalsFor(sess, team) {
+  return sessEvents(sess).filter(e => e.type==='goal' && e.team===team).length;
+}
+
+function fmtDate(ds) {
+  if (!ds) return '';
+  return new Date(ds + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+}
+
+function posTag(p) {
+  return `<span class="pos-tag pos-${p}">${p}</span>`;
+}
+
+function teamTag(t) {
+  return `<span class="team-tag team-${t}">${t==='red'?'🔴':'🟢'} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>`;
+}
+
+// ─────────────────────────────────────────
+// POINTS ENGINE
+// ─────────────────────────────────────────
+function calcStats(pid) {
+  let g=0, a=0, sv=0, apps=0, pts=0, y=0, r=0;
+  for (const sess of Object.values(S.sessions)) {
+    if (sess.status !== 'completed') continue;
+    const sp = sessPlayers(sess).find(p => p.pid===pid);
+    if (!sp) continue;
+    const rules = SCORE[sp.pos];
+    const evs   = sessEvents(sess);
+    apps++; pts += rules.app;
+    const myGoals  = evs.filter(e => e.type==='goal' && e.scorerId===pid);
+    const myAssist = evs.filter(e => e.type==='goal' && e.assistId===pid);
+    const myYellow = evs.filter(e => e.type==='yellowCard' && e.playerId===pid);
+    const myRed    = evs.filter(e => e.type==='redCard'    && e.playerId===pid);
+    g  += myGoals.length;   pts += myGoals.length  * rules.goal;
+    a  += myAssist.length;  pts += myAssist.length * rules.assist;
+    y  += myYellow.length;  pts += myYellow.length * rules.yellow;
+    r  += myRed.length;     pts += myRed.length    * rules.red;
+
+    if (sp.pos === 'GK') {
+      const mySaves  = evs.filter(e => e.type==='save'        && e.playerId===pid);
+      const myPenSv  = evs.filter(e => e.type==='penaltySave' && e.playerId===pid);
+      sv += mySaves.length;
+      pts += Math.floor(mySaves.length / rules.savePer);
+      pts += myPenSv.length * rules.penaltySave;
+      const conceded = evs.filter(e => e.type==='goal' && e.team!==sp.team).length;
+      pts -= Math.floor(conceded / rules.concedePer);
+    }
+
+    const cs = sess.cleanSheets?.[sp.team];
+    if (cs && (sp.pos==='GK' || sp.pos==='DEF')) pts += rules.cleanSheet;
+  }
+  return { g, a, sv, apps, pts, y, r };
+}
+
+function calcTeams() {
+  const T = { red:{w:0,d:0,l:0,gf:0,ga:0,pts:0}, green:{w:0,d:0,l:0,gf:0,ga:0,pts:0} };
+  for (const sess of Object.values(S.sessions)) {
+    if (sess.status !== 'completed') continue;
+    const rg = goalsFor(sess,'red'), gg = goalsFor(sess,'green');
+    T.red.gf+=rg; T.red.ga+=gg; T.green.gf+=gg; T.green.ga+=rg;
+    if      (rg>gg) { T.red.w++;   T.red.pts+=3; T.green.l++; }
+    else if (gg>rg) { T.green.w++; T.green.pts+=3; T.red.l++; }
+    else            { T.red.d++;   T.red.pts++;  T.green.d++; T.green.pts++; }
+  }
+  return T;
+}
+
+// ─────────────────────────────────────────
+// RENDER — ALL
+// ─────────────────────────────────────────
+function renderAll() {
+  renderLive(); renderPlayers(); renderTeams(); renderAdmin();
+}
+
+// ─────────────────────────────────────────
+// RENDER — LIVE
+// ─────────────────────────────────────────
+function renderLive() {
+  const el  = document.getElementById('live-root');
+  const sess = activeSess();
+
+  if (!sess) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="e-icon">⚽</div>
+        <div class="e-title">No Active Game</div>
+        <div class="e-desc">Start a session from the Admin tab to begin tracking.</div>
+      </div>`;
+    return;
+  }
+
+  const evs = sessEvents(sess).sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
+  const rg  = goalsFor(sess,'red');
+  const gg  = goalsFor(sess,'green');
+  const sp  = sessPlayers(sess);
+  const adm = S.admin;
+
+  el.innerHTML = `
+    <div class="live-banner">
+      <div class="live-left">
+        <div class="live-dot"></div>
+        <strong>LIVE</strong> · ${fmtDate(sess.date)}
+      </div>
+      ${adm ? `<button class="btn btn-danger btn-sm" style="width:auto" onclick="openEndGame()">End Game</button>` : ''}
+    </div>
+
+    <div class="score-wrap">
+      <div class="score-side">
+        <div class="s-name" style="color:#ff7b7b">🔴 RED</div>
+        <div class="s-goals" style="color:#ff7b7b">${rg}</div>
+      </div>
+      <div class="score-divider">—</div>
+      <div class="score-side">
+        <div class="s-name" style="color:var(--green)">🟢 GREEN</div>
+        <div class="s-goals" style="color:var(--green)">${gg}</div>
+      </div>
+    </div>
+
+    <div class="action-grid">
+      <button class="action-btn ab-goal"   onclick="openGoal()">
+        <span class="ab-icon">⚽</span>GOAL
+      </button>
+      <button class="action-btn ab-save"   onclick="openSave()">
+        <span class="ab-icon">🧤</span>SAVE
+      </button>
+      <button class="action-btn ab-yellow" onclick="openCard()">
+        <span class="ab-icon">🟨</span>CARD
+      </button>
+      <button class="action-btn ab-red"    onclick="openCard('redCard')">
+        <span class="ab-icon">🟥</span>RED CARD
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="sh">
+        <div class="card-title" style="margin:0">Match Events</div>
+        ${adm ? `<span style="font-size:10px;color:var(--muted)">Tap 🗑 to delete</span>` : ''}
+      </div>
+      ${evs.length===0 ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No events yet</div>` : ''}
+      <ul class="event-log">
+        ${evs.map(e => renderEvent(e, sp, adm)).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderEvent(ev, sp, isAdmin) {
+  const pname = id => { if(!id) return null; const p=sp.find(x=>x.pid===id); return p?.name || S.players[id]?.name || '?'; };
+  let icon='', name='', detail='';
+  switch(ev.type) {
+    case 'goal':
+      icon='⚽'; name=pname(ev.scorerId)||'?';
+      const tm = ev.team==='red'?'🔴 Red':'🟢 Green';
+      const as = ev.assistId ? ` · Assist: ${pname(ev.assistId)}` : '';
+      detail = `${tm}${as}`; break;
+    case 'save':
+      icon='🧤'; name=pname(ev.playerId)||'?'; detail='Regular Save'; break;
+    case 'penaltySave':
+      icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
+    case 'yellowCard':
+      icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
+    case 'redCard':
+      icon='🟥'; name=pname(ev.playerId)||'?'; detail='Red Card'; break;
+  }
+  return `
+    <li class="ev-item">
+      <span class="ev-icon">${icon}</span>
+      <div class="ev-body">
+        <div class="ev-name">${name}</div>
+        <div class="ev-detail">${detail}</div>
+      </div>
+      ${isAdmin ? `<button class="ev-del" onclick="deleteEvent('${ev.id}')">🗑</button>` : ''}
+    </li>`;
+}
+
+// ─────────────────────────────────────────
+// RENDER — PLAYERS
+// ─────────────────────────────────────────
+function renderPlayers() {
+  const el = document.getElementById('players-root');
+  const ids = Object.keys(S.players);
+  if (!ids.length) {
+    el.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">No players yet. Add them in Admin.</div>`;
+    return;
+  }
+  const board = ids.map(id => ({ id, ...S.players[id], ...calcStats(id) }))
+                   .sort((a,b) => b.pts-a.pts || b.g-a.g);
+  el.innerHTML = `
+    <table class="ptable">
+      <thead>
+        <tr>
+          <th>#</th><th>Player</th><th>Apps</th><th>G</th><th>A</th><th>Sv</th><th>Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${board.map((p,i)=>`
+          <tr>
+            <td class="rk">${i+1}</td>
+            <td>
+              <div style="font-weight:700;font-size:13px">${p.name}</div>
+              <div style="margin-top:3px;display:flex;gap:4px">
+                ${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}
+              </div>
+            </td>
+            <td>${p.apps}</td>
+            <td>${p.g}</td>
+            <td>${p.a}</td>
+            <td>${p.sv}</td>
+            <td class="pts">${p.pts}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ─────────────────────────────────────────
+// RENDER — TEAMS
+// ─────────────────────────────────────────
+function renderTeams() {
+  const el = document.getElementById('teams-root');
+  const T  = calcTeams();
+  const played = T.red.w + T.red.d + T.red.l;
+
+  const history = Object.entries(S.sessions)
+    .filter(([,s])=>s.status==='completed')
+    .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date))
+    .slice(0,10);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="team-vs">
+        <div class="tvc red">
+          <div class="tc-name">RED</div>
+          <div class="tc-pts">${T.red.pts}</div>
+          <div class="tc-lbl">POINTS</div>
+        </div>
+        <div class="vs-lbl">VS</div>
+        <div class="tvc green">
+          <div class="tc-name">GREEN</div>
+          <div class="tc-pts">${T.green.pts}</div>
+          <div class="tc-lbl">POINTS</div>
+        </div>
+      </div>
+      <div class="div"></div>
+      <div style="font-size:10px;color:var(--muted);font-weight:800;margin-bottom:8px;letter-spacing:0.8px">
+        SEASON (${played} games)
+      </div>
+      <table class="ptable">
+        <thead>
+          <tr><th>Team</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+        </thead>
+        <tbody>
+          ${['red','green'].map(t=>`
+            <tr>
+              <td style="font-weight:800;color:${t==='red'?'#ff7b7b':'var(--green)'}">${t==='red'?'🔴 Red':'🟢 Green'}</td>
+              <td>${T[t].w}</td><td>${T[t].d}</td><td>${T[t].l}</td>
+              <td>${T[t].gf}</td><td>${T[t].ga}</td>
+              <td>${T[t].gf-T[t].ga>0?'+':''}${T[t].gf-T[t].ga}</td>
+              <td class="pts">${T[t].pts}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent Results</div>
+      ${history.length===0
+        ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">No completed games yet</div>`
+        : history.map(([,s])=>{
+            const rg=goalsFor(s,'red'), gg=goalsFor(s,'green');
+            const res = rg>gg?'🔴 Red win':gg>rg?'🟢 Green win':'Draw';
+            return `
+              <div class="session-row">
+                <div>
+                  <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px">
+                    <span style="color:#ff7b7b;font-weight:800">${rg}</span>
+                    <span style="margin:0 6px">—</span>
+                    <span style="color:var(--green);font-weight:800">${gg}</span>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:var(--muted)">${res}</div>
+              </div>`;
+          }).join('')}
+    </div>`;
+}
+
+// ─────────────────────────────────────────
+// RENDER — ADMIN
+// ─────────────────────────────────────────
+function renderAdmin() {
+  const el = document.getElementById('admin-root');
+  if (!S.admin) {
+    el.innerHTML = `
+      <div class="empty">
+        <div class="e-icon">🔐</div>
+        <div class="e-title">Admin Access</div>
+        <div class="e-desc">Password required to manage players and sessions.</div>
+        <button class="btn btn-primary" style="width:auto;padding:12px 32px;margin-top:20px" onclick="openM('m-login')">Login</button>
+      </div>`;
+    return;
+  }
+
+  const sess  = activeSess();
+  const plist = Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+
+  el.innerHTML = `
+    ${!FIREBASE_CONFIGURED ? `
+      <div class="setup-banner">
+        <strong>⚠️ Firebase Setup Required</strong>
+        1. Go to <strong>console.firebase.google.com</strong><br>
+        2. Create a new project → Add a web app → copy the config<br>
+        3. Enable <strong>Realtime Database</strong> in test mode<br>
+        4. Replace the REPLACE_* values in index.html with your config<br>
+        5. Save and re-open the app
+      </div>` : ''}
+
+    <div class="card">
+      <div class="sh">
+        <div class="card-title" style="margin:0">Game Session</div>
+      </div>
+      ${sess
+        ? `<div style="color:var(--green);font-size:13px;margin-bottom:12px">🟢 Active · ${fmtDate(sess.date)}</div>
+           <button class="btn btn-danger" onclick="openEndGame()">🏁 End Game</button>`
+        : `<button class="btn btn-primary" onclick="openNewGame()">🏟️ Start New Game</button>`}
+    </div>
+
+    <div class="card">
+      <div class="sh">
+        <div class="card-title" style="margin:0">Players (${plist.length})</div>
+        <button class="btn btn-primary btn-sm" style="width:auto;padding:7px 14px" onclick="openAddPlayer()">+ Add</button>
+      </div>
+      ${plist.length===0
+        ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No players yet</div>`
+        : plist.map(([id,p])=>`
+          <div class="pli">
+            <div style="flex:1">
+              <div class="pli-name">${p.name}</div>
+              <div class="pli-tags">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+            </div>
+            <button class="icon-btn" onclick="openEditPlayer('${id}')">✏️</button>
+            <button class="icon-btn" onclick="delPlayer('${id}')">🗑</button>
+          </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
+    </div>`;
+}
+
+// ─────────────────────────────────────────
+// TAB SWITCHING
+// ─────────────────────────────────────────
+window.switchTab = function(id, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+};
+
+// ─────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────
+window.openM  = id => document.getElementById(id).classList.add('open');
+window.closeM = id => document.getElementById(id).classList.remove('open');
+
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+function toast(msg, isErr=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isErr ? 'var(--red)' : 'var(--green)';
+  t.style.color = '#fff';
+  if (!isErr) t.style.color = '#0b1a2e';
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+// ─────────────────────────────────────────
+// ADMIN LOGIN
+// ─────────────────────────────────────────
+window.doLogin = function() {
+  const pw = document.getElementById('login-pw').value;
+  if (pw===ADMIN_PW) {
+    S.admin=true;
+    document.getElementById('login-pw').value='';
+    document.getElementById('login-err').style.display='none';
+    closeM('m-login');
+    renderAdmin(); renderLive();
+    toast('Welcome, Admin 👋');
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+};
+
+window.doLogout = function() {
+  S.admin=false; renderAdmin(); renderLive();
+};
+
+// ─────────────────────────────────────────
+// GOAL MODAL
+// ─────────────────────────────────────────
+window.openGoal = function() {
+  if (!activeSess()) return toast('No active game',true);
+  GS = { team:null, scorerId:null, assistId:null };
+  document.getElementById('g-scorer-wrap').style.display='none';
+  document.getElementById('g-assist-wrap').style.display='none';
+  document.getElementById('g-confirm').disabled=true;
+  document.getElementById('gt-red').className='tsel-btn';
+  document.getElementById('gt-green').className='tsel-btn';
+  openM('m-goal');
+};
+
+window.goalPickTeam = function(team) {
+  GS.team=team; GS.scorerId=null; GS.assistId=null;
+  document.getElementById('g-confirm').disabled=true;
+  document.getElementById('gt-red').className  = 'tsel-btn'+(team==='red'  ?' red-sel':'');
+  document.getElementById('gt-green').className= 'tsel-btn'+(team==='green'?' green-sel':'');
+
+  const sess  = activeSess();
+  const sp    = sessPlayers(sess);
+  const onTeam= sp.filter(p=>p.team===team);
+  const all   = sp;
+
+  // Scorer chips
+  document.getElementById('g-scorer-chips').innerHTML =
+    onTeam.map(p=>
+      `<span class="chip" data-pid="${p.pid}" data-role="scorer" onclick="goalChipClick(this,'scorer','${team}')">${p.name} ${posTag(p.pos)}</span>`
+    ).join('');
+  document.getElementById('g-scorer-wrap').style.display='block';
+
+  // Assist chips
+  document.getElementById('g-assist-chips').innerHTML =
+    `<span class="chip sel-none" data-pid="" data-role="assist" onclick="goalChipClick(this,'assist','${team}')">None</span>` +
+    all.map(p=>
+      `<span class="chip" data-pid="${p.pid}" data-role="assist" onclick="goalChipClick(this,'assist','${team}')">${p.name}</span>`
+    ).join('');
+  document.getElementById('g-assist-wrap').style.display='block';
+};
+
+window.goalChipClick = function(el, role, team) {
+  const pid = el.dataset.pid;
+  const sel = role==='scorer' ? 'sel-green' : 'sel-none';
+  const container = role==='scorer' ? 'g-scorer-chips' : 'g-assist-chips';
+  document.querySelectorAll(`#${container} .chip`).forEach(c=>c.className='chip'+(c.dataset.pid===''?' sel-none':''));
+  el.className = `chip ${team==='red'?'sel-red':'sel-green'}`;
+  if (role==='scorer') { GS.scorerId=pid||null; document.getElementById('g-confirm').disabled=!pid; }
+  else                 { GS.assistId =pid||null; }
+};
+
+window.confirmGoal = async function() {
+  if (!GS.scorerId||!GS.team) return;
+  await DB.push(`sessions/${S.activeId}/events`,{
+    type:'goal', team:GS.team, scorerId:GS.scorerId, assistId:GS.assistId||null, timestamp:Date.now()
+  });
+  closeM('m-goal'); toast('⚽ Goal logged!');
+};
+
+// ─────────────────────────────────────────
+// SAVE MODAL
+// ─────────────────────────────────────────
+window.openSave = function() {
+  if (!activeSess()) return toast('No active game',true);
+  SVS = { playerId:null, type:'save' };
+  document.getElementById('save-confirm').disabled=true;
+  document.getElementById('st-reg').className='stbtn sel';
+  document.getElementById('st-pen').className='stbtn';
+
+  const keepers = sessPlayers(activeSess()).filter(p=>p.pos==='GK');
+  const pool    = keepers.length ? keepers : sessPlayers(activeSess());
+  document.getElementById('save-chips').innerHTML =
+    pool.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="saveChipClick(this)">${p.name} ${posTag(p.pos)}</span>`).join('');
+  openM('m-save');
+};
+
+window.pickSaveType = function(type) {
+  SVS.type=type;
+  document.getElementById('st-reg').className='stbtn'+(type==='save'?' sel':'');
+  document.getElementById('st-pen').className='stbtn'+(type==='penaltySave'?' sel':'');
+};
+
+window.saveChipClick = function(el) {
+  document.querySelectorAll('#save-chips .chip').forEach(c=>c.className='chip');
+  el.className='chip sel-green'; SVS.playerId=el.dataset.pid;
+  document.getElementById('save-confirm').disabled=false;
+};
+
+window.confirmSave = async function() {
+  if (!SVS.playerId) return;
+  await DB.push(`sessions/${S.activeId}/events`,{
+    type:SVS.type, playerId:SVS.playerId, timestamp:Date.now()
+  });
+  closeM('m-save');
+  toast(SVS.type==='penaltySave' ? '🧤 Penalty save logged!' : '🧤 Save logged!');
+};
+
+// ─────────────────────────────────────────
+// CARD MODAL
+// ─────────────────────────────────────────
+window.openCard = function(preset=null) {
+  if (!activeSess()) return toast('No active game',true);
+  CS = { playerId:null, type: preset||'yellowCard' };
+  document.getElementById('card-confirm').disabled=true;
+  document.getElementById('ct-yellow').className='ctbtn'+(CS.type==='yellowCard'?' yellow-sel':'');
+  document.getElementById('ct-red').className   ='ctbtn'+(CS.type==='redCard'?' red-sel':'');
+
+  const sp = sessPlayers(activeSess());
+  document.getElementById('card-chips').innerHTML =
+    sp.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="cardChipClick(this)">${p.name} ${posTag(p.pos)}</span>`).join('');
+  openM('m-card');
+};
+
+window.pickCardType = function(type) {
+  CS.type=type;
+  document.getElementById('ct-yellow').className='ctbtn'+(type==='yellowCard'?' yellow-sel':'');
+  document.getElementById('ct-red').className   ='ctbtn'+(type==='redCard'?' red-sel':'');
+};
+
+window.cardChipClick = function(el) {
+  document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');
+  el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');
+  el.style.borderColor=CS.type==='yellowCard'?'var(--yellow)':'';
+  CS.playerId=el.dataset.pid;
+  document.getElementById('card-confirm').disabled=false;
+};
+
+window.confirmCard = async function() {
+  if (!CS.playerId) return;
+  await DB.push(`sessions/${S.activeId}/events`,{
+    type:CS.type, playerId:CS.playerId, timestamp:Date.now()
+  });
+  closeM('m-card');
+  toast(CS.type==='yellowCard'?'🟨 Yellow card logged':'🟥 Red card logged', CS.type==='redCard');
+};
+
+// ─────────────────────────────────────────
+// DELETE EVENT
+// ─────────────────────────────────────────
+window.deleteEvent = async function(evId) {
+  if (!S.admin) return;
+  if (!confirm('Delete this event?')) return;
+  await DB.remove(`sessions/${S.activeId}/events/${evId}`);
+  toast('Event deleted',true);
+};
+
+// ─────────────────────────────────────────
+// NEW GAME
+// ─────────────────────────────────────────
+window.openNewGame = function() {
+  document.getElementById('ng-date').value = new Date().toISOString().split('T')[0];
+  const plist = Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
+  document.getElementById('ng-assignments').innerHTML = plist.length===0
+    ? `<div style="color:var(--muted);font-size:12px">Add players first.</div>`
+    : plist.map(([id,p])=>`
+        <div class="assign-row">
+          <div class="assign-name">${p.name}</div>
+          <select class="assign-sel" id="ap-${id}">
+            <option value="GK"  ${p.defaultPosition==='GK' ?'selected':''}>GK</option>
+            <option value="DEF" ${p.defaultPosition==='DEF'?'selected':''}>DEF</option>
+            <option value="MID" ${p.defaultPosition==='MID'?'selected':''}>MID</option>
+            <option value="FWD" ${p.defaultPosition==='FWD'?'selected':''}>FWD</option>
+          </select>
+          <select class="assign-sel" id="at-${id}">
+            <option value="red"   ${p.defaultTeam==='red'  ?'selected':''}>🔴 Red</option>
+            <option value="green" ${p.defaultTeam==='green'?'selected':''}>🟢 Green</option>
+            <option value="bench">⬛ Bench</option>
+          </select>
+        </div>`).join('');
+  openM('m-newgame');
+};
+
+window.startGame = async function() {
+  if (S.activeId) return toast('End the current game first',true);
+  const date = document.getElementById('ng-date').value;
+  if (!date) return toast('Pick a date',true);
+
+  const teams = { red:{players:{}}, green:{players:{}} };
+  for (const id of Object.keys(S.players)) {
+    const pos  = document.getElementById(`ap-${id}`)?.value;
+    const team = document.getElementById(`at-${id}`)?.value;
+    if (team==='bench'||!teams[team]) continue;
+    teams[team].players[id] = { position:pos };
+  }
+
+  await DB.push('sessions', { date, status:'active', teams, events:null, cleanSheets:null });
+  closeM('m-newgame'); toast('🏟️ Game started!');
+};
+
+// ─────────────────────────────────────────
+// END GAME
+// ─────────────────────────────────────────
+window.openEndGame = function() {
+  const sess = activeSess(); if(!sess) return;
+  const rg=goalsFor(sess,'red'), gg=goalsFor(sess,'green');
+  document.getElementById('eg-summary').innerHTML = `
+    <div style="font-size:36px;font-weight:900;margin-bottom:6px">
+      <span style="color:#ff7b7b">${rg}</span>
+      <span style="color:var(--muted);font-size:22px;margin:0 10px">—</span>
+      <span style="color:var(--green)">${gg}</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted)">
+      ${rg===0?'🟢 Green clean sheet':''}${gg===0?'🔴 Red clean sheet':''}
+      ${rg>0&&gg>0?'No clean sheets':''}
+    </div>`;
+  openM('m-endgame');
+};
+
+window.confirmEndGame = async function() {
+  const sess=activeSess(); if(!sess) return;
+  const rg=goalsFor(sess,'red'), gg=goalsFor(sess,'green');
+  await DB.update(`sessions/${S.activeId}`,{
+    status:'completed',
+    cleanSheets:{ red:gg===0, green:rg===0 }
+  });
+  closeM('m-endgame'); toast('🏁 Game completed!');
+};
+
+// ─────────────────────────────────────────
+// PLAYER MANAGEMENT
+// ─────────────────────────────────────────
+window.openAddPlayer = function() {
+  editPid=null;
+  document.getElementById('pm-title').textContent='Add Player';
+  document.getElementById('pm-name').value='';
+  document.getElementById('pm-pos').value='MID';
+  document.getElementById('pm-team').value='red';
+  openM('m-player');
+};
+
+window.openEditPlayer = function(id) {
+  editPid=id;
+  const p=S.players[id]; if(!p) return;
+  document.getElementById('pm-title').textContent='Edit Player';
+  document.getElementById('pm-name').value=p.name;
+  document.getElementById('pm-pos').value=p.defaultPosition;
+  document.getElementById('pm-team').value=p.defaultTeam;
+  openM('m-player');
+};
+
+window.savePlayer = async function() {
+  const name = document.getElementById('pm-name').value.trim();
+  if (!name) return toast('Enter a name',true);
+  const data = {
+    name,
+    defaultPosition: document.getElementById('pm-pos').value,
+    defaultTeam:     document.getElementById('pm-team').value,
+  };
+  if (editPid) await DB.update(`players/${editPid}`, data);
+  else         await DB.push('players', data);
+  closeM('m-player'); toast(editPid?'Player updated ✓':'Player added ✓');
+};
+
+window.delPlayer = async function(id) {
+  if (!confirm(`Delete ${S.players[id]?.name}?`)) return;
+  await DB.remove(`players/${id}`);
+  toast('Player deleted',true);
+};
+
+</script>
+</body>
+</html>
