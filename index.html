@@ -885,6 +885,7 @@ let editPid = null;
 let editSessId = null;
 let pcPid = null;
 let playersView = 'list';
+let adminView = 'players';
 let viewerPid = null;
 let _welcomeShown = false;
 let _may24cleaned = false;
@@ -1506,12 +1507,48 @@ function renderAdmin() {
 
   const sess  = activeSess();
   const plist = Object.entries(S.players).sort(([,a],[,b])=>a.name.localeCompare(b.name));
-  const noPlayers = plist.length === 0;
-
   const completedSessions = Object.entries(S.sessions)
     .filter(([,s])=>s.status==='completed')
     .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date))
-    .slice(0,15);
+    .slice(0,30);
+
+  const playersPanel = `
+    <div class="sh" style="margin-bottom:12px">
+      <div class="card-title" style="margin:0">Players (${plist.length})</div>
+      <button class="btn btn-primary btn-sm" style="width:auto;padding:7px 14px" onclick="openAddPlayer()">+ Add</button>
+    </div>
+    ${plist.length===0
+      ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No players yet</div>`
+      : plist.map(([id,p])=>`
+        <div class="pli">
+          <div style="flex:1">
+            <div class="pli-name">${p.name}</div>
+            <div class="pli-tags">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
+          </div>
+          <button class="icon-btn" onclick="openEditPlayer('${id}')">✏️</button>
+          <button class="icon-btn" onclick="delPlayer('${id}')">🗑</button>
+        </div>`).join('')}`;
+
+  const matchesPanel = completedSessions.length === 0
+    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No completed games yet</div>`
+    : completedSessions.map(([sid,s])=>{
+        const mode = s.mode||'live';
+        const teams = getActiveTeams(s);
+        const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:700">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)} ${getTeamGoals(s,t)}</span>`).join(' <span style="color:var(--muted)">—</span> ');
+        const editNote = mode==='history' ? '(score only)' : mode==='post' ? '(player stats)' : '(events)';
+        return `
+          <div class="sess-admin-row">
+            <div>
+              <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${scoreStr}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px"><span class="sess-mode-badge mode-${mode}">${mode}</span> <span style="opacity:0.6">${editNote}</span></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="icon-btn" onclick="openEditMatch('${sid}')">✏️</button>
+              <button class="icon-btn" onclick="delSession('${sid}')">🗑</button>
+            </div>
+          </div>`;
+      }).join('');
 
   el.innerHTML = `
     <div class="card">
@@ -1525,49 +1562,21 @@ function renderAdmin() {
            </div>`}
     </div>
 
-    <div class="card">
-      <div class="sh">
-        <div class="card-title" style="margin:0">Players (${plist.length})</div>
-        <button class="btn btn-primary btn-sm" style="width:auto;padding:7px 14px" onclick="openAddPlayer()">+ Add</button>
-      </div>
-      ${plist.length===0
-        ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No players yet</div>`
-        : plist.map(([id,p])=>`
-          <div class="pli">
-            <div style="flex:1">
-              <div class="pli-name">${p.name}</div>
-              <div class="pli-tags">${posTag(p.defaultPosition)} ${teamTag(p.defaultTeam)}</div>
-            </div>
-            <button class="icon-btn" onclick="openEditPlayer('${id}')">✏️</button>
-            <button class="icon-btn" onclick="delPlayer('${id}')">🗑</button>
-          </div>`).join('')}
+    <div class="view-toggle">
+      <button class="vtbtn ${adminView==='players'?'active':''}" onclick="setAdminView('players')">👤 Players (${plist.length})</button>
+      <button class="vtbtn ${adminView==='matches'?'active':''}" onclick="setAdminView('matches')">📅 Matches (${completedSessions.length})</button>
     </div>
 
-    ${completedSessions.length > 0 ? `
     <div class="card">
-      <div class="card-title">Match History</div>
-      ${completedSessions.map(([sid,s])=>{
-        const mode = s.mode||'live';
-        const teams = getActiveTeams(s);
-        const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:700">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)} ${getTeamGoals(s,t)}</span>`).join(' <span style="color:var(--muted)">—</span> ');
-        return `
-          <div class="sess-admin-row">
-            <div>
-              <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px">${scoreStr} <span class="sess-mode-badge mode-${mode}">${mode}</span></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="icon-btn" onclick="openEditMatch('${sid}')">✏️</button>
-              <button class="icon-btn" onclick="delSession('${sid}')">🗑</button>
-            </div>
-          </div>`
-      }).join('')}
-    </div>` : ''}
+      ${adminView==='players' ? playersPanel : matchesPanel}
+    </div>
 
     <div class="card">
       <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
     </div>`;
 }
+
+window.setAdminView = function(v) { adminView = v; renderAdmin(); };
 
 // ─── TAB SWITCHING ───
 window.switchTab = function(id, btn) {
