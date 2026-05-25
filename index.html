@@ -2188,7 +2188,7 @@ window.submitPastGame=async function(){
 };
 
 // ─── EDIT MATCH (full) ───
-let emPickedTeam=null, emPickedPid=null, emEditEvId=null;
+let emPickedTeam=null, emPickedPid=null, emEditEvId=null, emPickedAssistId=null;
 
 function playerTeamInSession(sess, pid) {
   if (!sess.teams) return null;
@@ -2291,7 +2291,7 @@ window.openMatchSummary = function(sid) {
 
 window.openEditMatch=function(sid){
   const s=S.sessions[sid];if(!s)return;
-  editSessId=sid; emPickedTeam=null; emPickedPid=null; emEditEvId=null;
+  editSessId=sid; emPickedTeam=null; emPickedPid=null; emEditEvId=null; emPickedAssistId=null;
   const mode=s.mode||'live';
   document.getElementById('em-title').textContent=`✏️ Edit — ${fmtDate(s.date)}`;
   const teams=getActiveTeams(s);
@@ -2325,7 +2325,8 @@ window.openEditMatch=function(sid){
       </div>`;
     }).join('');
     const sp=sessPlayers(s);
-    const playerChips=sp.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="emChipClick(this)">${p.name}</span>`).join('');
+    const playerChips=sp.map(p=>`<span class="chip" data-pid="${p.pid}" data-team="${p.team}" onclick="emChipClick(this)">${p.name}</span>`).join('');
+    const assistChips=sp.map(p=>`<span class="chip" data-pid="${p.pid}" data-team="${p.team}" onclick="emAssistChipClick(this)">${p.name}</span>`).join('');
     const teamBtns=teams.map(t=>`<button class="tsel-btn" id="emgt-${t}" onclick="emPickTeam('${t}')">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
     extraHtml=`
       <div class="fg">
@@ -2334,7 +2335,7 @@ window.openEditMatch=function(sid){
       </div>
       <div class="fg">
         <div class="flbl" id="em-section-lbl">Add Correction</div>
-        <select class="fsel" id="em-ev-type" style="margin-bottom:10px">
+        <select class="fsel" id="em-ev-type" style="margin-bottom:10px" onchange="emTypeChange()">
           <option value="goal">⚽ Goal</option>
           <option value="assist">🤝 Assist</option>
           <option value="save">🧤 Save</option>
@@ -2346,8 +2347,12 @@ window.openEditMatch=function(sid){
           <div class="flbl">Team (goals only)</div>
           <div class="team-btns">${teamBtns}</div>
         </div>
-        <div class="flbl">Player</div>
+        <div class="flbl">Scorer</div>
         <div class="chips" id="em-player-chips">${playerChips}</div>
+        <div id="em-assist-wrap" style="display:none;margin-top:10px">
+          <div class="flbl">Assist <span style="font-weight:400;color:var(--muted)">(optional · shows teammates only)</span></div>
+          <div class="chips" id="em-assist-chips">${assistChips}</div>
+        </div>
         <button id="em-add-btn" class="btn btn-ghost btn-sm" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addEditEvent('${sid}')">+ Add Event</button>
       </div>`;
   } else if(mode==='post'){
@@ -2508,16 +2513,32 @@ window.editEventFromEdit=function(sid,evId){
   const s=S.sessions[sid];
   const ev=sessEvents(s).find(e=>e.id===evId);
   if(!ev)return;
-  emEditEvId=evId;
+  emEditEvId=evId; emPickedAssistId=null;
   // pre-fill type
   const typeEl=document.getElementById('em-ev-type');
   if(typeEl) typeEl.value=ev.type;
-  // pre-fill player chip
+  // show/hide assist wrap
+  window.emTypeChange();
+  // pre-fill scorer/player chip
   const pid=ev.scorerId||ev.playerId;
   if(pid){
     document.querySelectorAll('#em-player-chips .chip').forEach(c=>{
       if(c.dataset.pid===pid){c.className='chip sel-green';emPickedPid=pid;}
       else c.className='chip';
+    });
+    // filter assist chips to scorer's team
+    if(ev.type==='goal'){
+      const scorerTeam=document.querySelector(`#em-player-chips .chip[data-pid="${pid}"]`)?.dataset.team;
+      document.querySelectorAll('#em-assist-chips .chip').forEach(c=>{
+        c.className='chip';
+        c.style.display=(c.dataset.team===scorerTeam&&c.dataset.pid!==pid)?'':'none';
+      });
+    }
+  }
+  // pre-fill assist chip
+  if(ev.type==='goal'&&ev.assistId){
+    document.querySelectorAll('#em-assist-chips .chip').forEach(c=>{
+      if(c.dataset.pid===ev.assistId&&c.style.display!=='none'){c.className='chip sel-green';emPickedAssistId=ev.assistId;}
     });
   }
   // pre-fill team if goal
@@ -2530,6 +2551,12 @@ window.editEventFromEdit=function(sid,evId){
   // scroll form into view
   if(typeEl) typeEl.scrollIntoView({behavior:'smooth',block:'start'});
 };
+window.emTypeChange=function(){
+  const type=document.getElementById('em-ev-type')?.value;
+  const wrap=document.getElementById('em-assist-wrap');
+  if(wrap) wrap.style.display=type==='goal'?'':'none';
+  if(type!=='goal'){ emPickedAssistId=null; document.querySelectorAll('#em-assist-chips .chip').forEach(c=>c.className='chip'); }
+};
 window.emPickTeam=function(t){
   emPickedTeam=t;
   document.querySelectorAll('[id^="emgt-"]').forEach(b=>b.className='tsel-btn');
@@ -2538,6 +2565,20 @@ window.emPickTeam=function(t){
 window.emChipClick=function(el){
   document.querySelectorAll('#em-player-chips .chip').forEach(c=>c.className='chip');
   el.className='chip sel-green'; emPickedPid=el.dataset.pid;
+  // filter assist chips to scorer's team only
+  const type=document.getElementById('em-ev-type')?.value;
+  if(type==='goal'){
+    const scorerTeam=el.dataset.team;
+    emPickedAssistId=null;
+    document.querySelectorAll('#em-assist-chips .chip').forEach(c=>{
+      c.className='chip';
+      c.style.display=(c.dataset.team===scorerTeam&&c.dataset.pid!==emPickedPid)?'':'none';
+    });
+  }
+};
+window.emAssistChipClick=function(el){
+  document.querySelectorAll('#em-assist-chips .chip').forEach(c=>{if(c.style.display!=='none')c.className='chip';});
+  el.className='chip sel-green'; emPickedAssistId=el.dataset.pid;
 };
 window.addEditEvent=async function(sid){
   if(!emPickedPid)return toast('Pick a player',true);
@@ -2546,19 +2587,24 @@ window.addEditEvent=async function(sid){
   if(type==='goal'){
     if(!emPickedTeam)return toast('Pick a team for the goal',true);
     evData.team=emPickedTeam; evData.scorerId=emPickedPid;
+    if(emPickedAssistId) evData.assistId=emPickedAssistId;
   } else {
     evData.playerId=emPickedPid;
   }
   if(emEditEvId){
-    // edit mode: remove old event, write corrected one
+    // edit mode: remove old, push corrected
     await DB.remove(`sessions/${sid}/events/${emEditEvId}`);
-    await DB.push(`sessions/${sid}/events`,evData);
+    if(S.sessions[sid]?.events) delete S.sessions[sid].events[emEditEvId];
     emEditEvId=null;
+    const ref=await DB.push(`sessions/${sid}/events`,evData);
+    if(ref?.key&&S.sessions[sid]){if(!S.sessions[sid].events)S.sessions[sid].events={};S.sessions[sid].events[ref.key]=evData;}
     toast('Event updated ✓');
   } else {
-    await DB.push(`sessions/${sid}/events`,evData);
+    const ref=await DB.push(`sessions/${sid}/events`,evData);
+    // fix 1: update local state immediately so score re-counts correctly
+    if(ref?.key&&S.sessions[sid]){if(!S.sessions[sid].events)S.sessions[sid].events={};S.sessions[sid].events[ref.key]=evData;}
   }
-  emPickedPid=null; emPickedTeam=null;
+  emPickedPid=null; emPickedTeam=null; emPickedAssistId=null;
   openEditMatch(sid);
 };
 
