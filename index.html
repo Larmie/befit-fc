@@ -1865,19 +1865,30 @@ window.goalPickTeam = function(team) {
   document.getElementById('g-scorer-chips').innerHTML =
     onTeam.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'scorer','${team}')">${p.name} ${posTag(p.pos)}</span>`).join('');
   document.getElementById('g-scorer-wrap').style.display='block';
+  // assist chips: ONLY teammates (filtered by team), plus a "None" option
   document.getElementById('g-assist-chips').innerHTML =
     `<span class="chip sel-none" data-pid="" onclick="goalChipClick(this,'assist','${team}')">None</span>`+
-    sp.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'assist','${team}')">${p.name}</span>`).join('');
+    onTeam.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'assist','${team}')">${p.name}</span>`).join('');
   document.getElementById('g-assist-wrap').style.display='block';
 };
 
 window.goalChipClick = function(el,role,team) {
   const pid=el.dataset.pid;
   const container=role==='scorer'?'g-scorer-chips':'g-assist-chips';
+  const selClass={red:'sel-red',green:'sel-green',blue:'sel-blue',gold:'sel-gold'}[team]||'sel-green';
   document.querySelectorAll(`#${container} .chip`).forEach(c=>c.className='chip'+(c.dataset.pid===''?' sel-none':''));
-  el.className=`chip sel-${team==='red'?'red':'green'}`;
-  if (role==='scorer'){GS.scorerId=pid||null;document.getElementById('g-confirm').disabled=!pid;}
-  else               {GS.assistId=pid||null;}
+  el.className=`chip ${selClass}`;
+  if (role==='scorer'){
+    GS.scorerId=pid||null;
+    document.getElementById('g-confirm').disabled=!pid;
+    // exclude scorer from assist list (can't assist your own goal); reset assist pick
+    GS.assistId=null;
+    document.querySelectorAll('#g-assist-chips .chip').forEach(c=>{
+      c.className='chip'+(c.dataset.pid===''?' sel-none':'');
+      c.style.display=(c.dataset.pid===pid)?'none':'';
+    });
+  }
+  else {GS.assistId=pid||null;}
 };
 
 window.confirmGoal = async function() {
@@ -2441,6 +2452,8 @@ window.openEditMatch=function(sid){
     <div class="fg"><div class="flbl">Score</div>${scoreInputs}</div>
     ${extraHtml}`;
   openM('m-editmatch');
+  // initialize assist wrap visibility based on the current type (only relevant in live mode)
+  if(mode==='live' && window.emTypeChange) window.emTypeChange();
 };
 
 window.saveEditMatch=async function(){
@@ -2505,8 +2518,10 @@ window.saveEditMatch=async function(){
 
 window.deleteEventFromEdit=async function(sid,evId){
   if(!confirm('Delete this event?'))return;
-  await DB.remove(`sessions/${sid}/events/${evId}`);
+  // optimistic local update first
+  if(S.sessions[sid]?.events) delete S.sessions[sid].events[evId];
   openEditMatch(sid);
+  await DB.remove(`sessions/${sid}/events/${evId}`);
 };
 
 window.editEventFromEdit=function(sid,evId){
@@ -2591,21 +2606,22 @@ window.addEditEvent=async function(sid){
   } else {
     evData.playerId=emPickedPid;
   }
-  if(emEditEvId){
-    // edit mode: remove old, push corrected
-    await DB.remove(`sessions/${sid}/events/${emEditEvId}`);
-    if(S.sessions[sid]?.events) delete S.sessions[sid].events[emEditEvId];
-    emEditEvId=null;
-    const ref=await DB.push(`sessions/${sid}/events`,evData);
-    if(ref?.key&&S.sessions[sid]){if(!S.sessions[sid].events)S.sessions[sid].events={};S.sessions[sid].events[ref.key]=evData;}
-    toast('Event updated ✓');
-  } else {
-    const ref=await DB.push(`sessions/${sid}/events`,evData);
-    // fix 1: update local state immediately so score re-counts correctly
-    if(ref?.key&&S.sessions[sid]){if(!S.sessions[sid].events)S.sessions[sid].events={};S.sessions[sid].events[ref.key]=evData;}
+  // generate our own key so the local update is guaranteed before any async work
+  const newKey='ev_'+Date.now()+'_'+Math.random().toString(36).substring(2,10);
+  const oldKey=emEditEvId;
+  // OPTIMISTIC LOCAL UPDATE — happens before any await, so score re-counts immediately
+  if(S.sessions[sid]){
+    if(!S.sessions[sid].events) S.sessions[sid].events={};
+    if(oldKey) delete S.sessions[sid].events[oldKey];
+    S.sessions[sid].events[newKey]=evData;
   }
-  emPickedPid=null; emPickedTeam=null; emPickedAssistId=null;
+  const wasEdit=!!emEditEvId;
+  emEditEvId=null; emPickedPid=null; emPickedTeam=null; emPickedAssistId=null;
   openEditMatch(sid);
+  // sync to Firebase (async — listener will reconcile)
+  if(oldKey) await DB.remove(`sessions/${sid}/events/${oldKey}`);
+  await DB.set(`sessions/${sid}/events/${newKey}`,evData);
+  if(wasEdit) toast('Event updated ✓');
 };
 
 window.delSession=async function(sid){
