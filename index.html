@@ -1430,6 +1430,7 @@ function renderEvent(ev, sp, isAdmin) {
       icon='⚽'; name=pname(ev.scorerId)||'?';
       detail=(TEAM_EMOJI[ev.team]||'')+' '+(ev.team||'')+(ev.assistId?` · Assist: ${pname(ev.assistId)}`:'');
       break;
+    case 'assist':      icon='🤝'; name=pname(ev.playerId)||'?'; detail='Assist'; break;
     case 'save':        icon='🧤'; name=pname(ev.playerId)||'?'; detail='Regular Save'; break;
     case 'penaltySave': icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
     case 'yellowCard':  icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
@@ -2187,7 +2188,7 @@ window.submitPastGame=async function(){
 };
 
 // ─── EDIT MATCH (full) ───
-let emPickedTeam=null, emPickedPid=null;
+let emPickedTeam=null, emPickedPid=null, emEditEvId=null;
 
 function playerTeamInSession(sess, pid) {
   if (!sess.teams) return null;
@@ -2290,7 +2291,7 @@ window.openMatchSummary = function(sid) {
 
 window.openEditMatch=function(sid){
   const s=S.sessions[sid];if(!s)return;
-  editSessId=sid; emPickedTeam=null; emPickedPid=null;
+  editSessId=sid; emPickedTeam=null; emPickedPid=null; emEditEvId=null;
   const mode=s.mode||'live';
   document.getElementById('em-title').textContent=`✏️ Edit — ${fmtDate(s.date)}`;
   const teams=getActiveTeams(s);
@@ -2309,6 +2310,7 @@ window.openEditMatch=function(sid){
       let desc='';
       switch(ev.type){
         case 'goal':        desc=`⚽ ${pname(ev.scorerId)}${ev.assistId?' → '+pname(ev.assistId):''} (${TEAM_EMOJI[ev.team]||ev.team})`; break;
+        case 'assist':      desc=`🤝 ${pname(ev.playerId)} — Assist`; break;
         case 'save':        desc=`🧤 ${pname(ev.playerId)} — Save`; break;
         case 'penaltySave': desc=`🧤 ${pname(ev.playerId)} — Pen Save`; break;
         case 'yellowCard':  desc=`🟨 ${pname(ev.playerId)}`; break;
@@ -2316,7 +2318,10 @@ window.openEditMatch=function(sid){
       }
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:12px">${desc}</span>
-        <button class="icon-btn" onclick="deleteEventFromEdit('${sid}','${ev.id}')">🗑</button>
+        <div style="display:flex;gap:4px">
+          <button class="icon-btn" onclick="editEventFromEdit('${sid}','${ev.id}')">✏️</button>
+          <button class="icon-btn" onclick="deleteEventFromEdit('${sid}','${ev.id}')">🗑</button>
+        </div>
       </div>`;
     }).join('');
     const sp=sessPlayers(s);
@@ -2324,13 +2329,14 @@ window.openEditMatch=function(sid){
     const teamBtns=teams.map(t=>`<button class="tsel-btn" id="emgt-${t}" onclick="emPickTeam('${t}')">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
     extraHtml=`
       <div class="fg">
-        <div class="flbl">Events <span style="font-weight:400;color:var(--muted)">(tap 🗑 to remove)</span></div>
+        <div class="flbl">Events <span style="font-weight:400;color:var(--muted)">(✏️ edit · 🗑 remove)</span></div>
         ${evs.length===0?'<div style="color:var(--muted);font-size:12px;padding:6px 0">No events</div>':evRows}
       </div>
       <div class="fg">
-        <div class="flbl">Add Correction</div>
+        <div class="flbl" id="em-section-lbl">Add Correction</div>
         <select class="fsel" id="em-ev-type" style="margin-bottom:10px">
           <option value="goal">⚽ Goal</option>
+          <option value="assist">🤝 Assist</option>
           <option value="save">🧤 Save</option>
           <option value="penaltySave">🧤 Penalty Save</option>
           <option value="yellowCard">🟨 Yellow Card</option>
@@ -2342,7 +2348,7 @@ window.openEditMatch=function(sid){
         </div>
         <div class="flbl">Player</div>
         <div class="chips" id="em-player-chips">${playerChips}</div>
-        <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addEditEvent('${sid}')">+ Add Event</button>
+        <button id="em-add-btn" class="btn btn-ghost btn-sm" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addEditEvent('${sid}')">+ Add Event</button>
       </div>`;
   } else if(mode==='post'){
     const sp=sessPlayers(s);
@@ -2497,6 +2503,33 @@ window.deleteEventFromEdit=async function(sid,evId){
   await DB.remove(`sessions/${sid}/events/${evId}`);
   openEditMatch(sid);
 };
+
+window.editEventFromEdit=function(sid,evId){
+  const s=S.sessions[sid];
+  const ev=sessEvents(s).find(e=>e.id===evId);
+  if(!ev)return;
+  emEditEvId=evId;
+  // pre-fill type
+  const typeEl=document.getElementById('em-ev-type');
+  if(typeEl) typeEl.value=ev.type;
+  // pre-fill player chip
+  const pid=ev.scorerId||ev.playerId;
+  if(pid){
+    document.querySelectorAll('#em-player-chips .chip').forEach(c=>{
+      if(c.dataset.pid===pid){c.className='chip sel-green';emPickedPid=pid;}
+      else c.className='chip';
+    });
+  }
+  // pre-fill team if goal
+  if(ev.type==='goal'&&ev.team) window.emPickTeam(ev.team);
+  // update label + button
+  const lbl=document.getElementById('em-section-lbl');
+  if(lbl) lbl.textContent='Edit Event';
+  const btn=document.getElementById('em-add-btn');
+  if(btn) btn.textContent='💾 Update Event';
+  // scroll form into view
+  if(typeEl) typeEl.scrollIntoView({behavior:'smooth',block:'start'});
+};
 window.emPickTeam=function(t){
   emPickedTeam=t;
   document.querySelectorAll('[id^="emgt-"]').forEach(b=>b.className='tsel-btn');
@@ -2516,7 +2549,15 @@ window.addEditEvent=async function(sid){
   } else {
     evData.playerId=emPickedPid;
   }
-  await DB.push(`sessions/${sid}/events`,evData);
+  if(emEditEvId){
+    // edit mode: remove old event, write corrected one
+    await DB.remove(`sessions/${sid}/events/${emEditEvId}`);
+    await DB.push(`sessions/${sid}/events`,evData);
+    emEditEvId=null;
+    toast('Event updated ✓');
+  } else {
+    await DB.push(`sessions/${sid}/events`,evData);
+  }
   emPickedPid=null; emPickedTeam=null;
   openEditMatch(sid);
 };
