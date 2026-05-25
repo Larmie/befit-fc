@@ -2459,6 +2459,33 @@ window.openEditMatch=function(sid){
 window.saveEditMatch=async function(){
   const s=S.sessions[editSessId];if(!s)return;
   const mode=s.mode||'live';
+
+  // If the user filled out the Add Correction form but didn't click "+ Add Event",
+  // commit that pending event as part of Save. Match the user's intent.
+  if(mode==='live' && emPickedPid){
+    const type=document.getElementById('em-ev-type')?.value;
+    if(type){
+      const evData={type,timestamp:Date.now()};
+      if(type==='goal'){
+        if(!emPickedTeam){toast('Pick a team for the pending goal correction',true);return;}
+        evData.team=emPickedTeam; evData.scorerId=emPickedPid;
+        if(emPickedAssistId) evData.assistId=emPickedAssistId;
+      } else {
+        evData.playerId=emPickedPid;
+      }
+      const newKey='ev_'+Date.now()+'_'+Math.random().toString(36).substring(2,10);
+      const oldKey=emEditEvId;
+      if(S.sessions[editSessId]){
+        if(!S.sessions[editSessId].events) S.sessions[editSessId].events={};
+        if(oldKey) delete S.sessions[editSessId].events[oldKey];
+        S.sessions[editSessId].events[newKey]=evData;
+      }
+      if(oldKey) await DB.remove(`sessions/${editSessId}/events/${oldKey}`);
+      await DB.set(`sessions/${editSessId}/events/${newKey}`,evData);
+      emEditEvId=null; emPickedPid=null; emPickedTeam=null; emPickedAssistId=null;
+    }
+  }
+
   const teams=getActiveTeams(s);
   const goals={};
   teams.forEach(t=>{const v=parseInt(document.getElementById('em-g-'+t)?.value);goals[t]=isNaN(v)?getTeamGoals(s,t):v;});
