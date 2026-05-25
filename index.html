@@ -2597,12 +2597,37 @@ window.emTypeChange=function(){
   const type=document.getElementById('em-ev-type')?.value;
   const wrap=document.getElementById('em-assist-wrap');
   if(wrap) wrap.style.display=type==='goal'?'':'none';
-  if(type!=='goal'){ emPickedAssistId=null; document.querySelectorAll('#em-assist-chips .chip').forEach(c=>c.className='chip'); }
+  if(type!=='goal'){
+    emPickedAssistId=null;
+    document.querySelectorAll('#em-assist-chips .chip').forEach(c=>c.className='chip');
+    // non-goal events: scorer/player can be anyone — show all chips
+    document.querySelectorAll('#em-player-chips .chip').forEach(c=>{c.style.display='';});
+  } else if(emPickedTeam){
+    // goal type with a team already picked: re-apply team filter
+    window.emPickTeam(emPickedTeam);
+  }
 };
 window.emPickTeam=function(t){
   emPickedTeam=t;
   document.querySelectorAll('[id^="emgt-"]').forEach(b=>b.className='tsel-btn');
   const el=document.getElementById('emgt-'+t);if(el)el.className='tsel-btn '+t+'-sel';
+  // when adding a goal, filter scorer chips and assist chips to this team only
+  const type=document.getElementById('em-ev-type')?.value;
+  if(type==='goal'){
+    // scorer chips: only this team
+    document.querySelectorAll('#em-player-chips .chip').forEach(c=>{
+      const onTeam=c.dataset.team===t;
+      c.style.display=onTeam?'':'none';
+      if(!onTeam && c.classList.contains('sel-green')){ c.className='chip'; emPickedPid=null; }
+    });
+    // assist chips: only this team, exclude any selected scorer
+    document.querySelectorAll('#em-assist-chips .chip').forEach(c=>{
+      const onTeam=c.dataset.team===t;
+      const notScorer=c.dataset.pid!==emPickedPid;
+      c.style.display=(onTeam&&notScorer)?'':'none';
+      if((!onTeam||!notScorer) && c.classList.contains('sel-green')){ c.className='chip'; emPickedAssistId=null; }
+    });
+  }
 };
 window.emChipClick=function(el){
   document.querySelectorAll('#em-player-chips .chip').forEach(c=>c.className='chip');
