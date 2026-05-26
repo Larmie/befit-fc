@@ -2646,10 +2646,11 @@ window.openEditMatch=function(sid){
         case 'halfTime':    desc=`⏱️ Half Time`; break;
       }
       const minTag = ev.min != null ? `<span class="ev-min" style="margin-right:6px">${ev.min}'</span>` : '';
+      const noEdit = ev.type === 'halfTime' || ev.type === 'ownGoal'; // type dropdown doesn't support these
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:12px;display:flex;align-items:center">${minTag}${desc}</span>
         <div style="display:flex;gap:4px">
-          ${ev.type==='halfTime' ? '' : `<button class="icon-btn" onclick="editEventFromEdit('${sid}','${ev.id}')">✏️</button>`}
+          ${noEdit ? '' : `<button class="icon-btn" onclick="editEventFromEdit('${sid}','${ev.id}')">✏️</button>`}
           <button class="icon-btn" onclick="deleteEventFromEdit('${sid}','${ev.id}')">🗑</button>
         </div>
       </div>`;
