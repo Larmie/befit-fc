@@ -234,18 +234,99 @@
 
     /* ── EVENT LOG ── */
     .event-log { list-style: none; }
-    .ev-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(30,58,95,0.6); }
+    .ev-item { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(30,58,95,0.6); }
     .ev-item:last-child { border-bottom: none; }
-    .ev-icon { font-size: 17px; min-width: 26px; text-align: center; }
-    .ev-body { flex: 1; }
-    .ev-body .ev-name { font-size: 13px; font-weight: 700; }
-    .ev-body .ev-detail { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .ev-icon { font-size: 18px; min-width: 28px; text-align: center; }
+    .ev-body { flex: 1; display: flex; align-items: center; gap: 8px; }
+    .ev-text { flex: 1; }
+    .ev-body .ev-name { font-size: 14px; font-weight: 700; }
+    .ev-body .ev-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .ev-min {
+      font-size: 11px; font-weight: 800; color: var(--green);
+      background: rgba(0,214,143,0.10); border: 1px solid rgba(0,214,143,0.25);
+      padding: 2px 7px; border-radius: 10px; font-variant-numeric: tabular-nums;
+      flex-shrink: 0; letter-spacing: 0.3px;
+    }
     .ev-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px 6px; }
+    .ev-item.ev-ht { background: rgba(255,212,59,0.04); border-radius: 10px; padding: 11px 12px; margin: 4px 0; border: 1px dashed rgba(255,212,59,0.3); }
+    .ev-item.ev-ht .ev-name { color: #ffd43b; letter-spacing: 1px; text-transform: uppercase; font-size: 12px; font-weight: 900; }
+    .ev-item.ev-og .ev-name { color: #ff9a3c; }
+
+    /* ── LIVE TIMER ── */
+    .timer-bar {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px;
+    }
+    .timer-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 14px;
+      background: rgba(0,214,143,0.10); border: 1px solid rgba(0,214,143,0.28);
+      font-weight: 900; font-size: 15px; color: var(--green);
+      font-variant-numeric: tabular-nums; letter-spacing: 0.5px;
+      box-shadow: 0 0 18px rgba(0,214,143,0.10);
+    }
+    .timer-pill .tp-clock { font-size: 18px; font-weight: 900; }
+    .timer-pill.is-idle  { color: var(--muted); background: rgba(127,168,201,0.08); border-color: var(--border); box-shadow: none; }
+    .timer-pill.is-paused { color: #ffd43b; background: rgba(255,212,59,0.10); border-color: rgba(255,212,59,0.32); box-shadow: 0 0 18px rgba(255,212,59,0.10); }
+    .timer-pill.is-ended { color: var(--muted); background: rgba(127,168,201,0.06); border-color: var(--border); box-shadow: none; }
+    .timer-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blink 1.4s infinite; }
+    .timer-pill.is-idle .timer-dot, .timer-pill.is-paused .timer-dot, .timer-pill.is-ended .timer-dot { animation: none; }
+    .timer-ctrl {
+      flex: 1; padding: 10px 14px; border-radius: 14px;
+      border: 1px solid var(--border); background: rgba(23,47,82,0.4);
+      color: var(--text); font-weight: 900; font-size: 13px; letter-spacing: 0.8px;
+      cursor: pointer; transition: all 0.12s; text-transform: uppercase;
+    }
+    .timer-ctrl:active { transform: scale(0.97); }
+    .timer-ctrl.is-kickoff {
+      background: linear-gradient(135deg, #00e69a 0%, #009d6e 100%);
+      color: #051020; border-color: rgba(0,255,170,0.35);
+      box-shadow: 0 4px 18px rgba(0,214,143,0.32);
+    }
+    .timer-ctrl.is-ht {
+      background: rgba(255,212,59,0.10); color: #ffd43b;
+      border-color: rgba(255,212,59,0.32);
+    }
+    .timer-ctrl.is-resume {
+      background: linear-gradient(135deg, #00e69a 0%, #009d6e 100%);
+      color: #051020; border-color: rgba(0,255,170,0.35);
+      box-shadow: 0 4px 14px rgba(0,214,143,0.25);
+    }
+    .timer-ctrl.is-pause {
+      background: rgba(74,144,217,0.10); color: #5aa5ee;
+      border-color: rgba(74,144,217,0.32);
+    }
+    .timer-ctrl.is-ended { display: none; }
+
+    /* full-width kickoff hero (when timer idle) */
+    .kickoff-hero {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 18px; border-radius: 16px; margin-bottom: 14px;
+      background: linear-gradient(135deg, #00e69a 0%, #009d6e 100%);
+      color: #051020; font-weight: 900; font-size: 16px; letter-spacing: 1.4px;
+      text-transform: uppercase; cursor: pointer; border: none;
+      box-shadow: 0 8px 32px rgba(0,214,143,0.32), inset 0 1px 0 rgba(255,255,255,0.3);
+      width: 100%;
+    }
+    .kickoff-hero:active { transform: scale(0.97); }
+    .kickoff-hero svg { width: 26px; height: 26px; }
+
+    /* ── PITCH BACKDROP ── */
+    #tab-live.has-pitch { position: relative; }
+    .pitch-bg {
+      position: absolute; inset: 0;
+      pointer-events: none; z-index: 0;
+      opacity: 0.05; overflow: hidden;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.1) 100%);
+      -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.1) 100%);
+    }
+    .pitch-bg svg { width: 100%; height: 100%; display: block; }
+    #tab-live > #live-root { position: relative; z-index: 1; }
 
     /* ── PLAYER TABLE ── */
     .ptable { width: 100%; border-collapse: collapse; font-size: 12px; }
     .ptable th { text-align: left; padding: 6px 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
-    .ptable td { padding: 9px 5px; border-bottom: 1px solid rgba(30,58,95,0.5); }
+    .ptable td { padding: 10px 5px; border-bottom: 1px solid rgba(30,58,95,0.5); font-size: 13px; }
     .ptable tr:last-child td { border-bottom: none; }
     .ptable .pts { font-weight: 800; color: var(--green); }
     .ptable .rk { color: var(--muted); font-size: 11px; }
@@ -301,7 +382,7 @@
     }
     .pgrid-card:active { border-color: var(--green); }
     .viewer-card { border-color: rgba(0,214,143,0.4) !important; box-shadow: 0 0 16px rgba(0,214,143,0.12); }
-    .pgrid-name  { font-size: 13px; font-weight: 800; }
+    .pgrid-name  { font-size: 14px; font-weight: 800; }
     .pgrid-rank  { font-size: 10px; color: var(--muted); font-weight: 700; }
     .pgrid-tags  { display: flex; gap: 4px; flex-wrap: wrap; }
     .pgrid-statrow { display: flex; justify-content: space-between; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 8px; }
@@ -362,7 +443,7 @@
 
     /* ── PLAYER CHIPS ── */
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip { padding: 7px 13px; border-radius: 20px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.12s; }
+    .chip { padding: 9px 14px; border-radius: 20px; border: 1px solid var(--border); background: rgba(23,47,82,0.4); color: var(--text); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.12s; }
     .chip.sel-green { border-color: var(--green); background: rgba(0,214,143,0.12); color: var(--green); }
     .chip.sel-red   { border-color: var(--red);   background: rgba(255,71,87,0.12);  color: #ff7b7b; }
     .chip.sel-none  { border-color: var(--muted);  background: rgba(127,168,201,0.08); color: var(--muted); }
@@ -386,7 +467,7 @@
     .ng-player-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
     .ng-player-row:last-child { border-bottom: none; }
     .ng-top { display: flex; align-items: center; gap: 8px; }
-    .ng-top label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; }
+    .ng-top label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; cursor: pointer; flex: 1; }
     .ng-cb { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
     .ng-sels { display: none; margin-top: 8px; display: none; gap: 8px; }
     .ng-sels.show { display: flex; }
@@ -396,7 +477,7 @@
     .lpg-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
     .lpg-row:last-child { border-bottom: none; }
     .lpg-top { display: flex; align-items: center; gap: 8px; }
-    .lpg-top label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; flex: 1; }
+    .lpg-top label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; cursor: pointer; flex: 1; }
     .lpg-stats { display: none; margin-top: 10px; }
     .lpg-stats.show { display: block; }
     .lpg-stat-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
@@ -479,7 +560,7 @@
     }
     .ms-row:last-child { border-bottom: none; }
     .ms-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
-    .ms-name { font-weight: 700; flex: 1; }
+    .ms-name { font-weight: 700; flex: 1; font-size: 14px; }
     .ms-count { font-size: 12px; color: var(--green); font-weight: 800; }
     .ms-empty { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
 
@@ -645,7 +726,14 @@
     <div class="mhandle"></div>
     <div class="mtitle">⚽ Log Goal</div>
     <div class="fg">
-      <div class="flbl">Which team scored?</div>
+      <div class="flbl">Goal type</div>
+      <div class="save-type-btns">
+        <button class="stbtn sel" id="gt-reg" onclick="pickGoalType(false)">⚽ Goal</button>
+        <button class="stbtn" id="gt-og" onclick="pickGoalType(true)">😬 Own Goal</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl" id="goal-team-lbl">Which team scored?</div>
       <div class="team-btns" id="goal-team-btns"></div>
     </div>
     <div class="fg" id="g-scorer-wrap" style="display:none">
@@ -653,7 +741,7 @@
       <div class="chips" id="g-scorer-chips"></div>
     </div>
     <div class="fg" id="g-assist-wrap" style="display:none">
-      <div class="flbl">Assist? (optional)</div>
+      <div class="flbl" id="g-assist-lbl">Assist? (optional · teammates only)</div>
       <div class="chips" id="g-assist-chips"></div>
     </div>
     <div class="mfooter">
@@ -1106,8 +1194,39 @@ function sessEvents(sess) {
 }
 
 function goalsFor(sess, team) {
-  return sessEvents(sess).filter(e => e.type==='goal' && e.team===team).length;
+  return sessEvents(sess).filter(e =>
+    (e.type==='goal' && e.team===team) ||
+    (e.type==='ownGoal' && e.benefitTeam===team)
+  ).length;
 }
+
+// ─── MATCH TIMER ───
+function getMatchMinute(sess) {
+  const t = sess?.timer;
+  if (!t || !t.startedAt || t.status === 'idle') return null;
+  let ref;
+  if (t.status === 'ended')      ref = t.endedAt || Date.now();
+  else if (t.status === 'paused') ref = t.pausedAt || Date.now();
+  else                            ref = Date.now();
+  const elapsed = ref - t.startedAt - (t.pausedTotal || 0);
+  return Math.max(0, Math.floor(elapsed / 60000));
+}
+function timerStatus(sess) { return sess?.timer?.status || 'idle'; }
+function isTimerActive(sess) { return ['running','paused'].includes(timerStatus(sess)); }
+let _timerInterval = null;
+function startTimerTick() {
+  if (_timerInterval) return;
+  _timerInterval = setInterval(() => {
+    const sess = activeSess();
+    if (!sess || timerStatus(sess) !== 'running') return;
+    const pillClock = document.getElementById('tp-clock');
+    if (pillClock) {
+      const m = getMatchMinute(sess);
+      if (m != null) pillClock.textContent = m + "'";
+    }
+  }, 1000);
+}
+function stopTimerTick() { if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } }
 
 function getTeamGoals(sess, team) {
   const mode = sess.mode || 'live';
@@ -1156,12 +1275,16 @@ function calcStats(pid) {
 
     if (mode === 'live') {
       const evs = sessEvents(sess);
-      const myGoals  = evs.filter(e => e.type==='goal' && e.scorerId===pid);
-      const myAssist = evs.filter(e => e.type==='goal' && e.assistId===pid);
-      const myYellow = evs.filter(e => e.type==='yellowCard' && e.playerId===pid);
-      const myRed    = evs.filter(e => e.type==='redCard'    && e.playerId===pid);
-      g += myGoals.length;  pts += myGoals.length  * rules.goal;
-      a += myAssist.length; pts += myAssist.length * rules.assist;
+      const myGoals    = evs.filter(e => e.type==='goal' && e.scorerId===pid);
+      const myAssist   = evs.filter(e => e.type==='goal' && e.assistId===pid);
+      const myOG       = evs.filter(e => e.type==='ownGoal' && e.scorerId===pid);
+      const myOGAssist = evs.filter(e => e.type==='ownGoal' && e.assistId===pid);
+      const myYellow   = evs.filter(e => e.type==='yellowCard' && e.playerId===pid);
+      const myRed      = evs.filter(e => e.type==='redCard'    && e.playerId===pid);
+      g += myGoals.length;     pts += myGoals.length     * rules.goal;
+      a += myAssist.length;    pts += myAssist.length    * rules.assist;
+      a += myOGAssist.length;  pts += myOGAssist.length  * rules.assist;
+      pts += myOG.length * -2; // own goal penalty (FPL convention)
       y += myYellow.length; pts += myYellow.length * rules.yellow;
       r += myRed.length;    pts += myRed.length    * rules.red;
       if (sp.pos === 'GK') {
@@ -1170,7 +1293,10 @@ function calcStats(pid) {
         sv += mySaves.length;
         pts += Math.floor(mySaves.length / rules.savePer);
         pts += myPenSv.length * rules.penaltySave;
-        const conceded = evs.filter(e => e.type==='goal' && e.team!==sp.team).length;
+        const conceded = evs.filter(e =>
+          (e.type==='goal' && e.team!==sp.team) ||
+          (e.type==='ownGoal' && e.benefitTeam!==sp.team)
+        ).length;
         pts -= Math.floor(conceded / rules.concedePer);
       }
     } else if (mode === 'post') {
@@ -1340,9 +1466,19 @@ window.liveLoginAndStart = function() {
 };
 
 function renderLive() {
+  const liveTab = document.getElementById('tab-live');
+  // ensure pitch backdrop element exists
+  if (liveTab && !liveTab.querySelector('.pitch-bg')) {
+    const pb = document.createElement('div');
+    pb.className = 'pitch-bg';
+    pb.innerHTML = pitchSVG();
+    liveTab.insertBefore(pb, liveTab.firstChild);
+    liveTab.classList.add('has-pitch');
+  }
   const el = document.getElementById('live-root');
   const sess = activeSess();
   if (!sess) {
+    stopTimerTick();
     el.innerHTML = `
       <div id="live-start-wrap" style="padding:0 4px;margin-bottom:16px">
         <div style="text-align:center;margin-bottom:14px">
@@ -1374,16 +1510,6 @@ function renderLive() {
           <button class="action-btn ab-yellow"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
           <button class="action-btn ab-red"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
         </div>
-        <div class="card">
-          <div class="sh">
-            <div class="card-title" style="margin:0">Match Events</div>
-          </div>
-          <ul class="event-log">
-            <li class="ev-item"><span class="ev-icon">⚽</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">🔴 Red</div></div></li>
-            <li class="ev-item"><span class="ev-icon">🧤</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">Regular Save</div></div></li>
-            <li class="ev-item"><span class="ev-icon">🟨</span><div class="ev-body"><div class="ev-name">Player Name</div><div class="ev-detail">Yellow Card</div></div></li>
-          </ul>
-        </div>
       </div>`;
     return;
   }
@@ -1397,6 +1523,45 @@ function renderLive() {
       <div class="s-goals" style="color:${TEAM_COLOR[t]}">${goalsFor(sess,t)}</div>
     </div>`).join('<div class="score-divider">—</div>');
 
+  // ── Timer bar ──
+  const tStatus = timerStatus(sess);
+  const tMin = getMatchMinute(sess);
+  let timerBarHtml = '';
+  if (tStatus === 'idle') {
+    timerBarHtml = adm ? `<button class="kickoff-hero" onclick="kickOff()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+        Kick Off
+      </button>` : '';
+  } else {
+    const pillCls = tStatus === 'running' ? '' : tStatus === 'paused' ? 'is-paused' : 'is-ended';
+    const clockText = tStatus === 'paused'
+      ? (sess.timer?.pauseReason === 'halftime' ? `HT ${tMin ?? 0}'` : `Paused ${tMin ?? 0}'`)
+      : tStatus === 'ended' ? `FT ${tMin ?? 0}'` : `${tMin ?? 0}'`;
+    let ctrlHtml = '';
+    if (adm) {
+      if (tStatus === 'running') {
+        if (!sess.timer?.htLogged) {
+          ctrlHtml = `<button class="timer-ctrl is-ht" onclick="halfTime()">⏸ Half Time</button>`;
+        } else {
+          ctrlHtml = `<button class="timer-ctrl is-pause" onclick="pauseMatch()">⏸ Pause</button>`;
+        }
+      } else if (tStatus === 'paused') {
+        ctrlHtml = `<button class="timer-ctrl is-resume" onclick="resumeMatch()">▶ Resume</button>`;
+      }
+    }
+    timerBarHtml = `
+      <div class="timer-bar">
+        <div class="timer-pill ${pillCls}">
+          <span class="timer-dot"></span>
+          <span class="tp-clock" id="tp-clock">${clockText}</span>
+        </div>
+        ${ctrlHtml}
+      </div>`;
+  }
+
+  // start/stop the live tick
+  if (tStatus === 'running') startTimerTick(); else stopTimerTick();
+
   el.innerHTML = `
     <div class="live-banner">
       <div class="live-left"><div class="live-dot"></div><strong>LIVE</strong> · ${fmtDate(sess.date)}</div>
@@ -1405,6 +1570,7 @@ function renderLive() {
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openSubOn()">➕ Add Player</button>
       <button class="btn btn-danger btn-sm" style="flex:1" onclick="openEndGame()">🏁 End Game</button>
     </div>`:''}
+    ${timerBarHtml}
     <div class="score-wrap">${scoreHtml}</div>
     <div class="action-grid">
       <button class="action-btn ab-goal"   onclick="openGoal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,8 15,10.2 13.8,13.8 10.2,13.8 9,10.2" fill="currentColor"/><path d="M12 8V4M15 10.2L18.5 8.5M13.8 13.8L16.2 17M10.2 13.8L7.8 17M9 10.2L5.5 8.5"/></svg>GOAL</button>
@@ -1422,26 +1588,54 @@ function renderLive() {
     </div>`;
 }
 
+// Pitch backdrop SVG (subtle, behind live page content)
+function pitchSVG() {
+  return `<svg viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="200" height="300" fill="none"/>
+    <rect x="6" y="6" width="188" height="288" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <line x1="6" y1="150" x2="194" y2="150" stroke="#00d68f" stroke-width="0.8"/>
+    <circle cx="100" cy="150" r="22" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <circle cx="100" cy="150" r="1.5" fill="#00d68f"/>
+    <rect x="50" y="6" width="100" height="34" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <rect x="74" y="6" width="52" height="14" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <path d="M 75 40 A 25 25 0 0 0 125 40" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <rect x="50" y="260" width="100" height="34" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <rect x="74" y="280" width="52" height="14" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <path d="M 75 260 A 25 25 0 0 1 125 260" fill="none" stroke="#00d68f" stroke-width="0.8"/>
+    <circle cx="100" cy="32" r="1.5" fill="#00d68f"/>
+    <circle cx="100" cy="268" r="1.5" fill="#00d68f"/>
+  </svg>`;
+}
+
 function renderEvent(ev, sp, isAdmin) {
   const pname = id => { if(!id) return null; const p=sp.find(x=>x.pid===id); return p?.name||S.players[id]?.name||'?'; };
-  let icon='', name='', detail='';
+  let icon='', name='', detail='', extraClass='';
   switch(ev.type) {
     case 'goal':
       icon='⚽'; name=pname(ev.scorerId)||'?';
       detail=(TEAM_EMOJI[ev.team]||'')+' '+(ev.team||'')+(ev.assistId?` · Assist: ${pname(ev.assistId)}`:'');
+      break;
+    case 'ownGoal':
+      icon='😬'; name=pname(ev.scorerId)||'?'; extraClass='ev-og';
+      detail=`Own Goal — counts for ${TEAM_EMOJI[ev.benefitTeam]||''} ${ev.benefitTeam||''}`+(ev.assistId?` · Assist: ${pname(ev.assistId)}`:'');
       break;
     case 'assist':      icon='🤝'; name=pname(ev.playerId)||'?'; detail='Assist'; break;
     case 'save':        icon='🧤'; name=pname(ev.playerId)||'?'; detail='Regular Save'; break;
     case 'penaltySave': icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
     case 'yellowCard':  icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
     case 'redCard':     icon='🟥'; name=pname(ev.playerId)||'?'; detail='Red Card'; break;
+    case 'halfTime':    icon='⏱️'; name='Half Time'; detail=`Break at ${ev.min ?? 0}'`; extraClass='ev-ht'; break;
   }
+  const minBadge = (ev.min != null) ? `<span class="ev-min">${ev.min}'</span>` : '';
   return `
-    <li class="ev-item">
+    <li class="ev-item ${extraClass}">
       <span class="ev-icon">${icon}</span>
       <div class="ev-body">
-        <div class="ev-name">${name}</div>
-        <div class="ev-detail">${detail}</div>
+        <div class="ev-text">
+          <div class="ev-name">${name}</div>
+          <div class="ev-detail">${detail}</div>
+        </div>
+        ${minBadge}
       </div>
       ${isAdmin?`<button class="ev-del" onclick="deleteEvent('${ev.id}')">🗑</button>`:''}
     </li>`;
@@ -1840,18 +2034,99 @@ window.cleanMay24Data = async function() {
   toast(`✓ Deleted ${toDelete.length} May 24 test session(s)`);
 };
 
+// ─── MATCH TIMER ACTIONS ───
+window.kickOff = async function() {
+  const sess = activeSess(); if (!sess) return;
+  if (!S.admin) return toast('Admin only',true);
+  if (timerStatus(sess) !== 'idle') return;
+  const now = Date.now();
+  const timer = { status:'running', startedAt:now, pausedAt:null, pausedTotal:0, htLogged:false, endedAt:null };
+  // optimistic local
+  if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = timer;
+  renderLive();
+  await DB.set(`sessions/${S.activeId}/timer`, timer);
+  toast('⚽ Kick off!');
+};
+window.halfTime = async function() {
+  const sess = activeSess(); if (!sess) return;
+  if (!S.admin) return toast('Admin only',true);
+  if (timerStatus(sess) !== 'running') return;
+  const min = getMatchMinute(sess) ?? 0;
+  const now = Date.now();
+  const t = { ...(sess.timer||{}), status:'paused', pausedAt:now, htLogged:true, pauseReason:'halftime' };
+  // optimistic
+  if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
+  // log HT event locally + remote
+  const newKey = 'ev_'+Date.now()+'_'+Math.random().toString(36).substring(2,10);
+  const evData = { type:'halfTime', timestamp:now, min };
+  if (S.sessions[S.activeId]) {
+    if (!S.sessions[S.activeId].events) S.sessions[S.activeId].events = {};
+    S.sessions[S.activeId].events[newKey] = evData;
+  }
+  renderLive();
+  await DB.set(`sessions/${S.activeId}/timer`, t);
+  await DB.set(`sessions/${S.activeId}/events/${newKey}`, evData);
+  toast('⏱️ Half Time');
+};
+window.pauseMatch = async function() {
+  const sess = activeSess(); if (!sess) return;
+  if (!S.admin) return toast('Admin only',true);
+  if (timerStatus(sess) !== 'running') return;
+  const now = Date.now();
+  const t = { ...(sess.timer||{}), status:'paused', pausedAt:now, pauseReason:'pause' };
+  if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
+  renderLive();
+  await DB.set(`sessions/${S.activeId}/timer`, t);
+};
+window.resumeMatch = async function() {
+  const sess = activeSess(); if (!sess) return;
+  if (!S.admin) return toast('Admin only',true);
+  if (timerStatus(sess) !== 'paused') return;
+  const now = Date.now();
+  const pauseDuration = now - (sess.timer.pausedAt || now);
+  const t = { ...(sess.timer||{}), status:'running', pausedAt:null, pauseReason:null, pausedTotal:(sess.timer.pausedTotal||0)+pauseDuration };
+  if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
+  renderLive();
+  await DB.set(`sessions/${S.activeId}/timer`, t);
+  toast('▶ Resumed');
+};
+
 // ─── GOAL MODAL ───
 window.openGoal = function() {
   if (!activeSess()) return toast('No active game',true);
-  GS = { team:null, scorerId:null, assistId:null };
+  GS = { team:null, scorerId:null, assistId:null, isOG:false };
   const sess = activeSess();
   const teams = Object.keys(sess.teams||{});
+  // reset OG toggle UI
+  const gtRegEl = document.getElementById('gt-reg');
+  const gtOgEl  = document.getElementById('gt-og');
+  if (gtRegEl) gtRegEl.className = 'stbtn sel';
+  if (gtOgEl)  gtOgEl.className  = 'stbtn';
+  document.getElementById('goal-team-lbl').textContent = 'Which team scored?';
   document.getElementById('goal-team-btns').innerHTML =
     teams.map(t=>`<button class="tsel-btn" id="gt-${t}" onclick="goalPickTeam('${t}')">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('');
   document.getElementById('g-scorer-wrap').style.display='none';
   document.getElementById('g-assist-wrap').style.display='none';
   document.getElementById('g-confirm').disabled=true;
+  document.getElementById('g-confirm').textContent='Log Goal';
   openM('m-goal');
+};
+
+window.pickGoalType = function(isOG) {
+  GS.isOG = isOG;
+  GS.team = null; GS.scorerId = null; GS.assistId = null;
+  document.getElementById('gt-reg').className = 'stbtn'+(isOG?'':' sel');
+  document.getElementById('gt-og').className  = 'stbtn'+(isOG?' red-sel':'');
+  document.getElementById('goal-team-lbl').textContent = isOG
+    ? 'Whose player scored the OG? (goal counts for the other team)'
+    : 'Which team scored?';
+  // clear scorer & assist
+  document.getElementById('g-scorer-wrap').style.display='none';
+  document.getElementById('g-assist-wrap').style.display='none';
+  document.getElementById('g-confirm').disabled = true;
+  document.getElementById('g-confirm').textContent = isOG ? 'Log Own Goal' : 'Log Goal';
+  // reset team chips selection
+  document.querySelectorAll('#goal-team-btns .tsel-btn').forEach(b=>b.className='tsel-btn');
 };
 
 window.goalPickTeam = function(team) {
@@ -1862,14 +2137,22 @@ window.goalPickTeam = function(team) {
   });
   const sess=activeSess(), sp=sessPlayers(sess);
   const onTeam=sp.filter(p=>p.team===team);
+  const otherTeams=sp.filter(p=>p.team!==team);
   document.getElementById('g-scorer-chips').innerHTML =
     onTeam.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'scorer','${team}')">${p.name} ${posTag(p.pos)}</span>`).join('');
   document.getElementById('g-scorer-wrap').style.display='block';
-  // assist chips: ONLY teammates (filtered by team), plus a "None" option
+  // assist chips:
+  //   regular goal → teammates of the scorer (same team), can be "None"
+  //   own goal     → players from the OPPOSING team (the team that benefited), can be "None"
+  const assistPool = GS.isOG ? otherTeams : onTeam;
+  const assistTeam = GS.isOG ? (otherTeams[0]?.team || team) : team;
   document.getElementById('g-assist-chips').innerHTML =
-    `<span class="chip sel-none" data-pid="" onclick="goalChipClick(this,'assist','${team}')">None</span>`+
-    onTeam.map(p=>`<span class="chip" data-pid="${p.pid}" onclick="goalChipClick(this,'assist','${team}')">${p.name}</span>`).join('');
+    `<span class="chip sel-none" data-pid="" onclick="goalChipClick(this,'assist','${assistTeam}')">None</span>`+
+    assistPool.map(p=>`<span class="chip" data-pid="${p.pid}" data-team="${p.team}" onclick="goalChipClick(this,'assist','${p.team}')">${p.name}</span>`).join('');
   document.getElementById('g-assist-wrap').style.display='block';
+  // update assist label
+  const lbl = document.getElementById('g-assist-lbl');
+  if (lbl) lbl.textContent = GS.isOG ? 'Assist? (opposing team forced the OG)' : 'Assist? (optional · teammates only)';
 };
 
 window.goalChipClick = function(el,role,team) {
@@ -1893,7 +2176,25 @@ window.goalChipClick = function(el,role,team) {
 
 window.confirmGoal = async function() {
   if (!GS.scorerId||!GS.team) return;
-  await DB.push(`sessions/${S.activeId}/events`,{type:'goal',team:GS.team,scorerId:GS.scorerId,assistId:GS.assistId||null,timestamp:Date.now()});
+  const sess = activeSess();
+  const min = getMatchMinute(sess);
+  if (GS.isOG) {
+    // figure out the benefiting team — the team that didn't have the OG scored on them
+    const allTeams = Object.keys(sess.teams||{});
+    const benefitTeam = allTeams.find(t=>t!==GS.team) || allTeams[0];
+    const evData = {
+      type:'ownGoal', team:GS.team, benefitTeam,
+      scorerId:GS.scorerId, assistId:GS.assistId||null,
+      timestamp:Date.now()
+    };
+    if (min != null) evData.min = min;
+    await DB.push(`sessions/${S.activeId}/events`,evData);
+    closeM('m-goal'); toast('😬 Own goal logged');
+    return;
+  }
+  const evData = { type:'goal', team:GS.team, scorerId:GS.scorerId, assistId:GS.assistId||null, timestamp:Date.now() };
+  if (min != null) evData.min = min;
+  await DB.push(`sessions/${S.activeId}/events`,evData);
   closeM('m-goal'); toast('⚽ Goal logged!');
 };
 
@@ -1912,7 +2213,7 @@ window.openSave = function() {
 };
 window.pickSaveType=function(type){SVS.type=type;document.getElementById('st-reg').className='stbtn'+(type==='save'?' sel':'');document.getElementById('st-pen').className='stbtn'+(type==='penaltySave'?' sel':'');};
 window.saveChipClick=function(el){document.querySelectorAll('#save-chips .chip').forEach(c=>c.className='chip');el.className='chip sel-green';SVS.playerId=el.dataset.pid;document.getElementById('save-confirm').disabled=false;};
-window.confirmSave=async function(){if(!SVS.playerId)return;await DB.push(`sessions/${S.activeId}/events`,{type:SVS.type,playerId:SVS.playerId,timestamp:Date.now()});closeM('m-save');toast(SVS.type==='penaltySave'?'🧤 Penalty save!':'🧤 Save logged!');};
+window.confirmSave=async function(){if(!SVS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:SVS.type,playerId:SVS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-save');toast(SVS.type==='penaltySave'?'🧤 Penalty save!':'🧤 Save logged!');};
 
 // ─── CARD MODAL ───
 window.openCard=function(preset=null){
@@ -1927,7 +2228,7 @@ window.openCard=function(preset=null){
 };
 window.pickCardType=function(type){CS.type=type;document.getElementById('ct-yellow').className='ctbtn'+(type==='yellowCard'?' yellow-sel':'');document.getElementById('ct-red').className='ctbtn'+(type==='redCard'?' red-sel':'');};
 window.cardChipClick=function(el){document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');if(CS.type==='yellowCard')el.style.borderColor='var(--yellow)';CS.playerId=el.dataset.pid;document.getElementById('card-confirm').disabled=false;};
-window.confirmCard=async function(){if(!CS.playerId)return;await DB.push(`sessions/${S.activeId}/events`,{type:CS.type,playerId:CS.playerId,timestamp:Date.now()});closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');};
+window.confirmCard=async function(){if(!CS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:CS.type,playerId:CS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');};
 
 // ─── DELETE EVENT ───
 window.deleteEvent=async function(evId){if(!S.admin)return;if(!confirm('Delete this event?'))return;await DB.remove(`sessions/${S.activeId}/events/${evId}`);toast('Event deleted',true);};
@@ -2061,7 +2362,20 @@ window.confirmEndGame=async function(){
   teams.forEach(t=>goals[t]=goalsFor(sess,t));
   const cleanSheets={};
   teams.forEach(t=>cleanSheets[t]=teams.every(other=>other===t||goals[other]===0));
-  await DB.update(`sessions/${S.activeId}`,{status:'completed',goals,cleanSheets});
+  // Lock the timer at Full Time (preserves the final minute)
+  const updates={status:'completed',goals,cleanSheets};
+  if (sess.timer && ['running','paused'].includes(sess.timer.status)) {
+    const now = Date.now();
+    let endedAt = now;
+    let pausedTotal = sess.timer.pausedTotal || 0;
+    if (sess.timer.status === 'paused') {
+      // freeze duration at the moment user originally paused
+      endedAt = sess.timer.pausedAt || now;
+    }
+    updates.timer = { ...sess.timer, status:'ended', endedAt, pausedTotal };
+  }
+  stopTimerTick();
+  await DB.update(`sessions/${S.activeId}`,updates);
   closeM('m-endgame');toast('🏁 Game completed!');
 };
 
@@ -2211,7 +2525,7 @@ function playerTeamInSession(sess, pid) {
 
 function getMatchSummary(sess) {
   const mode = sess.mode || 'live';
-  const sum = { goals: {}, assists: {}, yellowCards: {}, redCards: {}, saves: {}, penaltySaves: {} };
+  const sum = { goals: {}, assists: {}, ownGoals: {}, yellowCards: {}, redCards: {}, saves: {}, penaltySaves: {} };
   const inc = (bucket, pid, by=1) => {
     if (!pid || by <= 0) return;
     sum[bucket][pid] = (sum[bucket][pid] || 0) + by;
@@ -2220,6 +2534,7 @@ function getMatchSummary(sess) {
     for (const ev of Object.values(sess.events || {})) {
       switch(ev.type) {
         case 'goal':        inc('goals', ev.scorerId); if (ev.assistId) inc('assists', ev.assistId); break;
+        case 'ownGoal':     inc('ownGoals', ev.scorerId); if (ev.assistId) inc('assists', ev.assistId); break;
         case 'save':        inc('saves', ev.playerId); break;
         case 'penaltySave': inc('penaltySaves', ev.playerId); break;
         case 'yellowCard':  inc('yellowCards', ev.playerId); break;
@@ -2278,6 +2593,7 @@ window.openMatchSummary = function(sid) {
 
   const sections = [
     renderSection('⚽', 'Goals Scored', sum.goals),
+    renderSection('😬', 'Own Goals', sum.ownGoals),
     renderSection('👟', 'Assists', sum.assists),
     renderSection('🧤', 'Saves', sum.saves),
     renderSection('✨', 'Penalty Saves', sum.penaltySaves),
@@ -2321,16 +2637,19 @@ window.openEditMatch=function(sid){
       let desc='';
       switch(ev.type){
         case 'goal':        desc=`⚽ ${pname(ev.scorerId)}${ev.assistId?' → '+pname(ev.assistId):''} (${TEAM_EMOJI[ev.team]||ev.team})`; break;
+        case 'ownGoal':     desc=`😬 ${pname(ev.scorerId)} OG${ev.assistId?' → '+pname(ev.assistId):''} (→ ${TEAM_EMOJI[ev.benefitTeam]||ev.benefitTeam})`; break;
         case 'assist':      desc=`🤝 ${pname(ev.playerId)} — Assist`; break;
         case 'save':        desc=`🧤 ${pname(ev.playerId)} — Save`; break;
         case 'penaltySave': desc=`🧤 ${pname(ev.playerId)} — Pen Save`; break;
         case 'yellowCard':  desc=`🟨 ${pname(ev.playerId)}`; break;
         case 'redCard':     desc=`🟥 ${pname(ev.playerId)}`; break;
+        case 'halfTime':    desc=`⏱️ Half Time`; break;
       }
+      const minTag = ev.min != null ? `<span class="ev-min" style="margin-right:6px">${ev.min}'</span>` : '';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:12px">${desc}</span>
+        <span style="font-size:12px;display:flex;align-items:center">${minTag}${desc}</span>
         <div style="display:flex;gap:4px">
-          <button class="icon-btn" onclick="editEventFromEdit('${sid}','${ev.id}')">✏️</button>
+          ${ev.type==='halfTime' ? '' : `<button class="icon-btn" onclick="editEventFromEdit('${sid}','${ev.id}')">✏️</button>`}
           <button class="icon-btn" onclick="deleteEventFromEdit('${sid}','${ev.id}')">🗑</button>
         </div>
       </div>`;
@@ -2466,6 +2785,9 @@ window.saveEditMatch=async function(){
     const type=document.getElementById('em-ev-type')?.value;
     if(type){
       const evData={type,timestamp:Date.now()};
+      const existing = emEditEvId ? (S.sessions[editSessId]?.events?.[emEditEvId]) : null;
+      if (existing && existing.min != null) evData.min = existing.min;
+      else { const m = getMatchMinute(S.sessions[editSessId]); if (m != null) evData.min = m; }
       if(type==='goal'){
         if(!emPickedTeam){toast('Pick a team for the pending goal correction',true);return;}
         evData.team=emPickedTeam; evData.scorerId=emPickedPid;
@@ -2651,6 +2973,10 @@ window.addEditEvent=async function(sid){
   if(!emPickedPid)return toast('Pick a player',true);
   const type=document.getElementById('em-ev-type')?.value;if(!type)return;
   const evData={type,timestamp:Date.now()};
+  // preserve the minute if we're editing an existing event with one, or stamp current if live timer is running
+  const existing = emEditEvId ? (S.sessions[sid]?.events?.[emEditEvId]) : null;
+  if (existing && existing.min != null) evData.min = existing.min;
+  else { const m = getMatchMinute(S.sessions[sid]); if (m != null) evData.min = m; }
   if(type==='goal'){
     if(!emPickedTeam)return toast('Pick a team for the goal',true);
     evData.team=emPickedTeam; evData.scorerId=emPickedPid;
