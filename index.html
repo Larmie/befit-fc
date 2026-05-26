@@ -561,8 +561,36 @@
     .ms-row:last-child { border-bottom: none; }
     .ms-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
     .ms-name { font-weight: 700; flex: 1; font-size: 14px; }
-    .ms-count { font-size: 12px; color: var(--green); font-weight: 800; }
+    .ms-count { font-size: 12px; color: var(--muted); font-weight: 800; }
     .ms-empty { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+    .ms-pts {
+      font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 10px;
+      font-variant-numeric: tabular-nums; letter-spacing: 0.2px;
+      margin-left: 6px; flex-shrink: 0;
+    }
+    .ms-pts.pos { color: var(--green); background: rgba(0,214,143,0.10); border: 1px solid rgba(0,214,143,0.28); }
+    .ms-pts.neg { color: #ff7b7b;     background: rgba(255,71,87,0.10); border: 1px solid rgba(255,71,87,0.30); }
+
+    /* Match Points section */
+    .mp-sect { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .mp-row { padding: 10px 0; border-bottom: 1px solid rgba(30,58,95,0.45); }
+    .mp-row:last-child { border-bottom: none; }
+    .mp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .mp-name { font-weight: 700; font-size: 14px; flex: 1; }
+    .mp-total {
+      font-size: 14px; font-weight: 900; color: var(--green);
+      font-variant-numeric: tabular-nums; padding: 3px 10px; border-radius: 10px;
+      background: rgba(0,214,143,0.12); border: 1px solid rgba(0,214,143,0.32);
+    }
+    .mp-total.neg { color: #ff7b7b; background: rgba(255,71,87,0.10); border-color: rgba(255,71,87,0.30); }
+    .mp-total.zero { color: var(--muted); background: rgba(127,168,201,0.08); border-color: var(--border); }
+    .mp-breakdown { display: flex; flex-wrap: wrap; gap: 5px; padding-left: 17px; }
+    .mp-chip {
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 9px;
+      font-variant-numeric: tabular-nums; letter-spacing: 0.2px;
+    }
+    .mp-chip.pos { color: var(--green); background: rgba(0,214,143,0.07); border: 1px solid rgba(0,214,143,0.20); }
+    .mp-chip.neg { color: #ff7b7b;     background: rgba(255,71,87,0.07); border: 1px solid rgba(255,71,87,0.22); }
 
     /* ── TAB ANIMATION ── */
     .tab.active { animation: tabFadeIn 0.28s ease forwards; }
@@ -1254,6 +1282,89 @@ function teamTag(t) {
   const e = TEAM_EMOJI[t] || '';
   const label = t ? (t.charAt(0).toUpperCase()+t.slice(1)) : t;
   return `<span class="team-tag team-${t}">${e} ${label}</span>`;
+}
+
+// ─── PER-MATCH POINTS (for Match Summary display) ───
+function pointsForBucket(sess, pid, bucket, count) {
+  const sp = sessPlayers(sess).find(p => p.pid === pid);
+  if (!sp) return 0;
+  const rules = SCORE[sp.pos];
+  switch(bucket) {
+    case 'goals':        return count * rules.goal;
+    case 'ownGoals':     return count * -2;
+    case 'assists':      return count * rules.assist;
+    case 'saves':        return sp.pos==='GK' ? Math.floor(count / rules.savePer) : 0;
+    case 'penaltySaves': return sp.pos==='GK' ? count * rules.penaltySave : 0;
+    case 'yellowCards':  return count * rules.yellow;
+    case 'redCards':     return count * rules.red;
+    default: return 0;
+  }
+}
+
+function calcMatchPoints(sess, pid) {
+  const sp = sessPlayers(sess).find(p => p.pid === pid);
+  if (!sp) return null;
+  const rules = SCORE[sp.pos];
+  const mode = sess.mode || 'live';
+  if (mode === 'history') return null; // history games have no per-player data
+  const breakdown = [];
+  let total = 0;
+  const add = (label, pts) => { if (pts !== 0) { breakdown.push({label, pts}); total += pts; } };
+
+  add('App', rules.app);
+
+  let goals=0, assists=0, ogs=0, yellow=0, red=0, saves=0, penSv=0, conceded=0;
+  if (mode === 'live') {
+    const evs = sessEvents(sess);
+    goals    = evs.filter(e => e.type==='goal'        && e.scorerId===pid).length;
+    assists  = evs.filter(e => (e.type==='goal'||e.type==='ownGoal') && e.assistId===pid).length;
+    ogs      = evs.filter(e => e.type==='ownGoal'     && e.scorerId===pid).length;
+    yellow   = evs.filter(e => e.type==='yellowCard'  && e.playerId===pid).length;
+    red      = evs.filter(e => e.type==='redCard'     && e.playerId===pid).length;
+    saves    = evs.filter(e => e.type==='save'        && e.playerId===pid).length;
+    penSv    = evs.filter(e => e.type==='penaltySave' && e.playerId===pid).length;
+    if (sp.pos === 'GK') {
+      conceded = evs.filter(e =>
+        (e.type==='goal' && e.team!==sp.team) ||
+        (e.type==='ownGoal' && e.benefitTeam!==sp.team)
+      ).length;
+    }
+  } else {
+    const ps = sess.playerStats?.[pid] || {};
+    goals = ps.goals||0; assists = ps.assists||0;
+    yellow = ps.yellow||0; red = ps.red||0;
+    saves = ps.saves||0; penSv = ps.penaltySaves||0; conceded = ps.conceded||0;
+  }
+
+  if (goals)   add(`Goal×${goals}`,     goals * rules.goal);
+  if (ogs)     add(`OG×${ogs}`,         ogs * -2);
+  if (assists) add(`Assist×${assists}`, assists * rules.assist);
+  if (sp.pos === 'GK') {
+    const sp_pts = Math.floor(saves / rules.savePer);
+    if (sp_pts) add(`Saves×${saves}`, sp_pts);
+    if (penSv)  add(`Pen Sv×${penSv}`, penSv * rules.penaltySave);
+    const cp = -Math.floor(conceded / rules.concedePer);
+    if (cp) add(`Conc×${conceded}`, cp);
+  }
+  if (yellow) add(`YC×${yellow}`, yellow * rules.yellow);
+  if (red)    add(`RC×${red}`,    red * rules.red);
+
+  // Clean sheet (GK +8, DEF +3) — use saved value when available, else compute live
+  if ((sp.pos === 'GK' || sp.pos === 'DEF') && rules.cleanSheet) {
+    let cs;
+    if (sess.cleanSheets && sess.cleanSheets[sp.team] !== undefined) {
+      cs = sess.cleanSheets[sp.team];
+    } else if (mode === 'live') {
+      const evs = sessEvents(sess);
+      cs = !evs.some(e =>
+        (e.type==='goal' && e.team !== sp.team) ||
+        (e.type==='ownGoal' && e.benefitTeam !== sp.team)
+      );
+    }
+    if (cs) add('CS', rules.cleanSheet);
+  }
+
+  return { total, breakdown };
 }
 
 // ─── POINTS ENGINE ───
@@ -2573,7 +2684,7 @@ window.openMatchSummary = function(sid) {
     </div>
   ` : teams.map(t => `<div class="ms-team"><div class="ms-team-name" style="color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t}</div><div class="ms-team-goals" style="color:${TEAM_COLOR[t]}">${getTeamGoals(s,t)}</div></div>`).join('<div class="ms-vs">—</div>');
 
-  const renderSection = (icon, title, bucket) => {
+  const renderSection = (icon, title, bucket, bucketKey) => {
     const entries = Object.entries(bucket).filter(([,c]) => c > 0).sort((a,b)=>b[1]-a[1]);
     if (entries.length === 0) return '';
     return `<div class="ms-sect">
@@ -2582,26 +2693,60 @@ window.openMatchSummary = function(sid) {
         const p = S.players[pid];
         const team = playerTeamInSession(s, pid) || p?.defaultTeam;
         const tc = TEAM_COLOR[team] || 'var(--muted)';
+        const pts = pointsForBucket(s, pid, bucketKey, count);
+        const ptsBadge = pts !== 0 ? `<span class="ms-pts ${pts>0?'pos':'neg'}">${pts>0?'+':''}${pts}</span>` : '';
         return `<div class="ms-row">
           <span class="ms-dot" style="background:${tc};color:${tc}"></span>
           <span class="ms-name">${p?.name || 'Unknown'}</span>
           ${count > 1 ? `<span class="ms-count">×${count}</span>` : ''}
+          ${ptsBadge}
         </div>`;
       }).join('')}
     </div>`;
   };
 
   const sections = [
-    renderSection('⚽', 'Goals Scored', sum.goals),
-    renderSection('😬', 'Own Goals', sum.ownGoals),
-    renderSection('👟', 'Assists', sum.assists),
-    renderSection('🧤', 'Saves', sum.saves),
-    renderSection('✨', 'Penalty Saves', sum.penaltySaves),
-    renderSection('🟨', 'Yellow Cards', sum.yellowCards),
-    renderSection('🟥', 'Red Cards', sum.redCards),
+    renderSection('⚽', 'Goals Scored', sum.goals, 'goals'),
+    renderSection('😬', 'Own Goals', sum.ownGoals, 'ownGoals'),
+    renderSection('👟', 'Assists', sum.assists, 'assists'),
+    renderSection('🧤', 'Saves', sum.saves, 'saves'),
+    renderSection('✨', 'Penalty Saves', sum.penaltySaves, 'penaltySaves'),
+    renderSection('🟨', 'Yellow Cards', sum.yellowCards, 'yellowCards'),
+    renderSection('🟥', 'Red Cards', sum.redCards, 'redCards'),
   ].filter(Boolean).join('');
 
-  const hasData = sections.length > 0;
+  // ── Match Points section: every player who appeared + their total for the day ──
+  let matchPointsSection = '';
+  if (mode !== 'history') {
+    const participants = sessPlayers(s)
+      .map(p => ({ ...p, mp: calcMatchPoints(s, p.pid) }))
+      .filter(p => p.mp != null)
+      .sort((a,b) => b.mp.total - a.mp.total);
+    if (participants.length > 0) {
+      const ptsRows = participants.map(p => {
+        const tc = TEAM_COLOR[p.team] || 'var(--muted)';
+        const totalCls = p.mp.total === 0 ? 'zero' : (p.mp.total < 0 ? 'neg' : '');
+        const chips = p.mp.breakdown.map(b =>
+          `<span class="mp-chip ${b.pts<0?'neg':'pos'}">${b.label} ${b.pts>0?'+':''}${b.pts}</span>`
+        ).join('');
+        return `<div class="mp-row">
+          <div class="mp-head">
+            <span class="ms-dot" style="background:${tc};color:${tc}"></span>
+            <span class="mp-name">${p.name}</span>
+            ${posTag(p.pos)}
+            <span class="mp-total ${totalCls}">${p.mp.total>0?'+':''}${p.mp.total}</span>
+          </div>
+          <div class="mp-breakdown">${chips}</div>
+        </div>`;
+      }).join('');
+      matchPointsSection = `<div class="ms-sect mp-sect">
+        <div class="ms-sect-hdr">⭐ Match Points</div>
+        ${ptsRows}
+      </div>`;
+    }
+  }
+
+  const hasData = sections.length > 0 || matchPointsSection.length > 0;
   const editBtn = S.admin
     ? `<div style="text-align:center;margin-top:14px"><button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 18px" onclick="closeM('m-matchsummary');openEditMatch('${sid}')">✏️ Edit Match</button></div>`
     : '';
@@ -2610,7 +2755,7 @@ window.openMatchSummary = function(sid) {
   document.getElementById('ms-body').innerHTML = `
     <div class="ms-score">${scoreBanner}</div>
     <div class="ms-meta">${mode === 'history' ? 'Legacy entry' : mode === 'post' ? 'Logged' : 'Live'}</div>
-    ${hasData ? sections : `<div class="ms-empty">No player events recorded${mode==='history'?' — only the final score was logged':''}</div>`}
+    ${hasData ? (sections + matchPointsSection) : `<div class="ms-empty">No player events recorded${mode==='history'?' — only the final score was logged':''}</div>`}
     ${editBtn}
   `;
   openM('m-matchsummary');
