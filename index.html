@@ -544,15 +544,40 @@
     .ms-team-goals { font-size: 42px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 0 24px currentColor; filter: brightness(1.08); }
     .ms-vs { font-size: 22px; color: var(--muted); opacity: 0.35; font-weight: 900; }
     .ms-meta { text-align: center; font-size: 11px; color: var(--muted); margin-bottom: 18px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
-    .ms-sect { margin-bottom: 6px; }
+    .ms-sect {
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(23,47,82,0.18);
+      overflow: hidden;
+    }
     .ms-sect-hdr {
       font-size: 11px; font-weight: 900; color: var(--text); letter-spacing: 1.4px;
-      text-transform: uppercase; padding: 10px 14px;
+      text-transform: uppercase; padding: 12px 14px;
       background: linear-gradient(90deg, rgba(0,214,143,0.08), rgba(23,47,82,0.4));
       border-left: 3px solid var(--green);
-      border-radius: 6px;
-      margin-top: 12px; margin-bottom: 4px;
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      cursor: pointer; user-select: none; list-style: none;
+    }
+    .ms-sect-hdr::-webkit-details-marker { display: none; }
+    .ms-sect-hdr-l { display: flex; align-items: center; gap: 8px; }
+    .ms-sect-hdr-r { display: flex; align-items: center; gap: 10px; }
+    .ms-sect-count {
+      font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 10px;
+      color: var(--muted);
+      background: rgba(127,168,201,0.10);
+      border: 1px solid var(--border);
+      letter-spacing: 0.3px; font-variant-numeric: tabular-nums;
+    }
+    .ms-sect-chev {
+      width: 14px; height: 14px; color: var(--muted);
+      transition: transform 0.18s ease;
+    }
+    .ms-sect[open] .ms-sect-chev { transform: rotate(90deg); }
+    .ms-sect-body { padding: 4px 0 6px; animation: msFade 0.18s ease; }
+    .mp-sect .ms-sect-body { padding: 6px 14px 10px; }
+    @keyframes msFade { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+    .ms-sect-spacer { /* unused, reserved */
     }
     .ms-row {
       display: flex; align-items: center; gap: 10px; padding: 9px 14px;
@@ -572,7 +597,8 @@
     .ms-pts.neg { color: #ff7b7b;     background: rgba(255,71,87,0.10); border: 1px solid rgba(255,71,87,0.30); }
 
     /* Match Points section */
-    .mp-sect { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
+    .mp-sect { margin-top: 14px; }
+    .mp-sect .ms-sect-hdr { border-left-color: #ffd43b; background: linear-gradient(90deg, rgba(255,212,59,0.10), rgba(23,47,82,0.4)); }
     .mp-row { padding: 10px 0; border-bottom: 1px solid rgba(30,58,95,0.45); }
     .mp-row:last-child { border-bottom: none; }
     .mp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -2684,11 +2710,19 @@ window.openMatchSummary = function(sid) {
     </div>
   ` : teams.map(t => `<div class="ms-team"><div class="ms-team-name" style="color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t}</div><div class="ms-team-goals" style="color:${TEAM_COLOR[t]}">${getTeamGoals(s,t)}</div></div>`).join('<div class="ms-vs">—</div>');
 
+  const chevSVG = `<svg class="ms-sect-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
   const renderSection = (icon, title, bucket, bucketKey) => {
     const entries = Object.entries(bucket).filter(([,c]) => c > 0).sort((a,b)=>b[1]-a[1]);
     if (entries.length === 0) return '';
-    return `<div class="ms-sect">
-      <div class="ms-sect-hdr">${icon} ${title}</div>
+    return `<details class="ms-sect">
+      <summary class="ms-sect-hdr">
+        <span class="ms-sect-hdr-l">${icon} ${title}</span>
+        <span class="ms-sect-hdr-r">
+          <span class="ms-sect-count">${entries.length}</span>
+          ${chevSVG}
+        </span>
+      </summary>
+      <div class="ms-sect-body">
       ${entries.map(([pid, count]) => {
         const p = S.players[pid];
         const team = playerTeamInSession(s, pid) || p?.defaultTeam;
@@ -2702,7 +2736,8 @@ window.openMatchSummary = function(sid) {
           ${ptsBadge}
         </div>`;
       }).join('')}
-    </div>`;
+      </div>
+    </details>`;
   };
 
   const sections = [
@@ -2739,10 +2774,16 @@ window.openMatchSummary = function(sid) {
           <div class="mp-breakdown">${chips}</div>
         </div>`;
       }).join('');
-      matchPointsSection = `<div class="ms-sect mp-sect">
-        <div class="ms-sect-hdr">⭐ Match Points</div>
-        ${ptsRows}
-      </div>`;
+      matchPointsSection = `<details class="ms-sect mp-sect">
+        <summary class="ms-sect-hdr">
+          <span class="ms-sect-hdr-l">⭐ Match Points</span>
+          <span class="ms-sect-hdr-r">
+            <span class="ms-sect-count">${participants.length}</span>
+            ${chevSVG}
+          </span>
+        </summary>
+        <div class="ms-sect-body">${ptsRows}</div>
+      </details>`;
     }
   }
 
