@@ -1165,23 +1165,23 @@ const SEED_PLAYERS = [
 
 // ─── SEED SESSIONS — 17 historical matches (Red 7W-1D-9W Green) ───
 const SEED_SESSIONS = [
-  { date:"2026-01-06", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
-  { date:"2026-01-13", goals:{red:2,green:1}, cleanSheets:{red:false,green:false} },
-  { date:"2026-01-20", goals:{red:1,green:2}, cleanSheets:{red:false,green:false} },
-  { date:"2026-01-27", goals:{red:0,green:2}, cleanSheets:{red:false,green:true}  },
-  { date:"2026-02-03", goals:{red:3,green:1}, cleanSheets:{red:false,green:false} },
-  { date:"2026-02-10", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
-  { date:"2026-02-17", goals:{red:2,green:2}, cleanSheets:{red:false,green:false} },
-  { date:"2026-02-24", goals:{red:1,green:2}, cleanSheets:{red:false,green:false} },
-  { date:"2026-03-03", goals:{red:2,green:1}, cleanSheets:{red:false,green:false} },
-  { date:"2026-03-10", goals:{red:0,green:2}, cleanSheets:{red:false,green:true}  },
-  { date:"2026-03-17", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
-  { date:"2026-03-30", goals:{red:4,green:2}, cleanSheets:{red:false,green:false} },
-  { date:"2026-04-13", goals:{red:6,green:2}, cleanSheets:{red:false,green:false} },
-  { date:"2026-04-20", goals:{red:1,green:3}, cleanSheets:{red:false,green:false} },
-  { date:"2026-04-27", goals:{red:7,green:3}, cleanSheets:{red:false,green:false} },
-  { date:"2026-05-11", goals:{red:8,green:12},cleanSheets:{red:false,green:false} },
-  { date:"2026-05-18", goals:{red:8,green:3}, cleanSheets:{red:false,green:false} },
+  { date:"2026-01-12", goals:{green:10,red:9},  cleanSheets:{green:false,red:false} },
+  { date:"2026-01-19", goals:{green:12,red:13}, cleanSheets:{green:false,red:false} },
+  { date:"2026-01-26", goals:{green:18,red:16}, cleanSheets:{green:false,red:false} },
+  { date:"2026-02-02", goals:{green:1,red:5},   cleanSheets:{green:false,red:false} },
+  { date:"2026-02-09", goals:{green:8,red:7},   cleanSheets:{green:false,red:false} },
+  { date:"2026-02-16", goals:{green:10,red:7},  cleanSheets:{green:false,red:false} },
+  { date:"2026-02-23", goals:{green:5,red:0},   cleanSheets:{green:true,red:false}  },
+  { date:"2026-03-02", goals:{green:15,red:7},  cleanSheets:{green:false,red:false} },
+  { date:"2026-03-09", goals:{green:2,red:4},   cleanSheets:{green:false,red:false} },
+  { date:"2026-03-16", goals:{green:9,red:11},  cleanSheets:{green:false,red:false} },
+  { date:"2026-03-23", goals:{green:6,red:8},   cleanSheets:{green:false,red:false} },
+  { date:"2026-03-30", goals:{green:10,red:5},  cleanSheets:{green:false,red:false} },
+  { date:"2026-04-13", goals:{green:1,red:1},   cleanSheets:{green:false,red:false} },
+  { date:"2026-04-20", goals:{green:6,red:4},   cleanSheets:{green:false,red:false} },
+  { date:"2026-04-27", goals:{green:3,red:7},   cleanSheets:{green:false,red:false} },
+  { date:"2026-05-11", goals:{green:12,red:8},  cleanSheets:{green:false,red:false} },
+  { date:"2026-05-18", goals:{green:3,red:8},   cleanSheets:{green:false,red:false} },
 ];
 
 // ─── STATE ───
@@ -2124,6 +2124,7 @@ function renderAdmin() {
     </div>
 
     <div class="card">
+      <button class="btn btn-ghost" style="margin-bottom:10px" onclick="reloadOfficialRecords()">♻️ Reload Official Records</button>
       <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
     </div>`;
 }
@@ -3368,6 +3369,28 @@ window.seedHistoricalData=async function(){
   } catch(e) {
     console.error('Seed error:',e);
     toast('Import failed: '+e.message,true);
+  }
+};
+
+// ─── RELOAD OFFICIAL RECORDS (one-time correction) ───
+window.reloadOfficialRecords=async function(){
+  if(!S.admin) return toast('Admin only',true);
+  if(!confirm('Overwrite the 17 history matches (seed_s01–seed_s17) with the official records? Your live games are not affected.')) return;
+  toast('Updating official records…');
+  const sessions={};
+  SEED_SESSIONS.forEach((s,i)=>{
+    sessions[`seed_s${String(i+1).padStart(2,'0')}`]={...s,status:'completed',mode:'history'};
+  });
+  try {
+    if(FIREBASE_CONFIGURED){
+      await fbUpdate(fbRef(_db,'sessions'),sessions);
+    } else {
+      Object.assign(LD.sessions,sessions);saveLocal();syncLocal();renderAll();
+    }
+    toast('✓ 17 official records updated!');
+  } catch(e){
+    console.error('Reload error:',e);
+    toast('Update failed: '+e.message,true);
   }
 };
 
