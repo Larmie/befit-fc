@@ -2079,10 +2079,19 @@ function renderAdmin() {
         const teams = getActiveTeams(s);
         const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:700">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)} ${getTeamGoals(s,t)}</span>`).join(' <span style="color:var(--muted)">—</span> ');
         const editNote = mode==='history' ? '(score only)' : mode==='post' ? '(player stats)' : '(events)';
+        const teamGoals = teams.map(t=>({t,g:getTeamGoals(s,t)}));
+        const maxG = Math.max(...teamGoals.map(x=>x.g));
+        const winners = teamGoals.filter(x=>x.g===maxG);
+        const resultBadge = winners.length>1
+          ? `<span style="font-size:11px;font-weight:700;color:var(--muted)">⚖️ Draw</span>`
+          : `<span style="font-size:11px;font-weight:700;color:${TEAM_COLOR[winners[0].t]}">${TEAM_EMOJI[winners[0].t]||''} ${winners[0].t.charAt(0).toUpperCase()+winners[0].t.slice(1)} won</span>`;
         return `
           <div class="sess-admin-row">
             <div onclick="openMatchSummary('${sid}')" style="cursor:pointer;flex:1">
-              <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
+                ${resultBadge}
+              </div>
               <div style="font-size:11px;color:var(--muted);margin-top:2px">${scoreStr}</div>
               <div style="font-size:10px;color:var(--muted);margin-top:2px"><span class="sess-mode-badge mode-${mode}">${mode}</span> <span style="opacity:0.6">${editNote}</span></div>
             </div>
@@ -2955,6 +2964,7 @@ window.openEditMatch=function(sid){
   }
 
   document.getElementById('em-body').innerHTML=`
+    <div class="fg"><div class="flbl">Date</div><input class="finput" id="em-date" type="date" value="${s.date}"></div>
     <div class="fg"><div class="flbl">Score</div>${scoreInputs}</div>
     ${extraHtml}`;
   openM('m-editmatch');
@@ -3001,6 +3011,8 @@ window.saveEditMatch=async function(){
   const cleanSheets={};
   teams.forEach(t=>cleanSheets[t]=teams.every(o=>o===t||goals[o]===0));
   const updates={goals,cleanSheets};
+  const newDate=document.getElementById('em-date')?.value;
+  if(newDate&&newDate!==s.date) updates.date=newDate;
   if(mode==='post'){
     const sp=sessPlayers(s);
     const playerStats={...(s.playerStats||{})};
