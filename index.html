@@ -2083,19 +2083,21 @@ function renderAdmin() {
         const maxG = Math.max(...teamGoals.map(x=>x.g));
         const winners = teamGoals.filter(x=>x.g===maxG);
         const resultBadge = winners.length>1
-          ? `<span style="font-size:11px;font-weight:700;color:var(--muted)">⚖️ Draw</span>`
-          : `<span style="font-size:11px;font-weight:700;color:${TEAM_COLOR[winners[0].t]}">${TEAM_EMOJI[winners[0].t]||''} ${winners[0].t.charAt(0).toUpperCase()+winners[0].t.slice(1)} won</span>`;
+          ? `<span style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.3px;color:var(--muted);border:1px solid rgba(127,168,201,0.35);background:rgba(127,168,201,0.08);padding:4px 14px;border-radius:20px">⚖️ Draw</span>`
+          : `<span style="display:inline-block;font-size:11px;font-weight:800;letter-spacing:.3px;color:${TEAM_COLOR[winners[0].t]};border:1px solid ${TEAM_COLOR[winners[0].t]};background:rgba(255,255,255,0.04);padding:4px 14px;border-radius:20px">${TEAM_EMOJI[winners[0].t]||''} ${winners[0].t.charAt(0).toUpperCase()+winners[0].t.slice(1)} won</span>`;
         return `
-          <div class="sess-admin-row">
-            <div onclick="openMatchSummary('${sid}')" style="cursor:pointer;flex:1">
-              <div style="font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
-              <div style="text-align:center;margin:4px 0 2px">${resultBadge}</div>
-              <div style="font-size:11px;color:var(--muted)">${scoreStr}</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:2px"><span class="sess-mode-badge mode-${mode}">${mode}</span> <span style="opacity:0.6">${editNote}</span></div>
+          <div class="sess-admin-row" style="flex-direction:column;align-items:stretch;gap:0">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div onclick="openMatchSummary('${sid}')" style="cursor:pointer;font-size:13px;font-weight:700">${fmtDate(s.date)}</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="icon-btn" onclick="openEditMatch('${sid}')">✏️</button>
+                <button class="icon-btn" onclick="delSession('${sid}')">🗑</button>
+              </div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="icon-btn" onclick="openEditMatch('${sid}')">✏️</button>
-              <button class="icon-btn" onclick="delSession('${sid}')">🗑</button>
+            <div onclick="openMatchSummary('${sid}')" style="cursor:pointer;text-align:center;margin-top:2px">
+              <div style="margin-bottom:6px">${resultBadge}</div>
+              <div style="font-size:12px;color:var(--muted)">${scoreStr}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:5px"><span class="sess-mode-badge mode-${mode}">${mode}</span> <span style="opacity:0.6">${editNote}</span></div>
             </div>
           </div>`;
       }).join('');
