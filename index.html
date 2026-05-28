@@ -2124,7 +2124,6 @@ function renderAdmin() {
     </div>
 
     <div class="card">
-      <button class="btn btn-ghost" style="margin-bottom:10px" onclick="reloadOfficialRecords()">♻️ Reload Official Records</button>
       <button class="btn btn-ghost" onclick="doLogout()">🚪 Logout</button>
     </div>`;
 }
@@ -3372,27 +3371,6 @@ window.seedHistoricalData=async function(){
   }
 };
 
-// ─── RELOAD OFFICIAL RECORDS (one-time correction) ───
-window.reloadOfficialRecords=async function(){
-  if(!S.admin) return toast('Admin only',true);
-  if(!confirm('Overwrite the 17 history matches (seed_s01–seed_s17) with the official records? Your live games are not affected.')) return;
-  toast('Updating official records…');
-  const sessions={};
-  SEED_SESSIONS.forEach((s,i)=>{
-    sessions[`seed_s${String(i+1).padStart(2,'0')}`]={...s,status:'completed',mode:'history'};
-  });
-  try {
-    if(FIREBASE_CONFIGURED){
-      await fbUpdate(fbRef(_db,'sessions'),sessions);
-    } else {
-      Object.assign(LD.sessions,sessions);saveLocal();syncLocal();renderAll();
-    }
-    toast('✓ 17 official records updated!');
-  } catch(e){
-    console.error('Reload error:',e);
-    toast('Update failed: '+e.message,true);
-  }
-};
 
 // ─── PLAYER HISTORY ───
 function getPlayerHistory(pid, limit=5) {
