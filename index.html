@@ -734,6 +734,72 @@
       background: rgba(17,34,64,0.3);
     }
     .ng-team-body.is-open { display: block; }
+
+    /* ── ON-PITCH CELEBRATION / CARD TAKEOVER ── */
+    #pitch-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; text-align: center;
+      overflow: hidden; touch-action: none;
+    }
+    #pitch-overlay.show { display: flex; }
+    #pitch-confetti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .po-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 0 24px;
+      animation: poPop 0.45s cubic-bezier(0.2,0.9,0.3,1.3);
+    }
+    @keyframes poPop {
+      0%   { transform: scale(0.4); opacity: 0; }
+      60%  { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .po-emoji {
+      font-size: 120px; line-height: 1;
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+      animation: poBounce 1.2s ease-in-out infinite;
+    }
+    @keyframes poBounce {
+      0%,100% { transform: translateY(0) rotate(-4deg); }
+      50%     { transform: translateY(-16px) rotate(4deg); }
+    }
+    .po-title {
+      font-size: 56px; font-weight: 900; letter-spacing: 2px;
+      text-transform: uppercase; line-height: 1.05;
+      text-shadow: 0 4px 18px rgba(0,0,0,0.4);
+    }
+    .po-sub {
+      font-size: 22px; font-weight: 800; opacity: 0.95;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    .po-close {
+      position: absolute; bottom: 28px; right: 28px; z-index: 3;
+      width: 72px; height: 72px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.9);
+      background: rgba(0,0,0,0.35);
+      color: #fff; font-size: 34px; font-weight: 900; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    }
+    .po-close:active { transform: scale(0.92); }
+    .po-hint {
+      position: absolute; bottom: 46px; right: 112px; z-index: 3;
+      font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.85);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    /* Card takeovers — solid full-bleed colour */
+    #pitch-overlay.po-yellow { background: #ffd11a; }
+    #pitch-overlay.po-yellow .po-title,
+    #pitch-overlay.po-yellow .po-sub { color: #1a1500; }
+    #pitch-overlay.po-yellow .po-close {
+      border-color: rgba(0,0,0,0.7); background: rgba(0,0,0,0.12); color: #1a1500;
+    }
+    #pitch-overlay.po-yellow .po-hint { color: rgba(0,0,0,0.6); }
+    #pitch-overlay.po-red { background: #e63946; }
+    #pitch-overlay.po-red .po-title,
+    #pitch-overlay.po-red .po-sub { color: #fff; }
   </style>
 </head>
 <body>
@@ -745,6 +811,18 @@
 </header>
 
 <div class="toast" id="toast"></div>
+
+<!-- ON-PITCH CELEBRATION / CARD TAKEOVER -->
+<div id="pitch-overlay">
+  <canvas id="pitch-confetti"></canvas>
+  <div class="po-content">
+    <div class="po-emoji" id="po-emoji">⚽</div>
+    <div class="po-title" id="po-title">GOAL!</div>
+    <div class="po-sub" id="po-sub"></div>
+  </div>
+  <div class="po-hint">tap ✕ to continue</div>
+  <button class="po-close" id="po-close" onclick="closePitchOverlay()" aria-label="Close">✕</button>
+</div>
 
 <main class="main">
   <div class="tab active" id="tab-live"><div id="live-root"></div></div>
@@ -2336,12 +2414,18 @@ window.confirmGoal = async function() {
     if (min != null) evData.min = min;
     await DB.push(`sessions/${S.activeId}/events`,evData);
     closeM('m-goal'); toast('😬 Own goal logged');
+    showPitchOverlay({ mode:'goal', team:benefitTeam, emoji:'😬',
+      title:'OWN GOAL', sub:`${benefitTeam.charAt(0).toUpperCase()+benefitTeam.slice(1)} benefit` });
     return;
   }
   const evData = { type:'goal', team:GS.team, scorerId:GS.scorerId, assistId:GS.assistId||null, timestamp:Date.now() };
   if (min != null) evData.min = min;
   await DB.push(`sessions/${S.activeId}/events`,evData);
   closeM('m-goal'); toast('⚽ Goal logged!');
+  const scorerName = S.players[GS.scorerId]?.name || '';
+  const teamName = GS.team.charAt(0).toUpperCase()+GS.team.slice(1);
+  showPitchOverlay({ mode:'goal', team:GS.team, emoji:'⚽',
+    title:'GOAL!', sub:scorerName ? `${scorerName} · ${teamName}` : teamName });
 };
 
 // ─── SAVE MODAL ───
@@ -2374,7 +2458,112 @@ window.openCard=function(preset=null){
 };
 window.pickCardType=function(type){CS.type=type;document.getElementById('ct-yellow').className='ctbtn'+(type==='yellowCard'?' yellow-sel':'');document.getElementById('ct-red').className='ctbtn'+(type==='redCard'?' red-sel':'');};
 window.cardChipClick=function(el){document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');if(CS.type==='yellowCard')el.style.borderColor='var(--yellow)';CS.playerId=el.dataset.pid;document.getElementById('card-confirm').disabled=false;};
-window.confirmCard=async function(){if(!CS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:CS.type,playerId:CS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');};
+window.confirmCard=async function(){if(!CS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:CS.type,playerId:CS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;const pname=S.players[CS.playerId]?.name||'';await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');if(CS.type==='yellowCard'){showPitchOverlay({mode:'yellow',emoji:'🟨',title:'YELLOW CARD',sub:pname});}else{showPitchOverlay({mode:'red',emoji:'🟥',title:'RED CARD',sub:pname});}};
+
+// ─── ON-PITCH CELEBRATION / CARD TAKEOVER ───
+const CONFETTI_PALETTE = {
+  red:   ['#ff4757','#ff7b7b','#ffffff','#ffd43b'],
+  green: ['#00d68f','#4affc4','#ffffff','#ffd43b'],
+  blue:  ['#4a90d9','#8ec5ff','#ffffff','#ffd43b'],
+  gold:  ['#f5a623','#ffd43b','#ffffff','#fff3c4'],
+};
+const GOAL_TINT = {
+  red:'#ff4757', green:'#00d68f', blue:'#4a90d9', gold:'#f5a623',
+};
+let _poRAF = null, _poParticles = [], _poEmit = false, _poCtx = null, _poCanvas = null;
+
+function _poResizeCanvas() {
+  const c = _poCanvas; if (!c) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  c.width = Math.floor(window.innerWidth * dpr);
+  c.height = Math.floor(window.innerHeight * dpr);
+  _poCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function _poSpawn(palette, n) {
+  const W = window.innerWidth;
+  for (let i = 0; i < n; i++) {
+    const ball = Math.random() < 0.12;
+    _poParticles.push({
+      x: Math.random() * W,
+      y: -20 - Math.random() * 80,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 3.5,
+      size: ball ? (16 + Math.random() * 12) : (7 + Math.random() * 8),
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.3,
+      color: palette[(Math.random() * palette.length) | 0],
+      ball,
+    });
+  }
+}
+
+function _poTick(palette) {
+  const ctx = _poCtx; if (!ctx) return;
+  const H = window.innerHeight;
+  ctx.clearRect(0, 0, window.innerWidth, H);
+  if (_poEmit && _poParticles.length < 260) _poSpawn(palette, 4);
+  for (let i = _poParticles.length - 1; i >= 0; i--) {
+    const p = _poParticles[i];
+    p.vy += 0.05; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+    if (p.y > H + 30) { _poParticles.splice(i, 1); continue; }
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    if (p.ball) {
+      ctx.font = `${p.size * 2}px serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('⚽', 0, 0);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+    }
+    ctx.restore();
+  }
+  if (_poEmit || _poParticles.length) {
+    _poRAF = requestAnimationFrame(() => _poTick(palette));
+  } else { _poRAF = null; }
+}
+
+// opts: { mode:'goal'|'yellow'|'red', emoji, title, sub, team }
+window.showPitchOverlay = function(opts) {
+  const ov = document.getElementById('pitch-overlay');
+  if (!ov) return;
+  ov.classList.remove('po-yellow', 'po-red');
+  document.getElementById('po-emoji').textContent = opts.emoji || '';
+  document.getElementById('po-title').textContent = opts.title || '';
+  document.getElementById('po-sub').textContent = opts.sub || '';
+
+  if (opts.mode === 'goal') {
+    const tint = GOAL_TINT[opts.team] || '#00d68f';
+    ov.style.background = `radial-gradient(circle at 50% 40%, ${tint} 0%, #0a1828 58%, #07101c 100%)`;
+    document.getElementById('po-title').style.color = '#fff';
+    _poCanvas = document.getElementById('pitch-confetti');
+    _poCtx = _poCanvas.getContext('2d');
+    _poResizeCanvas();
+    _poParticles = [];
+    const palette = CONFETTI_PALETTE[opts.team] || CONFETTI_PALETTE.green;
+    _poSpawn(palette, 120);
+    _poEmit = true;
+    if (_poRAF) cancelAnimationFrame(_poRAF);
+    _poTick(palette);
+  } else {
+    ov.style.background = '';
+    ov.classList.add(opts.mode === 'red' ? 'po-red' : 'po-yellow');
+  }
+  ov.classList.add('show');
+};
+
+window.closePitchOverlay = function() {
+  const ov = document.getElementById('pitch-overlay');
+  if (ov) ov.classList.remove('show');
+  _poEmit = false;
+  if (_poRAF) { cancelAnimationFrame(_poRAF); _poRAF = null; }
+  _poParticles = [];
+  if (_poCtx) _poCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+};
+
+window.addEventListener('resize', () => { if (_poCanvas && document.getElementById('pitch-overlay').classList.contains('show')) _poResizeCanvas(); });
 
 // ─── DELETE EVENT ───
 window.deleteEvent=async function(evId){if(!S.admin)return;if(!confirm('Delete this event?'))return;await DB.remove(`sessions/${S.activeId}/events/${evId}`);toast('Event deleted',true);};
