@@ -143,19 +143,16 @@
     .btn-sm       { padding: 8px 14px; font-size: 12px; }
 
     /* ── ACTION GRID ── */
-    .action-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px; }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; overflow: visible; }
     .action-btn {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 7px; padding: 16px 6px; border-radius: 16px; border: 1px solid transparent;
-      font-size: 10.5px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase;
+      gap: 8px; padding: 18px 10px; border-radius: 16px; border: 1px solid transparent;
+      font-size: 11px; font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase;
       cursor: pointer; transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
-      position: relative; overflow: hidden; min-height: 86px;
+      position: relative; overflow: hidden; min-height: 88px;
     }
     .action-btn:active { transform: scale(0.96); }
-    .action-btn svg { width: 26px; height: 26px; stroke-width: 2.2; }
-    /* 5-button layout: 3 on top, 2 on bottom — uniform height */
-    .ab-goal, .ab-save, .ab-yellow { grid-column: span 2; }
-    .ab-red, .ab-def { grid-column: span 3; }
+    .action-btn svg { width: 28px; height: 28px; stroke-width: 2.2; }
     .action-btn::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
       opacity: 0.9;
@@ -182,9 +179,36 @@
     .ab-yellow { box-shadow: 0 4px 24px rgba(255,212,59,0.12); }
     .ab-yellow svg { color: #ffd43b; filter: drop-shadow(0 0 10px rgba(255,212,59,0.5)); }
     .ab-yellow::before { background: linear-gradient(90deg, transparent, #ffd43b 50%, transparent); }
-    .ab-def { box-shadow: 0 4px 24px rgba(74,144,217,0.1); }
-    .ab-def svg { color: #5aa5ee; filter: drop-shadow(0 0 10px rgba(74,144,217,0.45)); }
-    .ab-def::before { background: linear-gradient(90deg, transparent, #4a90d9 50%, transparent); }
+    /* DEF: circular shield badge that visually separates events (top) from cards (bottom) */
+    .ab-def {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: 86px; height: 86px;
+      border-radius: 50%;
+      padding: 0; min-height: 0;
+      margin: 6px auto;
+      gap: 2px;
+      font-size: 9px; letter-spacing: 0.6px;
+      background: radial-gradient(circle at 30% 25%, rgba(90,165,238,0.35), rgba(11,22,40,0.95) 75%);
+      border: 2px solid rgba(90,165,238,0.55);
+      box-shadow: 0 6px 22px rgba(74,144,217,0.32), inset 0 1px 0 rgba(255,255,255,0.15);
+      color: #cfe4ff;
+      overflow: visible !important;
+      position: relative;
+      z-index: 1;
+    }
+    .ab-def svg { width: 32px; height: 32px; color: #5aa5ee; filter: drop-shadow(0 0 10px rgba(74,144,217,0.6)); }
+    /* divider lines extending from either side of the shield */
+    .ab-def::before {
+      content: ''; position: absolute; top: 50%; left: 100%; height: 1px; width: 110px;
+      background: linear-gradient(90deg, rgba(127,168,201,0.5), transparent);
+      pointer-events: none;
+    }
+    .ab-def::after {
+      content: ''; position: absolute; top: 50%; right: 100%; height: 1px; width: 110px;
+      background: linear-gradient(90deg, transparent, rgba(127,168,201,0.5));
+      pointer-events: none;
+    }
     .ab-red    { box-shadow: 0 4px 24px rgba(255,71,87,0.15); }
     .ab-red    svg { color: #ff5e6d; filter: drop-shadow(0 0 10px rgba(255,71,87,0.55)); }
     .ab-red::before    { background: linear-gradient(90deg, transparent, #ff4757 50%, transparent); }
@@ -1767,9 +1791,9 @@ function renderLive() {
         <div class="action-grid">
           <button class="action-btn ab-goal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,8 15,10.2 13.8,13.8 10.2,13.8 9,10.2" fill="currentColor"/><path d="M12 8V4M15 10.2L18.5 8.5M13.8 13.8L16.2 17M10.2 13.8L7.8 17M9 10.2L5.5 8.5"/></svg>GOAL</button>
           <button class="action-btn ab-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 8.5v5M11 7.5v6M13 7.5v6M15 8.5v5M9 13.5c0 1.2 1.2 2 3 2s3-0.8 3-2"/></svg>SAVE</button>
+          <button class="action-btn ab-def"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF</button>
           <button class="action-btn ab-yellow"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
           <button class="action-btn ab-red"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
-          <button class="action-btn ab-def"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF ACTION</button>
         </div>
       </div>`;
     return;
@@ -1836,9 +1860,9 @@ function renderLive() {
     <div class="action-grid">
       <button class="action-btn ab-goal"   onclick="openGoal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,8 15,10.2 13.8,13.8 10.2,13.8 9,10.2" fill="currentColor"/><path d="M12 8V4M15 10.2L18.5 8.5M13.8 13.8L16.2 17M10.2 13.8L7.8 17M9 10.2L5.5 8.5"/></svg>GOAL</button>
       <button class="action-btn ab-save"   onclick="openSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 8.5v5M11 7.5v6M13 7.5v6M15 8.5v5M9 13.5c0 1.2 1.2 2 3 2s3-0.8 3-2"/></svg>SAVE</button>
+      <button class="action-btn ab-def"    onclick="openDefAction()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF</button>
       <button class="action-btn ab-yellow" onclick="openCard()"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
       <button class="action-btn ab-red"    onclick="openCard('redCard')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
-      <button class="action-btn ab-def"    onclick="openDefAction()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF ACTION</button>
     </div>
     <div class="card card-primary">
       <div class="sh">
