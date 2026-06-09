@@ -179,6 +179,9 @@
     .ab-yellow { box-shadow: 0 4px 24px rgba(255,212,59,0.12); }
     .ab-yellow svg { color: #ffd43b; filter: drop-shadow(0 0 10px rgba(255,212,59,0.5)); }
     .ab-yellow::before { background: linear-gradient(90deg, transparent, #ffd43b 50%, transparent); }
+    .ab-def { grid-column: 1 / -1; box-shadow: 0 4px 24px rgba(74,144,217,0.1); }
+    .ab-def svg { color: #5aa5ee; filter: drop-shadow(0 0 10px rgba(74,144,217,0.45)); }
+    .ab-def::before { background: linear-gradient(90deg, transparent, #4a90d9 50%, transparent); }
     .ab-red    { box-shadow: 0 4px 24px rgba(255,71,87,0.15); }
     .ab-red    svg { color: #ff5e6d; filter: drop-shadow(0 0 10px rgba(255,71,87,0.55)); }
     .ab-red::before    { background: linear-gradient(90deg, transparent, #ff4757 50%, transparent); }
@@ -462,6 +465,7 @@
     .ctbtn.yellow-sel { border-color: var(--yellow); background: rgba(255,212,59,0.12); color: var(--yellow); }
     .ctbtn.red-sel, .stbtn.red-sel { border-color: var(--red); background: rgba(255,71,87,0.12); color: #ff7b7b; }
     .stbtn.sel { border-color: var(--blue); background: rgba(74,144,217,0.12); color: var(--blue); }
+    .stbtn.def-sel { border-color: var(--blue); background: rgba(74,144,217,0.15); color: var(--blue); }
 
     /* ── ASSIGN ROW (New Game) ── */
     .ng-player-row { border-bottom: 1px solid var(--border); padding: 10px 0; }
@@ -630,6 +634,7 @@
     .tab.active .action-btn:nth-child(2) { animation-delay: 0.1s; }
     .tab.active .action-btn:nth-child(3) { animation-delay: 0.15s; }
     .tab.active .action-btn:nth-child(4) { animation-delay: 0.2s; }
+    .tab.active .action-btn:nth-child(5) { animation-delay: 0.25s; }
     @keyframes btnPop {
       from { opacity: 0; transform: scale(0.9) translateY(8px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
@@ -1044,6 +1049,29 @@
   </div>
 </div>
 
+<!-- DEF ACTION MODAL -->
+<div class="overlay" id="m-def">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🛡️ Defensive Action</div>
+    <div class="fg">
+      <div class="flbl">Action type</div>
+      <div class="save-type-btns">
+        <button class="stbtn def-sel" id="dt-block"     onclick="pickDefType('block')">🛡️ Block · 2pts</button>
+        <button class="stbtn"         id="dt-clearance" onclick="pickDefType('clearance')">↩️ Clearance · 1pt</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">Which defender?</div>
+      <div class="chips" id="def-chips"></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closeM('m-def')">Cancel</button>
+      <button class="btn btn-primary" id="def-confirm" disabled onclick="confirmDefAction()">Log Action</button>
+    </div>
+  </div>
+</div>
+
 <!-- SUB ON MODAL -->
 <div class="overlay" id="m-subon">
   <div class="modal">
@@ -1181,7 +1209,7 @@ const DB = {
 // ─── SCORING RULES ───
 const SCORE = {
   GK:  { app:2, goal:10, assist:3, penaltySave:6, cleanSheet:8,  yellow:-1, red:-3, savePer:4, concedePer:3 },
-  DEF: { app:2, goal:6,  assist:3, penaltySave:0, cleanSheet:3,  yellow:-1, red:-3 },
+  DEF: { app:2, goal:6,  assist:3, penaltySave:0, cleanSheet:3,  yellow:-1, red:-3, block:2, clearance:1 },
   MID: { app:2, goal:5,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
   FWD: { app:2, goal:4,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
 };
@@ -1401,6 +1429,8 @@ function pointsForBucket(sess, pid, bucket, count) {
     case 'penaltySaves': return sp.pos==='GK' ? count * rules.penaltySave : 0;
     case 'yellowCards':  return count * rules.yellow;
     case 'redCards':     return count * rules.red;
+    case 'blocks':       return sp.pos==='DEF' ? count * (rules.block||0) : 0;
+    case 'clearances':   return sp.pos==='DEF' ? count * (rules.clearance||0) : 0;
     default: return 0;
   }
 }
@@ -1417,16 +1447,18 @@ function calcMatchPoints(sess, pid) {
 
   add('App', rules.app);
 
-  let goals=0, assists=0, ogs=0, yellow=0, red=0, saves=0, penSv=0, conceded=0;
+  let goals=0, assists=0, ogs=0, yellow=0, red=0, saves=0, penSv=0, conceded=0, blocks=0, clearances=0;
   if (mode === 'live') {
     const evs = sessEvents(sess);
-    goals    = evs.filter(e => e.type==='goal'        && e.scorerId===pid).length;
-    assists  = evs.filter(e => (e.type==='goal'||e.type==='ownGoal') && e.assistId===pid).length;
-    ogs      = evs.filter(e => e.type==='ownGoal'     && e.scorerId===pid).length;
-    yellow   = evs.filter(e => e.type==='yellowCard'  && e.playerId===pid).length;
-    red      = evs.filter(e => e.type==='redCard'     && e.playerId===pid).length;
-    saves    = evs.filter(e => e.type==='save'        && e.playerId===pid).length;
-    penSv    = evs.filter(e => e.type==='penaltySave' && e.playerId===pid).length;
+    goals      = evs.filter(e => e.type==='goal'        && e.scorerId===pid).length;
+    assists    = evs.filter(e => (e.type==='goal'||e.type==='ownGoal') && e.assistId===pid).length;
+    ogs        = evs.filter(e => e.type==='ownGoal'     && e.scorerId===pid).length;
+    yellow     = evs.filter(e => e.type==='yellowCard'  && e.playerId===pid).length;
+    red        = evs.filter(e => e.type==='redCard'     && e.playerId===pid).length;
+    saves      = evs.filter(e => e.type==='save'        && e.playerId===pid).length;
+    penSv      = evs.filter(e => e.type==='penaltySave' && e.playerId===pid).length;
+    blocks     = evs.filter(e => e.type==='block'       && e.playerId===pid).length;
+    clearances = evs.filter(e => e.type==='clearance'   && e.playerId===pid).length;
     if (sp.pos === 'GK') {
       conceded = evs.filter(e =>
         (e.type==='goal' && e.team!==sp.team) ||
@@ -1452,6 +1484,10 @@ function calcMatchPoints(sess, pid) {
   }
   if (yellow) add(`YC×${yellow}`, yellow * rules.yellow);
   if (red)    add(`RC×${red}`,    red * rules.red);
+  if (sp.pos === 'DEF') {
+    if (blocks)     add(`Block×${blocks}`,       blocks     * (rules.block||0));
+    if (clearances) add(`Clearance×${clearances}`, clearances * (rules.clearance||0));
+  }
 
   // Clean sheet (GK +8, DEF +3) — use saved value when available, else compute live
   if ((sp.pos === 'GK' || sp.pos === 'DEF') && rules.cleanSheet) {
@@ -1502,6 +1538,12 @@ function calcStats(pid) {
       pts += myOG.length * -2; // own goal penalty (FPL convention)
       y += myYellow.length; pts += myYellow.length * rules.yellow;
       r += myRed.length;    pts += myRed.length    * rules.red;
+      if (sp.pos === 'DEF') {
+        const myBlocks     = evs.filter(e => e.type==='block'     && e.playerId===pid);
+        const myClearances = evs.filter(e => e.type==='clearance' && e.playerId===pid);
+        pts += myBlocks.length     * (rules.block||0);
+        pts += myClearances.length * (rules.clearance||0);
+      }
       if (sp.pos === 'GK') {
         const mySaves  = evs.filter(e => e.type==='save'        && e.playerId===pid);
         const myPenSv  = evs.filter(e => e.type==='penaltySave' && e.playerId===pid);
@@ -1724,6 +1766,7 @@ function renderLive() {
           <button class="action-btn ab-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 8.5v5M11 7.5v6M13 7.5v6M15 8.5v5M9 13.5c0 1.2 1.2 2 3 2s3-0.8 3-2"/></svg>SAVE</button>
           <button class="action-btn ab-yellow"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
           <button class="action-btn ab-red"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
+          <button class="action-btn ab-def"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF ACTION</button>
         </div>
       </div>`;
     return;
@@ -1792,6 +1835,7 @@ function renderLive() {
       <button class="action-btn ab-save"   onclick="openSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 8.5v5M11 7.5v6M13 7.5v6M15 8.5v5M9 13.5c0 1.2 1.2 2 3 2s3-0.8 3-2"/></svg>SAVE</button>
       <button class="action-btn ab-yellow" onclick="openCard()"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>CARD</button>
       <button class="action-btn ab-red"    onclick="openCard('redCard')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
+      <button class="action-btn ab-def"    onclick="openDefAction()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF ACTION</button>
     </div>
     <div class="card card-primary">
       <div class="sh">
@@ -1839,6 +1883,8 @@ function renderEvent(ev, sp, isAdmin) {
     case 'penaltySave': icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
     case 'yellowCard':  icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
     case 'redCard':     icon='🟥'; name=pname(ev.playerId)||'?'; detail='Red Card'; break;
+    case 'block':       icon='🛡️'; name=pname(ev.playerId)||'?'; detail='Block +2pts'; break;
+    case 'clearance':   icon='↩️'; name=pname(ev.playerId)||'?'; detail='Clearance +1pt'; break;
     case 'halfTime':    icon='⏱️'; name='Half Time'; detail=`Break at ${ev.min ?? 0}'`; extraClass='ev-ht'; break;
   }
   const minBadge = (ev.min != null) ? `<span class="ev-min">${ev.min}'</span>` : '';
@@ -2460,6 +2506,42 @@ window.pickCardType=function(type){CS.type=type;document.getElementById('ct-yell
 window.cardChipClick=function(el){document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');if(CS.type==='yellowCard')el.style.borderColor='var(--yellow)';CS.playerId=el.dataset.pid;document.getElementById('card-confirm').disabled=false;};
 window.confirmCard=async function(){if(!CS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:CS.type,playerId:CS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;const pname=S.players[CS.playerId]?.name||'';await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');if(CS.type==='yellowCard'){showPitchOverlay({mode:'yellow',emoji:'🟨',title:'YELLOW CARD',sub:pname});}else{showPitchOverlay({mode:'red',emoji:'🟥',title:'RED CARD',sub:pname});}};
 
+// ─── DEF ACTION MODAL ───
+let DS = { playerId:null, type:'block' };
+window.openDefAction = function() {
+  if (!activeSess()) return toast('No active game', true);
+  const defs = sessPlayers(activeSess()).filter(p => p.pos === 'DEF');
+  if (!defs.length) return toast('No defenders in this game', true);
+  DS = { playerId:null, type:'block' };
+  document.getElementById('def-confirm').disabled = true;
+  document.getElementById('dt-block').className     = 'stbtn def-sel';
+  document.getElementById('dt-clearance').className = 'stbtn';
+  document.getElementById('def-chips').innerHTML =
+    defs.map(p => `<span class="chip" data-pid="${p.pid}" onclick="defChipClick(this)">${p.name}</span>`).join('');
+  openM('m-def');
+};
+window.pickDefType = function(type) {
+  DS.type = type;
+  document.getElementById('dt-block').className     = 'stbtn' + (type==='block'     ? ' def-sel' : '');
+  document.getElementById('dt-clearance').className = 'stbtn' + (type==='clearance' ? ' def-sel' : '');
+};
+window.defChipClick = function(el) {
+  document.querySelectorAll('#def-chips .chip').forEach(c => c.className = 'chip');
+  el.className = 'chip sel-green';
+  DS.playerId = el.dataset.pid;
+  document.getElementById('def-confirm').disabled = false;
+};
+window.confirmDefAction = async function() {
+  if (!DS.playerId) return;
+  const min = getMatchMinute(activeSess());
+  const evData = { type: DS.type, playerId: DS.playerId, timestamp: Date.now() };
+  if (min != null) evData.min = min;
+  await DB.push(`sessions/${S.activeId}/events`, evData);
+  closeM('m-def');
+  const pname = S.players[DS.playerId]?.name || '';
+  toast(DS.type === 'block' ? `🛡️ Block logged — ${pname} +2pts` : `↩️ Clearance logged — ${pname} +1pt`);
+};
+
 // ─── ON-PITCH CELEBRATION / CARD TAKEOVER ───
 const CONFETTI_PALETTE = {
   red:   ['#ff4757','#ff7b7b','#ffffff','#ffd43b'],
@@ -3027,6 +3109,8 @@ window.openEditMatch=function(sid){
         case 'penaltySave': desc=`🧤 ${pname(ev.playerId)} — Pen Save`; break;
         case 'yellowCard':  desc=`🟨 ${pname(ev.playerId)}`; break;
         case 'redCard':     desc=`🟥 ${pname(ev.playerId)}`; break;
+        case 'block':       desc=`🛡️ ${pname(ev.playerId)} — Block`; break;
+        case 'clearance':   desc=`↩️ ${pname(ev.playerId)} — Clearance`; break;
         case 'halfTime':    desc=`⏱️ Half Time`; break;
       }
       const minTag = ev.min != null ? `<span class="ev-min" style="margin-right:6px">${ev.min}'</span>` : '';
