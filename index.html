@@ -2942,7 +2942,7 @@ function playerTeamInSession(sess, pid) {
 
 function getMatchSummary(sess) {
   const mode = sess.mode || 'live';
-  const sum = { goals: {}, assists: {}, ownGoals: {}, yellowCards: {}, redCards: {}, saves: {}, penaltySaves: {} };
+  const sum = { goals: {}, assists: {}, ownGoals: {}, yellowCards: {}, redCards: {}, saves: {}, penaltySaves: {}, blocks: {}, clearances: {} };
   const inc = (bucket, pid, by=1) => {
     if (!pid || by <= 0) return;
     sum[bucket][pid] = (sum[bucket][pid] || 0) + by;
@@ -2956,6 +2956,8 @@ function getMatchSummary(sess) {
         case 'penaltySave': inc('penaltySaves', ev.playerId); break;
         case 'yellowCard':  inc('yellowCards', ev.playerId); break;
         case 'redCard':     inc('redCards', ev.playerId); break;
+        case 'block':       inc('blocks', ev.playerId); break;
+        case 'clearance':   inc('clearances', ev.playerId); break;
       }
     }
   } else if (mode === 'post') {
@@ -3028,6 +3030,8 @@ window.openMatchSummary = function(sid) {
     renderSection('✨', 'Penalty Saves', sum.penaltySaves, 'penaltySaves'),
     renderSection('🟨', 'Yellow Cards', sum.yellowCards, 'yellowCards'),
     renderSection('🟥', 'Red Cards', sum.redCards, 'redCards'),
+    renderSection('🛡️', 'Blocks', sum.blocks, 'blocks'),
+    renderSection('↩️', 'Clearances', sum.clearances, 'clearances'),
   ].filter(Boolean).join('');
 
   // ── Match Points section: every player who appeared + their total for the day ──
@@ -3141,6 +3145,8 @@ window.openEditMatch=function(sid){
           <option value="penaltySave">🧤 Penalty Save</option>
           <option value="yellowCard">🟨 Yellow Card</option>
           <option value="redCard">🟥 Red Card</option>
+          <option value="block">🛡️ Block (DEF +2)</option>
+          <option value="clearance">↩️ Clearance (DEF +1)</option>
         </select>
         <div style="margin-bottom:10px">
           <div class="flbl">Team (goals only)</div>
