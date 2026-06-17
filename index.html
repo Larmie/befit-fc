@@ -649,6 +649,27 @@
     .mp-chip.pos { color: var(--green); background: rgba(0,214,143,0.07); border: 1px solid rgba(0,214,143,0.20); }
     .mp-chip.neg { color: #ff7b7b;     background: rgba(255,71,87,0.07); border: 1px solid rgba(255,71,87,0.22); }
 
+    /* Match Points — team columns (aligned with the scoreline) */
+    .mp-cols { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+    .mp-col { min-width: 0; }
+    .mp-col-hdr {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+      font-size: 13px; font-weight: 900; letter-spacing: 0.5px;
+      padding-bottom: 6px; margin-bottom: 2px; border-bottom: 2px solid currentColor;
+    }
+    .mp-col-sum { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .mp-player { border-bottom: 1px solid rgba(30,58,95,0.45); }
+    .mp-player:last-child { border-bottom: none; }
+    .mp-psum {
+      display: flex; align-items: center; gap: 5px; padding: 8px 0;
+      cursor: pointer; user-select: none; list-style: none;
+    }
+    .mp-psum::-webkit-details-marker { display: none; }
+    .mp-pname { font-weight: 700; font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mp-psum .mp-total { font-size: 12px; padding: 2px 7px; margin-left: auto; }
+    .mp-pbd { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 0 9px; animation: msFade 0.18s ease; }
+    .mp-pbd:empty::before { content: 'No points'; font-size: 10px; color: var(--muted); padding-bottom: 4px; }
+
     /* ── TAB ANIMATION ── */
     .tab.active { animation: tabFadeIn 0.28s ease forwards; }
     @keyframes tabFadeIn {
@@ -3090,31 +3111,51 @@ window.openMatchSummary = function(sid) {
     renderSection('↩️', 'Clearances', sum.clearances, 'clearances'),
   ].filter(Boolean).join('');
 
-  // ── Match Points section: every player who appeared + their total for the day ──
+  // ── Match Points: players split into team columns, aligned with the scoreline ──
+  // Tap a player to expand how they earned their points.
   let matchPointsSection = '';
   if (mode !== 'history') {
     const participants = sessPlayers(s)
       .map(p => ({ ...p, mp: calcMatchPoints(s, p.pid) }))
-      .filter(p => p.mp != null)
-      .sort((a,b) => b.mp.total - a.mp.total);
+      .filter(p => p.mp != null);
     if (participants.length > 0) {
-      const ptsRows = participants.map(p => {
-        const tc = TEAM_COLOR[p.team] || 'var(--muted)';
+      // Column order follows the scoreline (teams[0], teams[1], …); any stragglers appended.
+      const colTeams = [...teams];
+      participants.forEach(p => { if (!colTeams.includes(p.team)) colTeams.push(p.team); });
+
+      const renderPlayer = (p) => {
         const totalCls = p.mp.total === 0 ? 'zero' : (p.mp.total < 0 ? 'neg' : '');
         const chips = p.mp.breakdown.map(b =>
           `<span class="mp-chip ${b.pts<0?'neg':'pos'}">${b.label} ${b.pts>0?'+':''}${b.pts}</span>`
         ).join('');
-        return `<div class="mp-row">
-          <div class="mp-head">
-            <span class="ms-dot" style="background:${tc};color:${tc}"></span>
-            <span class="mp-name">${p.name}</span>
+        return `<details class="mp-player">
+          <summary class="mp-psum">
+            <span class="mp-pname">${p.name}</span>
             ${posTag(p.pos)}
             <span class="mp-total ${totalCls}">${p.mp.total>0?'+':''}${p.mp.total}</span>
+          </summary>
+          <div class="mp-pbd">${chips}</div>
+        </details>`;
+      };
+
+      const cols = colTeams.map(t => {
+        const tc = TEAM_COLOR[t] || 'var(--muted)';
+        const tname = t.charAt(0).toUpperCase()+t.slice(1);
+        const players = participants
+          .filter(p => p.team === t)
+          .sort((a,b) => b.mp.total - a.mp.total);
+        if (players.length === 0) return '';
+        const teamPts = players.reduce((sum,p) => sum + p.mp.total, 0);
+        return `<div class="mp-col">
+          <div class="mp-col-hdr" style="color:${tc}">
+            <span>${TEAM_EMOJI[t]||''} ${tname}</span>
+            <span class="mp-col-sum">${teamPts>0?'+':''}${teamPts} pts</span>
           </div>
-          <div class="mp-breakdown">${chips}</div>
+          ${players.map(renderPlayer).join('')}
         </div>`;
-      }).join('');
-      matchPointsSection = `<details class="ms-sect mp-sect">
+      }).filter(Boolean).join('');
+
+      matchPointsSection = `<details class="ms-sect mp-sect" open>
         <summary class="ms-sect-hdr">
           <span class="ms-sect-hdr-l">⭐ Match Points</span>
           <span class="ms-sect-hdr-r">
@@ -3122,7 +3163,7 @@ window.openMatchSummary = function(sid) {
             ${chevSVG}
           </span>
         </summary>
-        <div class="ms-sect-body">${ptsRows}</div>
+        <div class="ms-sect-body"><div class="mp-cols">${cols}</div></div>
       </details>`;
     }
   }
