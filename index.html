@@ -1084,8 +1084,8 @@
     <div class="fg">
       <div class="flbl">Action type</div>
       <div class="save-type-btns">
-        <button class="stbtn def-sel" id="dt-block"     onclick="pickDefType('block')">🛡️ Block · 2pts</button>
-        <button class="stbtn"         id="dt-clearance" onclick="pickDefType('clearance')">↩️ Clearance · 1pt</button>
+        <button class="stbtn def-sel" id="dt-block"     onclick="pickDefType('block')">🛡️ Block</button>
+        <button class="stbtn"         id="dt-clearance" onclick="pickDefType('clearance')">↩️ Clearance</button>
       </div>
     </div>
     <div class="fg">
@@ -1237,9 +1237,21 @@ const DB = {
 const SCORE = {
   GK:  { app:2, goal:10, assist:3, penaltySave:6, cleanSheet:8,  yellow:-1, red:-3, savePer:4, concedePer:3 },
   DEF: { app:2, goal:6,  assist:3, penaltySave:0, cleanSheet:3,  yellow:-1, red:-3, block:2, clearance:1 },
-  MID: { app:2, goal:5,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
-  FWD: { app:2, goal:4,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3 },
+  MID: { app:2, goal:5,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3, defBonusPer:4, defBonusPts:2 },
+  FWD: { app:2, goal:4,  assist:3, penaltySave:0, cleanSheet:0,  yellow:-1, red:-3, defBonusPer:6, defBonusPts:2 },
 };
+
+// Defensive-action points for a single match.
+// DEF earns per-action (block=2, clearance=1).
+// MID/FWD earn a threshold bonus: 1 block = 2 "def-pts", 1 clearance = 1 def-pt;
+// MID: every 4 def-pts → +2.  FWD: every 6 def-pts → +2.  Resets each match.
+function defActionPoints(pos, blocks, clearances) {
+  if (pos === 'DEF') return (blocks||0)*2 + (clearances||0)*1;
+  const r = SCORE[pos];
+  if (!r || !r.defBonusPer) return 0;
+  const defPts = (blocks||0)*2 + (clearances||0)*1;
+  return Math.floor(defPts / r.defBonusPer) * r.defBonusPts;
+}
 
 const ALL_TEAMS = ['red','green','blue','gold'];
 const TEAM_EMOJI = { red:'🔴', green:'🟢', blue:'🔵', gold:'🟡' };
@@ -1514,6 +1526,14 @@ function calcMatchPoints(sess, pid) {
   if (sp.pos === 'DEF') {
     if (blocks)     add(`Block×${blocks}`,       blocks     * (rules.block||0));
     if (clearances) add(`Clearance×${clearances}`, clearances * (rules.clearance||0));
+  } else if (sp.pos === 'MID' || sp.pos === 'FWD') {
+    const bonus = defActionPoints(sp.pos, blocks, clearances);
+    if (bonus) {
+      const parts = [];
+      if (blocks)     parts.push(`${blocks}B`);
+      if (clearances) parts.push(`${clearances}C`);
+      add(`Def Bonus (${parts.join('+')})`, bonus);
+    }
   }
 
   // Clean sheet (GK +8, DEF +3) — use saved value when available, else compute live
@@ -1565,11 +1585,10 @@ function calcStats(pid) {
       pts += myOG.length * -2; // own goal penalty (FPL convention)
       y += myYellow.length; pts += myYellow.length * rules.yellow;
       r += myRed.length;    pts += myRed.length    * rules.red;
-      if (sp.pos === 'DEF') {
-        const myBlocks     = evs.filter(e => e.type==='block'     && e.playerId===pid);
-        const myClearances = evs.filter(e => e.type==='clearance' && e.playerId===pid);
-        pts += myBlocks.length     * (rules.block||0);
-        pts += myClearances.length * (rules.clearance||0);
+      if (sp.pos === 'DEF' || sp.pos === 'MID' || sp.pos === 'FWD') {
+        const myBlocks     = evs.filter(e => e.type==='block'     && e.playerId===pid).length;
+        const myClearances = evs.filter(e => e.type==='clearance' && e.playerId===pid).length;
+        pts += defActionPoints(sp.pos, myBlocks, myClearances);
       }
       if (sp.pos === 'GK') {
         const mySaves  = evs.filter(e => e.type==='save'        && e.playerId===pid);
@@ -1910,8 +1929,18 @@ function renderEvent(ev, sp, isAdmin) {
     case 'penaltySave': icon='🧤'; name=pname(ev.playerId)||'?'; detail='Penalty Save ✨'; break;
     case 'yellowCard':  icon='🟨'; name=pname(ev.playerId)||'?'; detail='Yellow Card'; break;
     case 'redCard':     icon='🟥'; name=pname(ev.playerId)||'?'; detail='Red Card'; break;
-    case 'block':       icon='🛡️'; name=pname(ev.playerId)||'?'; detail='Block +2pts'; break;
-    case 'clearance':   icon='↩️'; name=pname(ev.playerId)||'?'; detail='Clearance +1pt'; break;
+    case 'block': {
+      icon='🛡️'; name=pname(ev.playerId)||'?';
+      const pos = sp.find(x=>x.pid===ev.playerId)?.pos;
+      detail = pos==='DEF' ? 'Block +2pts' : 'Block · counts toward def bonus';
+      break;
+    }
+    case 'clearance': {
+      icon='↩️'; name=pname(ev.playerId)||'?';
+      const pos = sp.find(x=>x.pid===ev.playerId)?.pos;
+      detail = pos==='DEF' ? 'Clearance +1pt' : 'Clearance · counts toward def bonus';
+      break;
+    }
     case 'halfTime':    icon='⏱️'; name='Half Time'; detail=`Break at ${ev.min ?? 0}'`; extraClass='ev-ht'; break;
   }
   const minBadge = (ev.min != null) ? `<span class="ev-min">${ev.min}'</span>` : '';
@@ -2566,7 +2595,7 @@ window.confirmDefAction = async function() {
   await DB.push(`sessions/${S.activeId}/events`, evData);
   closeM('m-def');
   const pname = S.players[DS.playerId]?.name || '';
-  toast(DS.type === 'block' ? `🛡️ Block logged — ${pname} +2pts` : `↩️ Clearance logged — ${pname} +1pt`);
+  toast(DS.type === 'block' ? `🛡️ Block logged — ${pname}` : `↩️ Clearance logged — ${pname}`);
 };
 
 // ─── ON-PITCH CELEBRATION / CARD TAKEOVER ───
@@ -3172,8 +3201,8 @@ window.openEditMatch=function(sid){
           <option value="penaltySave">🧤 Penalty Save</option>
           <option value="yellowCard">🟨 Yellow Card</option>
           <option value="redCard">🟥 Red Card</option>
-          <option value="block">🛡️ Block (DEF +2)</option>
-          <option value="clearance">↩️ Clearance (DEF +1)</option>
+          <option value="block">🛡️ Block</option>
+          <option value="clearance">↩️ Clearance</option>
         </select>
         <div style="margin-bottom:10px">
           <div class="flbl">Team (goals only)</div>
