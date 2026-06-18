@@ -3342,6 +3342,24 @@ window.openEditMatch=function(sid){
     </div>`;
   }
 
+  // Current roster with remove buttons (live & post only) — the mirror of Add Player.
+  // Taking a player off the team-sheet removes their appearance and any points.
+  let rosterHtml='';
+  if(mode==='live'||mode==='post'){
+    const roster=sessPlayers(s).sort((a,b)=>a.name.localeCompare(b.name));
+    if(roster.length){
+      rosterHtml=`
+        <div class="fg">
+          <div class="flbl">Players in this match <span style="font-weight:400;color:var(--muted)">(🗑 removes them & their points)</span></div>
+          ${roster.map(p=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;display:flex;align-items:center;gap:6px">${p.name} ${posTag(p.pos)} ${teamTag(p.team)}</span>
+              <button class="icon-btn" onclick="emRemovePlayer('${sid}','${p.team}','${p.pid}')">🗑</button>
+            </div>`).join('')}
+        </div>`;
+    }
+  }
+
   // Add-player section (live & post only — history mode already lets you tick any player).
   // For someone who actually played but was never on the team-sheet: adds them to the
   // roster so appearance points (and any later stat edits) apply.
@@ -3377,6 +3395,7 @@ window.openEditMatch=function(sid){
     <div class="fg"><div class="flbl">Date</div><input class="finput" id="em-date" type="date" value="${s.date}"></div>
     <div class="fg"><div class="flbl">Score</div>${scoreInputs}</div>
     ${extraHtml}
+    ${rosterHtml}
     ${addPlayerHtml}`;
   openM('m-editmatch');
   // initialize assist wrap visibility based on the current type (only relevant in live mode)
@@ -3405,6 +3424,18 @@ window.emAddPlayer=async function(sid){
   await DB.update(`sessions/${sid}/teams/${team}/players/${pid}`,{position:pos});
   toast(`${S.players[pid]?.name||'Player'} added to match ✓`);
   openEditMatch(sid); // refresh so they appear in the events/stats list
+};
+
+// Remove a player from a match team-sheet — the mirror of emAddPlayer.
+// Takes back their appearance and any points. Their logged events (if any) stay on
+// the match record but are no longer credited to them.
+window.emRemovePlayer=async function(sid,team,pid){
+  if(!S.admin)return;
+  const name=S.players[pid]?.name||'this player';
+  if(!confirm(`Remove ${name} from this match? This takes back their appearance and any points.`))return;
+  await DB.remove(`sessions/${sid}/teams/${team}/players/${pid}`);
+  toast(`${name} removed from match`,true);
+  openEditMatch(sid); // refresh the list
 };
 
 window.saveEditMatch=async function(){
