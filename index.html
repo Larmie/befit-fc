@@ -3342,13 +3342,69 @@ window.openEditMatch=function(sid){
     </div>`;
   }
 
+  // Add-player section (live & post only — history mode already lets you tick any player).
+  // For someone who actually played but was never on the team-sheet: adds them to the
+  // roster so appearance points (and any later stat edits) apply.
+  let addPlayerHtml='';
+  if(mode==='live'||mode==='post'){
+    const inGame=new Set(sessPlayers(s).map(p=>p.pid));
+    const avail=Object.entries(S.players)
+      .filter(([id])=>!inGame.has(id))
+      .sort(([,a],[,b])=>a.name.localeCompare(b.name));
+    if(avail.length){
+      const playerOpts=avail.map(([id,p])=>
+        `<option value="${id}" data-pos="${p.defaultPosition}" data-team="${p.defaultTeam}">${p.name}</option>`).join('');
+      const teamOpts=teams.map(t=>`<option value="${t}">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</option>`).join('');
+      addPlayerHtml=`
+        <div class="fg">
+          <div class="flbl">Add a player who played <span style="font-weight:400;color:var(--muted)">(missed someone? add them for their appearance points)</span></div>
+          <select class="fsel" id="em-addp-pid" style="margin-bottom:10px" onchange="emAddpChange()">${playerOpts}</select>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <select class="assign-sel" id="em-addp-team">${teamOpts}</select>
+            <select class="assign-sel" id="em-addp-pos">
+              <option value="GK">GK</option>
+              <option value="DEF">DEF</option>
+              <option value="MID">MID</option>
+              <option value="FWD">FWD</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 18px" onclick="emAddPlayer('${sid}')">+ Add to Match</button>
+        </div>`;
+    }
+  }
+
   document.getElementById('em-body').innerHTML=`
     <div class="fg"><div class="flbl">Date</div><input class="finput" id="em-date" type="date" value="${s.date}"></div>
     <div class="fg"><div class="flbl">Score</div>${scoreInputs}</div>
-    ${extraHtml}`;
+    ${extraHtml}
+    ${addPlayerHtml}`;
   openM('m-editmatch');
   // initialize assist wrap visibility based on the current type (only relevant in live mode)
   if(mode==='live' && window.emTypeChange) window.emTypeChange();
+  // sync the add-player team/position selects to the first listed player's defaults
+  if(document.getElementById('em-addp-pid')) emAddpChange();
+};
+
+// Add-player picker: keep team/position in step with the chosen player's defaults.
+window.emAddpChange=function(){
+  const sel=document.getElementById('em-addp-pid');
+  const opt=sel?.options[sel.selectedIndex];
+  if(!opt)return;
+  const posSel=document.getElementById('em-addp-pos');
+  const teamSel=document.getElementById('em-addp-team');
+  if(posSel && opt.dataset.pos) posSel.value=opt.dataset.pos;
+  if(teamSel && opt.dataset.team && [...teamSel.options].some(o=>o.value===opt.dataset.team)) teamSel.value=opt.dataset.team;
+};
+
+window.emAddPlayer=async function(sid){
+  if(!S.admin)return;
+  const pid=document.getElementById('em-addp-pid')?.value;
+  const team=document.getElementById('em-addp-team')?.value;
+  const pos=document.getElementById('em-addp-pos')?.value||'MID';
+  if(!pid||!team)return toast('Pick a player and team',true);
+  await DB.update(`sessions/${sid}/teams/${team}/players/${pid}`,{position:pos});
+  toast(`${S.players[pid]?.name||'Player'} added to match ✓`);
+  openEditMatch(sid); // refresh so they appear in the events/stats list
 };
 
 window.saveEditMatch=async function(){
