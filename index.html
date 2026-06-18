@@ -1110,7 +1110,7 @@
       </div>
     </div>
     <div class="fg">
-      <div class="flbl">Which defender?</div>
+      <div class="flbl">Which player?</div>
       <div class="chips" id="def-chips"></div>
     </div>
     <div class="mfooter">
@@ -2587,14 +2587,17 @@ window.confirmCard=async function(){if(!CS.playerId)return;const min=getMatchMin
 let DS = { playerId:null, type:'block' };
 window.openDefAction = function() {
   if (!activeSess()) return toast('No active game', true);
-  const defs = sessPlayers(activeSess()).filter(p => p.pos === 'DEF');
-  if (!defs.length) return toast('No defenders in this game', true);
+  const order = { DEF:0, MID:1, FWD:2 };
+  const defs = sessPlayers(activeSess())
+    .filter(p => p.pos === 'DEF' || p.pos === 'MID' || p.pos === 'FWD')
+    .sort((a,b) => (order[a.pos] - order[b.pos]) || a.name.localeCompare(b.name));
+  if (!defs.length) return toast('No outfield players in this game', true);
   DS = { playerId:null, type:'block' };
   document.getElementById('def-confirm').disabled = true;
   document.getElementById('dt-block').className     = 'stbtn def-sel';
   document.getElementById('dt-clearance').className = 'stbtn';
   document.getElementById('def-chips').innerHTML =
-    defs.map(p => `<span class="chip" data-pid="${p.pid}" onclick="defChipClick(this)">${p.name}</span>`).join('');
+    defs.map(p => `<span class="chip" data-pid="${p.pid}" onclick="defChipClick(this)">${p.name} ${posTag(p.pos)}</span>`).join('');
   openM('m-def');
 };
 window.pickDefType = function(type) {
