@@ -360,6 +360,13 @@
     .ptable tr:last-child td { border-bottom: none; }
     .ptable .pts { font-weight: 800; color: var(--green); }
     .ptable .rk { color: var(--muted); font-size: 11px; }
+    .tform-row { padding: 10px 0; border-bottom: 1px solid rgba(30,58,95,0.5); }
+    .tform-row:last-child { border-bottom: none; }
+    .tform-top { display: flex; align-items: center; gap: 10px; }
+    .tform-team { font-weight: 800; font-size: 13px; min-width: 64px; flex-shrink: 0; }
+    .tform-dots { display: flex; gap: 5px; }
+    .tform-dot { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; }
+    .tform-sum { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
     /* ── TAGS ── */
     .pos-tag { display: inline-block; padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 900; letter-spacing: 0.5px; }
@@ -1693,6 +1700,26 @@ function calcStreak() {
   return { team:lastWinner, count:streak };
 }
 
+// Per-team recent form: chronological list of 'W'/'D'/'L' for each game a team played.
+function calcForm() {
+  const F = {};
+  const completed = Object.values(S.sessions)
+    .filter(s => s.status==='completed')
+    .sort((a,b) => new Date(a.date)-new Date(b.date));
+  for (const sess of completed) {
+    const teams = getActiveTeams(sess);
+    if (teams.length < 2) continue;
+    const [t1,t2] = [teams[0],teams[1]];
+    const g1 = getTeamGoals(sess,t1), g2 = getTeamGoals(sess,t2);
+    if (!F[t1]) F[t1]=[];
+    if (!F[t2]) F[t2]=[];
+    if (g1>g2)      { F[t1].push('W'); F[t2].push('L'); }
+    else if (g2>g1) { F[t1].push('L'); F[t2].push('W'); }
+    else            { F[t1].push('D'); F[t2].push('D'); }
+  }
+  return F;
+}
+
 // ─── RENDER ───
 function renderAll() {
   if (!_dataReady && (Object.keys(S.players).length > 0 || !FIREBASE_CONFIGURED)) _dataReady = true;
@@ -2132,6 +2159,7 @@ function renderTeams() {
   }
   const T  = calcTeams();
   const streak = calcStreak();
+  const form = calcForm();
   const activeTeams = ALL_TEAMS.filter(t => T[t].played > 0);
 
   const completedSessions = Object.entries(S.sessions)
@@ -2200,6 +2228,25 @@ function renderTeams() {
       <td class="pts">${T[t].pts}</td>
     </tr>`).join('');
 
+  const dotStyle = { W:'background:var(--green);color:#06281a', D:'background:rgba(127,168,201,0.3);color:var(--muted)', L:'background:rgba(255,123,123,0.25);color:#ff7b7b' };
+  const formRows = sortedTeams.map(t => {
+    const res = form[t] || [];
+    const last5 = res.slice(-5);
+    const last3 = res.slice(-3);
+    const w3 = last3.filter(r=>r==='W').length;
+    const w5 = last5.filter(r=>r==='W').length;
+    const dots = last5.map(r=>`<span class="tform-dot" style="${dotStyle[r]}">${r}</span>`).join('')
+      || `<span style="font-size:11px;color:var(--muted)">No games yet</span>`;
+    return `
+      <div class="tform-row">
+        <div class="tform-top">
+          <div class="tform-team" style="color:${TEAM_COLOR[t]}">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)}</div>
+          <div class="tform-dots">${dots}</div>
+        </div>
+        <div class="tform-sum">Won ${w3} of last ${last3.length} · ${w5} of last ${last5.length}</div>
+      </div>`;
+  }).join('');
+
   const recentHtml = completedSessions.slice(0,10).map(([sid,s])=>{
     const teams = getActiveTeams(s);
     const scoreStr = teams.map(t=>`<span style="color:${TEAM_COLOR[t]};font-weight:800">${TEAM_EMOJI[t]||''} ${t.charAt(0).toUpperCase()+t.slice(1)} ${getTeamGoals(s,t)}</span>`).join('<span style="margin:0 8px;color:var(--muted)">—</span>');
@@ -2227,6 +2274,11 @@ function renderTeams() {
         <thead><tr><th>Team</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
         <tbody>${standingsRows}</tbody>
       </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Recent Form</div>
+      <div style="font-size:10px;color:var(--muted);margin:-4px 0 10px">Last 5 games · oldest left, latest right</div>
+      ${formRows || `<div style="color:var(--muted);font-size:12px;text-align:center;padding:14px">No completed games yet</div>`}
     </div>
     <div class="card">
       <div class="card-title">Recent Results</div>
