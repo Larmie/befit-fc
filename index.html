@@ -1525,26 +1525,8 @@ function getStoppageElapsedMs(sess, now=Date.now()) {
     : 0;
   return saved + current;
 }
-function getTotalElapsedMs(sess, now=Date.now()) {
-  const regular = getRegularElapsedMs(sess, now);
-  if (regular == null) return null;
-  return regular + getStoppageElapsedMs(sess, now);
-}
 function getDisplayElapsedMs(sess, now=Date.now()) {
-  const t = sess?.timer;
-  if (!t) return null;
-  if (t.status === 'stoppage') {
-    if (Number.isFinite(t.stoppageBaseTotalMs)) return t.stoppageBaseTotalMs;
-    const regular = getRegularElapsedMs(sess, now) || 0;
-    return regular + (t.stoppageTotal || 0);
-  }
-  return getTotalElapsedMs(sess, now);
-}
-function getCurrentStoppageMs(sess, now=Date.now()) {
-  const t = sess?.timer;
-  return t?.status === 'stoppage' && t.stoppageStartedAt
-    ? Math.max(0, now - t.stoppageStartedAt)
-    : 0;
+  return getRegularElapsedMs(sess, now);
 }
 function formatTimerClock(ms) {
   const totalSeconds = Math.max(0, Math.floor((ms || 0) / 1000));
@@ -1555,15 +1537,15 @@ function formatTimerClock(ms) {
 function getEventMinuteParts(sess, now=Date.now()) {
   const t = sess?.timer;
   if (!t || !t.startedAt || t.status === 'idle') return null;
-  const totalMs = getTotalElapsedMs(sess, now);
-  if (totalMs == null) return null;
-  const parts = { min: Math.max(1, Math.ceil(totalMs / 60000)) };
+  const regularMs = getRegularElapsedMs(sess, now);
+  if (regularMs == null) return null;
+  const parts = { min: Math.max(1, Math.ceil(regularMs / 60000)) };
   if (t.status === 'stoppage') {
     const baseMs = Number.isFinite(t.stoppageBaseTotalMs)
       ? t.stoppageBaseTotalMs
-      : Math.max(0, totalMs - getCurrentStoppageMs(sess, now));
-    parts.stoppageBaseMin = Math.floor(baseMs / 60000);
-    parts.stoppageMin = Math.max(1, Math.ceil(getCurrentStoppageMs(sess, now) / 60000));
+      : regularMs;
+    parts.stoppageBaseMin = Math.max(1, Math.ceil(baseMs / 60000));
+    parts.stoppageMin = Math.max(1, Math.ceil(getStoppageElapsedMs(sess, now) / 60000));
   }
   return parts;
 }
@@ -1612,7 +1594,7 @@ function updateTimerDisplay(sess) {
   const mainClock = document.getElementById('tp-clock');
   if (mainClock) mainClock.textContent = formatTimerClock(getDisplayElapsedMs(sess));
   const stoppageClock = document.getElementById('stoppage-clock');
-  if (stoppageClock) stoppageClock.textContent = '+' + formatTimerClock(getCurrentStoppageMs(sess));
+  if (stoppageClock) stoppageClock.textContent = '+' + formatTimerClock(getStoppageElapsedMs(sess));
 }
 function startTimerTick() {
   if (_timerInterval) return;
@@ -2062,7 +2044,7 @@ function renderLive() {
       ? (sess.timer?.pauseReason === 'halftime' ? `HT ${tClock}` : `Paused ${tClock}`)
       : tStatus === 'ended' ? `FT ${tClock}` : tClock;
     const stoppageHtml = tStatus === 'stoppage'
-      ? `<div class="stoppage-pill"><span>STOPPAGE</span><span class="stoppage-clock" id="stoppage-clock">+${formatTimerClock(getCurrentStoppageMs(sess))}</span></div>`
+      ? `<div class="stoppage-pill"><span>STOPPAGE TOTAL</span><span class="stoppage-clock" id="stoppage-clock">+${formatTimerClock(getStoppageElapsedMs(sess))}</span></div>`
       : '';
     let ctrlHtml = '';
     if (adm) {
@@ -2822,7 +2804,7 @@ window.startStoppage = async function() {
   const now = Date.now();
   const t = {
     ...(sess.timer||{}), status:'stoppage', stoppageStartedAt:now,
-    stoppageBaseTotalMs:getTotalElapsedMs(sess, now), pauseReason:'stoppage'
+    stoppageBaseTotalMs:getRegularElapsedMs(sess, now), pauseReason:'stoppage'
   };
   if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
   renderLive();
