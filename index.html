@@ -284,9 +284,10 @@
 
     /* ── LIVE TIMER ── */
     .timer-bar {
-      display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: flex-start; gap: 10px;
       margin-bottom: 14px;
     }
+    .timer-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; flex-shrink: 0; }
     .timer-pill {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 8px 14px; border-radius: 14px;
@@ -299,8 +300,22 @@
     .timer-pill.is-idle  { color: var(--muted); background: rgba(127,168,201,0.08); border-color: var(--border); box-shadow: none; }
     .timer-pill.is-paused { color: #ffd43b; background: rgba(255,212,59,0.10); border-color: rgba(255,212,59,0.32); box-shadow: 0 0 18px rgba(255,212,59,0.10); }
     .timer-pill.is-ended { color: var(--muted); background: rgba(127,168,201,0.06); border-color: var(--border); box-shadow: none; }
+    .timer-pill.is-stoppage {
+      color: #c3cbd5; background: rgba(116,125,140,0.16);
+      border-color: rgba(166,176,190,0.3); box-shadow: none;
+    }
+    .stoppage-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 11px; border-radius: 12px;
+      color: #aeb8c5; background: rgba(91,101,116,0.18);
+      border: 1px solid rgba(145,155,170,0.25);
+      font-size: 12px; font-weight: 900; letter-spacing: 0.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .stoppage-pill .stoppage-clock { font-size: 15px; }
+    .timer-actions { display: flex; flex: 1; gap: 8px; min-width: 0; }
     .timer-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: blink 1.4s infinite; }
-    .timer-pill.is-idle .timer-dot, .timer-pill.is-paused .timer-dot, .timer-pill.is-ended .timer-dot { animation: none; }
+    .timer-pill.is-idle .timer-dot, .timer-pill.is-paused .timer-dot, .timer-pill.is-ended .timer-dot, .timer-pill.is-stoppage .timer-dot { animation: none; }
     .timer-ctrl {
       flex: 1; padding: 10px 14px; border-radius: 14px;
       border: 1px solid var(--border); background: rgba(23,47,82,0.4);
@@ -326,7 +341,13 @@
       background: rgba(74,144,217,0.10); color: #5aa5ee;
       border-color: rgba(74,144,217,0.32);
     }
+    .timer-ctrl.is-stoppage {
+      background: rgba(116,125,140,0.16); color: #c3cbd5;
+      border-color: rgba(166,176,190,0.3);
+    }
     .timer-ctrl.is-ended { display: none; }
+    .action-btn:disabled { opacity: 0.34; cursor: not-allowed; filter: saturate(0.35); box-shadow: none; }
+    .action-btn:disabled:active { transform: none; }
 
     /* full-width kickoff hero (when timer idle) */
     .kickoff-hero {
@@ -536,6 +557,48 @@
     .mode-live    { background: rgba(0,214,143,0.15); color: var(--green); }
     .mode-post    { background: rgba(74,144,217,0.15); color: #4a90d9; }
     .mode-history { background: rgba(127,168,201,0.12); color: var(--muted); }
+
+    /* ── MATCH PAYMENTS (Admin) ── */
+    .payment-match-row {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 13px 0; border: none; border-bottom: 1px solid var(--border);
+      background: none; color: var(--text); text-align: left; cursor: pointer;
+    }
+    .payment-match-row:last-child { border-bottom: none; }
+    .payment-match-date { font-size: 13px; font-weight: 800; }
+    .payment-match-meta { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .payment-match-total { color: var(--green); font-size: 14px; font-weight: 900; white-space: nowrap; }
+    .payment-row {
+      display: grid; grid-template-columns: minmax(0,1fr) 98px; gap: 10px;
+      align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);
+    }
+    .payment-row:last-child { border-bottom: none; }
+    .payment-player { min-width: 0; }
+    .payment-player-name { font-size: 13px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .payment-player-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+    .payment-status { font-size: 10px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
+    .payment-status.is-paid { color: var(--green); }
+    .payment-status.is-unpaid { color: #ff7b7b; }
+    .payment-input-wrap { position: relative; }
+    .payment-currency {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: 10px; font-weight: 900; pointer-events: none;
+    }
+    .payment-input {
+      width: 100%; padding: 10px 8px 10px 31px; border-radius: 10px;
+      border: 1px solid var(--border); background: rgba(8,15,30,0.7);
+      color: var(--text); font: inherit; font-size: 13px; font-weight: 800;
+      font-variant-numeric: tabular-nums; outline: none;
+    }
+    .payment-input:focus { border-color: rgba(0,214,143,0.55); box-shadow: 0 0 0 2px rgba(0,214,143,0.08); }
+    .payment-summary {
+      position: sticky; bottom: -1px; margin-top: 14px; padding: 14px;
+      border-radius: 14px; border: 1px solid rgba(0,214,143,0.22);
+      background: rgba(8,15,30,0.96); box-shadow: 0 -8px 24px rgba(0,0,0,0.28);
+    }
+    .payment-summary-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .payment-summary-total { color: var(--green); font-size: 23px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .payment-updated { margin-top: 6px; color: var(--muted); font-size: 10px; text-align: right; }
 
     /* ── EMPTY STATE ── */
     .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
@@ -1091,6 +1154,18 @@
   </div>
 </div>
 
+<!-- MATCH PAYMENTS MODAL (ADMIN ONLY) -->
+<div class="overlay" id="m-payments">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="pay-title">Match Payments</div>
+    <div id="pay-body"></div>
+    <div class="mfooter">
+      <button class="btn btn-ghost" onclick="closePayments()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT MATCH MODAL -->
 <div class="overlay" id="m-editmatch">
   <div class="modal">
@@ -1368,7 +1443,9 @@ let editSessId = null;
 let pcPid = null;
 let playersView = 'list';
 let adminView = 'players';
+let paymentSessId = null;
 let viewerPid = null;
+let _timerInterval = null;
 let _welcomeShown = false;
 let _may24cleaned = false;
 let _dataReady = false;
@@ -1428,29 +1505,121 @@ function goalsFor(sess, team) {
 }
 
 // ─── MATCH TIMER ───
-function getMatchMinute(sess) {
+function getRegularElapsedMs(sess, now=Date.now()) {
   const t = sess?.timer;
   if (!t || !t.startedAt || t.status === 'idle') return null;
   let ref;
-  if (t.status === 'ended')      ref = t.endedAt || Date.now();
-  else if (t.status === 'paused') ref = t.pausedAt || Date.now();
-  else                            ref = Date.now();
+  if (t.status === 'ended')       ref = t.endedAt || now;
+  else if (t.status === 'paused') ref = t.pausedAt || now;
+  else if (t.status === 'stoppage') ref = t.stoppageStartedAt || now;
+  else                             ref = now;
   const elapsed = ref - t.startedAt - (t.pausedTotal || 0);
-  return Math.max(0, Math.floor(elapsed / 60000));
+  return Math.max(0, elapsed);
+}
+function getStoppageElapsedMs(sess, now=Date.now()) {
+  const t = sess?.timer;
+  if (!t || t.status === 'idle') return 0;
+  const saved = t.stoppageTotal || 0;
+  const current = t.status === 'stoppage' && t.stoppageStartedAt
+    ? Math.max(0, now - t.stoppageStartedAt)
+    : 0;
+  return saved + current;
+}
+function getTotalElapsedMs(sess, now=Date.now()) {
+  const regular = getRegularElapsedMs(sess, now);
+  if (regular == null) return null;
+  return regular + getStoppageElapsedMs(sess, now);
+}
+function getDisplayElapsedMs(sess, now=Date.now()) {
+  const t = sess?.timer;
+  if (!t) return null;
+  if (t.status === 'stoppage') {
+    if (Number.isFinite(t.stoppageBaseTotalMs)) return t.stoppageBaseTotalMs;
+    const regular = getRegularElapsedMs(sess, now) || 0;
+    return regular + (t.stoppageTotal || 0);
+  }
+  return getTotalElapsedMs(sess, now);
+}
+function getCurrentStoppageMs(sess, now=Date.now()) {
+  const t = sess?.timer;
+  return t?.status === 'stoppage' && t.stoppageStartedAt
+    ? Math.max(0, now - t.stoppageStartedAt)
+    : 0;
+}
+function formatTimerClock(ms) {
+  const totalSeconds = Math.max(0, Math.floor((ms || 0) / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = String(totalSeconds % 60).padStart(2,'0');
+  return `${mins}:${secs}`;
+}
+function getEventMinuteParts(sess, now=Date.now()) {
+  const t = sess?.timer;
+  if (!t || !t.startedAt || t.status === 'idle') return null;
+  const totalMs = getTotalElapsedMs(sess, now);
+  if (totalMs == null) return null;
+  const parts = { min: Math.max(1, Math.ceil(totalMs / 60000)) };
+  if (t.status === 'stoppage') {
+    const baseMs = Number.isFinite(t.stoppageBaseTotalMs)
+      ? t.stoppageBaseTotalMs
+      : Math.max(0, totalMs - getCurrentStoppageMs(sess, now));
+    parts.stoppageBaseMin = Math.floor(baseMs / 60000);
+    parts.stoppageMin = Math.max(1, Math.ceil(getCurrentStoppageMs(sess, now) / 60000));
+  }
+  return parts;
+}
+function getMatchMinute(sess) {
+  return getEventMinuteParts(sess)?.min ?? null;
+}
+function stampEventMinute(evData, sess, now=Date.now()) {
+  const parts = getEventMinuteParts(sess, now);
+  if (!parts) return evData;
+  evData.min = parts.min;
+  if (parts.stoppageMin != null) {
+    evData.stoppageBaseMin = parts.stoppageBaseMin;
+    evData.stoppageMin = parts.stoppageMin;
+  }
+  return evData;
+}
+function formatEventMinute(ev) {
+  if (ev?.stoppageMin != null && ev?.stoppageBaseMin != null) {
+    return `${ev.stoppageBaseMin}+${ev.stoppageMin}'`;
+  }
+  return ev?.min != null ? `${ev.min}'` : '';
+}
+function finalizeActiveStoppage(timer, now=Date.now()) {
+  const t = { ...(timer || {}) };
+  if (t.status !== 'stoppage') return t;
+  const duration = Math.max(0, now - (t.stoppageStartedAt || now));
+  t.stoppageTotal = (t.stoppageTotal || 0) + duration;
+  t.pausedTotal = (t.pausedTotal || 0) + duration;
+  t.stoppageStartedAt = null;
+  t.stoppageBaseTotalMs = null;
+  return t;
 }
 function timerStatus(sess) { return sess?.timer?.status || 'idle'; }
-function isTimerActive(sess) { return ['running','paused'].includes(timerStatus(sess)); }
-let _timerInterval = null;
+function isTimerActive(sess) { return ['running','paused','stoppage'].includes(timerStatus(sess)); }
+function canLogTimedEvent(sess) { return S.admin && ['running','stoppage'].includes(timerStatus(sess)); }
+function requireLiveTimer() {
+  const sess = activeSess();
+  if (!S.admin) { toast('Admin only',true); return false; }
+  if (!sess || !['running','stoppage'].includes(timerStatus(sess))) {
+    toast('Kick off or resume the timer before logging events',true);
+    return false;
+  }
+  return true;
+}
+function updateTimerDisplay(sess) {
+  const mainClock = document.getElementById('tp-clock');
+  if (mainClock) mainClock.textContent = formatTimerClock(getDisplayElapsedMs(sess));
+  const stoppageClock = document.getElementById('stoppage-clock');
+  if (stoppageClock) stoppageClock.textContent = '+' + formatTimerClock(getCurrentStoppageMs(sess));
+}
 function startTimerTick() {
   if (_timerInterval) return;
   _timerInterval = setInterval(() => {
     const sess = activeSess();
-    if (!sess || timerStatus(sess) !== 'running') return;
-    const pillClock = document.getElementById('tp-clock');
-    if (pillClock) {
-      const m = getMatchMinute(sess);
-      if (m != null) pillClock.textContent = m + "'";
-    }
+    if (!sess || !['running','stoppage'].includes(timerStatus(sess))) return;
+    updateTimerDisplay(sess);
   }, 1000);
 }
 function stopTimerTick() { if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } }
@@ -1724,6 +1893,8 @@ function calcForm() {
 function renderAll() {
   if (!_dataReady && (Object.keys(S.players).length > 0 || !FIREBASE_CONFIGURED)) _dataReady = true;
   renderLive(); renderPlayers(); renderTeams(); renderAdmin();
+  const paymentModal = document.getElementById('m-payments');
+  if (paymentSessId && S.admin && paymentModal?.classList.contains('open')) renderPaymentsModal(paymentSessId);
   if (!_welcomeShown && Object.keys(S.players).length > 0) {
     _welcomeShown = true;
     checkViewer();
@@ -1877,7 +2048,8 @@ function renderLive() {
 
   // ── Timer bar ──
   const tStatus = timerStatus(sess);
-  const tMin = getMatchMinute(sess);
+  const tClock = formatTimerClock(getDisplayElapsedMs(sess));
+  const eventsEnabled = canLogTimedEvent(sess);
   let timerBarHtml = '';
   if (tStatus === 'idle') {
     timerBarHtml = adm ? `<button class="kickoff-hero" onclick="kickOff()">
@@ -1885,51 +2057,67 @@ function renderLive() {
         Kick Off
       </button>` : '';
   } else {
-    const pillCls = tStatus === 'running' ? '' : tStatus === 'paused' ? 'is-paused' : 'is-ended';
+    const pillCls = tStatus === 'running' ? '' : tStatus === 'paused' ? 'is-paused' : tStatus === 'stoppage' ? 'is-stoppage' : 'is-ended';
     const clockText = tStatus === 'paused'
-      ? (sess.timer?.pauseReason === 'halftime' ? `HT ${tMin ?? 0}'` : `Paused ${tMin ?? 0}'`)
-      : tStatus === 'ended' ? `FT ${tMin ?? 0}'` : `${tMin ?? 0}'`;
+      ? (sess.timer?.pauseReason === 'halftime' ? `HT ${tClock}` : `Paused ${tClock}`)
+      : tStatus === 'ended' ? `FT ${tClock}` : tClock;
+    const stoppageHtml = tStatus === 'stoppage'
+      ? `<div class="stoppage-pill"><span>STOPPAGE</span><span class="stoppage-clock" id="stoppage-clock">+${formatTimerClock(getCurrentStoppageMs(sess))}</span></div>`
+      : '';
     let ctrlHtml = '';
     if (adm) {
       if (tStatus === 'running') {
-        if (!sess.timer?.htLogged) {
-          ctrlHtml = `<button class="timer-ctrl is-ht" onclick="halfTime()">⏸ Half Time</button>`;
-        } else {
-          ctrlHtml = `<button class="timer-ctrl is-pause" onclick="pauseMatch()">⏸ Pause</button>`;
-        }
+        const phaseControl = !sess.timer?.htLogged
+          ? `<button class="timer-ctrl is-ht" onclick="halfTime()">⏸ Half Time</button>`
+          : `<button class="timer-ctrl is-pause" onclick="pauseMatch()">⏸ Pause</button>`;
+        ctrlHtml = `<div class="timer-actions">
+          ${phaseControl}
+          <button class="timer-ctrl is-stoppage" onclick="startStoppage()">+ Stoppage</button>
+        </div>`;
       } else if (tStatus === 'paused') {
-        ctrlHtml = `<button class="timer-ctrl is-resume" onclick="resumeMatch()">▶ Resume</button>`;
+        ctrlHtml = `<div class="timer-actions"><button class="timer-ctrl is-resume" onclick="resumeMatch()">▶ Resume</button></div>`;
+      } else if (tStatus === 'stoppage') {
+        const halfTimeControl = !sess.timer?.htLogged
+          ? `<button class="timer-ctrl is-ht" onclick="halfTime()">⏸ Half Time</button>`
+          : '';
+        ctrlHtml = `<div class="timer-actions">
+          <button class="timer-ctrl is-stoppage" onclick="endStoppage()">End Stoppage</button>
+          ${halfTimeControl}
+        </div>`;
       }
     }
     timerBarHtml = `
       <div class="timer-bar">
-        <div class="timer-pill ${pillCls}">
-          <span class="timer-dot"></span>
-          <span class="tp-clock" id="tp-clock">${clockText}</span>
+        <div class="timer-stack">
+          <div class="timer-pill ${pillCls}">
+            <span class="timer-dot"></span>
+            <span class="tp-clock" id="tp-clock">${clockText}</span>
+          </div>
+          ${stoppageHtml}
         </div>
         ${ctrlHtml}
       </div>`;
   }
 
   // start/stop the live tick
-  if (tStatus === 'running') startTimerTick(); else stopTimerTick();
+  if (tStatus === 'running' || tStatus === 'stoppage') startTimerTick(); else stopTimerTick();
 
   el.innerHTML = `
     <div class="live-banner">
       <div class="live-left"><div class="live-dot"></div><strong>LIVE</strong> · ${fmtDate(sess.date)}</div>
     </div>
+    ${timerBarHtml}
     ${adm?`<div style="display:flex;gap:8px;margin-bottom:12px">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="openSubOn()">➕ Add Player</button>
       <button class="btn btn-danger btn-sm" style="flex:1" onclick="openEndGame()">🏁 End Game</button>
     </div>`:''}
-    ${timerBarHtml}
     <div class="score-wrap">${scoreHtml}</div>
     <div class="action-grid">
-      <button class="action-btn ab-goal"   onclick="openGoal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,8 15,10.2 13.8,13.8 10.2,13.8 9,10.2" fill="currentColor"/><path d="M12 8V4M15 10.2L18.5 8.5M13.8 13.8L16.2 17M10.2 13.8L7.8 17M9 10.2L5.5 8.5"/></svg>GOAL</button>
-      <button class="action-btn ab-save"   onclick="openSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 8.5v5M11 7.5v6M13 7.5v6M15 8.5v5M9 13.5c0 1.2 1.2 2 3 2s3-0.8 3-2"/></svg>SAVE</button>
-      <button class="action-btn ab-def"    onclick="openDefAction()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF</button>
-      <button class="action-btn ab-yellow" onclick="openCard()"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>YELLOW CARD</button>
-      <button class="action-btn ab-red"    onclick="openCard('redCard')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
+      <button class="action-btn ab-goal"   ${eventsEnabled?'':'disabled'} onclick="openGoal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="12,8 15,10.2 13.8,13.8 10.2,13.8 9,10.2" fill="currentColor"/><path d="M12 8V4M15 10.2L18.5 8.5M13.8 13.8L16.2 17M10.2 13.8L7.8 17M9 10.2L5.5 8.5"/></svg>GOAL</button>
+      <button class="action-btn ab-save"   ${eventsEnabled?'':'disabled'} onclick="openSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 8.5v5M11 7.5v6M13 7.5v6M15 8.5v5M9 13.5c0 1.2 1.2 2 3 2s3-0.8 3-2"/></svg>SAVE</button>
+      <button class="action-btn ab-def"    ${eventsEnabled?'':'disabled'} onclick="openDefAction()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L4 7v5c0 5 4 9.5 8 11 4-1.5 8-6 8-11V7z"/><polyline points="9,12 11,14 15,10"/></svg>DEF</button>
+      <button class="action-btn ab-yellow" ${eventsEnabled?'':'disabled'} onclick="openCard()"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>YELLOW CARD</button>
+      <button class="action-btn ab-red"    ${eventsEnabled?'':'disabled'} onclick="openCard('redCard')"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="3" width="10" height="18" rx="1.5"/></svg>RED CARD</button>
     </div>
     <div class="card card-primary">
       <div class="sh">
@@ -1989,9 +2177,10 @@ function renderEvent(ev, sp, isAdmin) {
       detail = pos==='DEF' ? 'Clearance +1pt' : 'Clearance · counts toward def bonus';
       break;
     }
-    case 'halfTime':    icon='⏱️'; name='Half Time'; detail=`Break at ${ev.min ?? 0}'`; extraClass='ev-ht'; break;
+    case 'halfTime':    icon='⏱️'; name='Half Time'; detail=`Break at ${formatEventMinute(ev) || "0'"}`; extraClass='ev-ht'; break;
   }
-  const minBadge = (ev.min != null) ? `<span class="ev-min">${ev.min}'</span>` : '';
+  const minuteLabel = formatEventMinute(ev);
+  const minBadge = minuteLabel ? `<span class="ev-min">${minuteLabel}</span>` : '';
   return `
     <li class="ev-item ${extraClass}">
       <span class="ev-icon">${icon}</span>
@@ -2288,6 +2477,32 @@ function renderTeams() {
     </div>`;
 }
 
+function paymentAmount(record) {
+  const raw = typeof record === 'number' ? record : record?.amount;
+  const amount = Number(raw);
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
+}
+function formatPaymentAmount(amount) {
+  return new Intl.NumberFormat('en-GH', { style:'currency', currency:'GHS', minimumFractionDigits:2 }).format(amount || 0);
+}
+function getPaymentSummary(sess) {
+  const participants = sessPlayers(sess);
+  const payments = sess?.payments || {};
+  let total = 0, paid = 0, updatedAt = 0;
+  participants.forEach(p => {
+    const record = payments[p.pid];
+    const amount = paymentAmount(record);
+    if (amount > 0) { paid++; total += amount; }
+    if (record?.updatedAt) updatedAt = Math.max(updatedAt, Number(record.updatedAt) || 0);
+  });
+  return { participants, total, paid, updatedAt };
+}
+function getPaymentSessions() {
+  return Object.entries(S.sessions)
+    .filter(([,s]) => sessPlayers(s).length > 0)
+    .sort(([,a],[,b]) => new Date(b.date)-new Date(a.date));
+}
+
 function renderAdmin() {
   const el = document.getElementById('admin-root');
   if (!S.admin) {
@@ -2307,6 +2522,7 @@ function renderAdmin() {
     .filter(([,s])=>s.status==='completed')
     .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date))
     .slice(0,30);
+  const paymentSessions = getPaymentSessions();
 
   const playersPanel = `
     <div class="sh" style="margin-bottom:12px">
@@ -2355,6 +2571,23 @@ function renderAdmin() {
           </div>`;
       }).join('');
 
+  const paymentsPanel = paymentSessions.length === 0
+    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No matches with a player roster yet</div>`
+    : `<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px">Select a match to record or correct payments for everyone who played that day.</div>
+      ${paymentSessions.map(([sid,s])=>{
+        const summary = getPaymentSummary(s);
+        const statusLabel = s.status === 'active'
+          ? `<span class="sess-mode-badge mode-live">active</span>`
+          : `<span class="sess-mode-badge mode-post">completed</span>`;
+        return `<button class="payment-match-row" onclick="openPayments('${sid}')">
+          <span>
+            <span class="payment-match-date">${fmtDate(s.date)} ${statusLabel}</span>
+            <span class="payment-match-meta">${summary.paid} of ${summary.participants.length} paid</span>
+          </span>
+          <span class="payment-match-total">${formatPaymentAmount(summary.total)}</span>
+        </button>`;
+      }).join('')}`;
+
   el.innerHTML = `
     <div class="card">
       <div class="sh"><div class="card-title" style="margin:0">Game Session</div></div>
@@ -2370,10 +2603,11 @@ function renderAdmin() {
     <div class="view-toggle">
       <button class="vtbtn ${adminView==='players'?'active':''}" onclick="setAdminView('players')">👤 Players (${plist.length})</button>
       <button class="vtbtn ${adminView==='matches'?'active':''}" onclick="setAdminView('matches')">📅 Matches (${completedSessions.length})</button>
+      <button class="vtbtn ${adminView==='payments'?'active':''}" onclick="setAdminView('payments')">Payments (${paymentSessions.length})</button>
     </div>
 
     <div class="card">
-      ${adminView==='players' ? playersPanel : matchesPanel}
+      ${adminView==='players' ? playersPanel : adminView==='matches' ? matchesPanel : paymentsPanel}
     </div>
 
     <div class="card">
@@ -2382,6 +2616,103 @@ function renderAdmin() {
 }
 
 window.setAdminView = function(v) { adminView = v; renderAdmin(); };
+
+function renderPaymentsModal(sid) {
+  const sess = S.sessions[sid];
+  if (!S.admin || !sess) { closePayments(); return; }
+  const summary = getPaymentSummary(sess);
+  const payments = sess.payments || {};
+  const participants = [...summary.participants].sort((a,b)=>a.name.localeCompare(b.name));
+  document.getElementById('pay-title').textContent = `Match Payments · ${fmtDate(sess.date)}`;
+  document.getElementById('pay-body').innerHTML = participants.length === 0
+    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No players were recorded for this match.</div>`
+    : `<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px">Amounts remain editable at any time. Clear an amount to mark the player as not paid.</div>
+      <div id="payment-rows">
+        ${participants.map(p=>{
+          const amount = paymentAmount(payments[p.pid]);
+          const paid = amount > 0;
+          return `<div class="payment-row">
+            <div class="payment-player">
+              <div class="payment-player-name">${p.name}</div>
+              <div class="payment-player-meta">
+                ${teamTag(p.team)}
+                <span class="payment-status ${paid?'is-paid':'is-unpaid'}" id="pay-status-${p.pid}">${paid?'Paid':'Not paid'}</span>
+              </div>
+            </div>
+            <div class="payment-input-wrap">
+              <span class="payment-currency">GH₵</span>
+              <input class="payment-input" data-pid="${p.pid}" type="number" inputmode="decimal" min="0" step="0.01"
+                value="${paid?amount.toFixed(2):''}" placeholder="0.00"
+                oninput="previewPayments('${sid}')">
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="payment-summary">
+        <div class="payment-summary-line">
+          <div>
+            <div style="font-size:10px;color:var(--muted);font-weight:900;letter-spacing:0.8px">TOTAL COLLECTED</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="pay-count">${summary.paid} of ${participants.length} paid</div>
+          </div>
+          <div class="payment-summary-total" id="pay-total">${formatPaymentAmount(summary.total)}</div>
+        </div>
+        <div class="payment-updated" id="pay-updated">${summary.updatedAt ? `Last updated ${new Date(summary.updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}` : 'No payments recorded yet'}</div>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="saveAllPayments('${sid}')">Save payment changes</button>
+      </div>`;
+}
+
+window.openPayments = function(sid) {
+  if (!S.admin) return toast('Admin only',true);
+  paymentSessId = sid;
+  renderPaymentsModal(sid);
+  openM('m-payments');
+};
+window.closePayments = function() {
+  paymentSessId = null;
+  closeM('m-payments');
+};
+window.previewPayments = function() {
+  const inputs = Array.from(document.querySelectorAll('#pay-body .payment-input'));
+  let total = 0, paid = 0;
+  inputs.forEach(input => {
+    const amount = Math.max(0, Number(input.value) || 0);
+    const isPaid = amount > 0;
+    if (isPaid) { paid++; total += amount; }
+    const status = document.getElementById('pay-status-'+input.dataset.pid);
+    if (status) {
+      status.textContent = isPaid ? 'Paid' : 'Not paid';
+      status.className = `payment-status ${isPaid?'is-paid':'is-unpaid'}`;
+    }
+  });
+  const totalEl = document.getElementById('pay-total');
+  const countEl = document.getElementById('pay-count');
+  if (totalEl) totalEl.textContent = formatPaymentAmount(total);
+  if (countEl) countEl.textContent = `${paid} of ${inputs.length} paid`;
+};
+window.saveAllPayments = async function(sid) {
+  if (!S.admin || !S.sessions[sid]) return;
+  const inputs = Array.from(document.querySelectorAll('#pay-body .payment-input'));
+  const updatedAt = Date.now();
+  const records = {};
+  inputs.forEach(input => {
+    const amount = Number(input.value);
+    records[input.dataset.pid] = {
+      amount:input.value !== '' && Number.isFinite(amount) && amount > 0 ? amount : 0,
+      updatedAt
+    };
+  });
+  S.sessions[sid].payments = { ...(S.sessions[sid].payments||{}), ...records };
+  previewPayments();
+  const updatedEl = document.getElementById('pay-updated');
+  if (updatedEl) updatedEl.textContent = 'Saving…';
+  try {
+    await DB.update(`sessions/${sid}/payments`,records);
+    if (updatedEl) updatedEl.textContent = `Last updated ${new Date(updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
+    toast('Payment changes saved');
+  } catch(e) {
+    toast('Payment changes could not be saved',true);
+  }
+};
 
 // ─── TAB SWITCHING ───
 window.switchTab = function(id, btn) {
@@ -2421,7 +2752,7 @@ window.doLogin = function() {
     document.getElementById('login-err').style.display='block';
   }
 };
-window.doLogout = function() { S.admin=false; sessionStorage.removeItem('befit_admin'); renderAdmin(); renderLive(); };
+window.doLogout = function() { S.admin=false; sessionStorage.removeItem('befit_admin'); if(paymentSessId)closePayments(); renderAdmin(); renderLive(); };
 
 // ─── CLEANUP TEST DATA ───
 window.cleanMay24Data = async function() {
@@ -2439,7 +2770,11 @@ window.kickOff = async function() {
   if (!S.admin) return toast('Admin only',true);
   if (timerStatus(sess) !== 'idle') return;
   const now = Date.now();
-  const timer = { status:'running', startedAt:now, pausedAt:null, pausedTotal:0, htLogged:false, endedAt:null };
+  const timer = {
+    status:'running', startedAt:now, pausedAt:null, pausedTotal:0,
+    htLogged:false, endedAt:null, stoppageStartedAt:null,
+    stoppageTotal:0, stoppageBaseTotalMs:null
+  };
   // optimistic local
   if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = timer;
   renderLive();
@@ -2449,15 +2784,18 @@ window.kickOff = async function() {
 window.halfTime = async function() {
   const sess = activeSess(); if (!sess) return;
   if (!S.admin) return toast('Admin only',true);
-  if (timerStatus(sess) !== 'running') return;
-  const min = getMatchMinute(sess) ?? 0;
+  if (!['running','stoppage'].includes(timerStatus(sess))) return;
+  if (sess.timer?.htLogged) return toast('Half time is already recorded',true);
   const now = Date.now();
-  const t = { ...(sess.timer||{}), status:'paused', pausedAt:now, htLogged:true, pauseReason:'halftime' };
+  const evData = stampEventMinute({ type:'halfTime', timestamp:now }, sess);
+  const t = {
+    ...finalizeActiveStoppage(sess.timer, now),
+    status:'paused', pausedAt:now, htLogged:true, pauseReason:'halftime'
+  };
   // optimistic
   if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
   // log HT event locally + remote
   const newKey = 'ev_'+Date.now()+'_'+Math.random().toString(36).substring(2,10);
-  const evData = { type:'halfTime', timestamp:now, min };
   if (S.sessions[S.activeId]) {
     if (!S.sessions[S.activeId].events) S.sessions[S.activeId].events = {};
     S.sessions[S.activeId].events[newKey] = evData;
@@ -2477,6 +2815,33 @@ window.pauseMatch = async function() {
   renderLive();
   await DB.set(`sessions/${S.activeId}/timer`, t);
 };
+window.startStoppage = async function() {
+  const sess = activeSess(); if (!sess) return;
+  if (!S.admin) return toast('Admin only',true);
+  if (timerStatus(sess) !== 'running') return;
+  const now = Date.now();
+  const t = {
+    ...(sess.timer||{}), status:'stoppage', stoppageStartedAt:now,
+    stoppageBaseTotalMs:getTotalElapsedMs(sess, now), pauseReason:'stoppage'
+  };
+  if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
+  renderLive();
+  await DB.set(`sessions/${S.activeId}/timer`, t);
+  toast('Stoppage time started');
+};
+window.endStoppage = async function() {
+  const sess = activeSess(); if (!sess) return;
+  if (!S.admin) return toast('Admin only',true);
+  if (timerStatus(sess) !== 'stoppage') return;
+  const t = {
+    ...finalizeActiveStoppage(sess.timer),
+    status:'running', pauseReason:null
+  };
+  if (S.sessions[S.activeId]) S.sessions[S.activeId].timer = t;
+  renderLive();
+  await DB.set(`sessions/${S.activeId}/timer`, t);
+  toast('Stoppage time ended');
+};
 window.resumeMatch = async function() {
   const sess = activeSess(); if (!sess) return;
   if (!S.admin) return toast('Admin only',true);
@@ -2492,7 +2857,7 @@ window.resumeMatch = async function() {
 
 // ─── GOAL MODAL ───
 window.openGoal = function() {
-  if (!activeSess()) return toast('No active game',true);
+  if (!requireLiveTimer()) return;
   GS = { team:null, scorerId:null, assistId:null, isOG:false };
   const sess = activeSess();
   const teams = Object.keys(sess.teams||{});
@@ -2574,27 +2939,25 @@ window.goalChipClick = function(el,role,team) {
 };
 
 window.confirmGoal = async function() {
+  if (!requireLiveTimer()) return;
   if (!GS.scorerId||!GS.team) return;
   const sess = activeSess();
-  const min = getMatchMinute(sess);
   if (GS.isOG) {
     // figure out the benefiting team — the team that didn't have the OG scored on them
     const allTeams = Object.keys(sess.teams||{});
     const benefitTeam = allTeams.find(t=>t!==GS.team) || allTeams[0];
-    const evData = {
+    const evData = stampEventMinute({
       type:'ownGoal', team:GS.team, benefitTeam,
       scorerId:GS.scorerId, assistId:GS.assistId||null,
       timestamp:Date.now()
-    };
-    if (min != null) evData.min = min;
+    }, sess);
     await DB.push(`sessions/${S.activeId}/events`,evData);
     closeM('m-goal'); toast('😬 Own goal logged');
     showPitchOverlay({ mode:'goal', team:benefitTeam, emoji:'😬',
       title:'OWN GOAL', sub:`${benefitTeam.charAt(0).toUpperCase()+benefitTeam.slice(1)} benefit` });
     return;
   }
-  const evData = { type:'goal', team:GS.team, scorerId:GS.scorerId, assistId:GS.assistId||null, timestamp:Date.now() };
-  if (min != null) evData.min = min;
+  const evData = stampEventMinute({ type:'goal', team:GS.team, scorerId:GS.scorerId, assistId:GS.assistId||null, timestamp:Date.now() }, sess);
   await DB.push(`sessions/${S.activeId}/events`,evData);
   closeM('m-goal'); toast('⚽ Goal logged!');
   const scorerName = S.players[GS.scorerId]?.name || '';
@@ -2605,7 +2968,7 @@ window.confirmGoal = async function() {
 
 // ─── SAVE MODAL ───
 window.openSave = function() {
-  if (!activeSess()) return toast('No active game',true);
+  if (!requireLiveTimer()) return;
   SVS={playerId:null,type:'save'};
   document.getElementById('save-confirm').disabled=true;
   document.getElementById('st-reg').className='stbtn sel';
@@ -2618,11 +2981,11 @@ window.openSave = function() {
 };
 window.pickSaveType=function(type){SVS.type=type;document.getElementById('st-reg').className='stbtn'+(type==='save'?' sel':'');document.getElementById('st-pen').className='stbtn'+(type==='penaltySave'?' sel':'');};
 window.saveChipClick=function(el){document.querySelectorAll('#save-chips .chip').forEach(c=>c.className='chip');el.className='chip sel-green';SVS.playerId=el.dataset.pid;document.getElementById('save-confirm').disabled=false;};
-window.confirmSave=async function(){if(!SVS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:SVS.type,playerId:SVS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-save');toast(SVS.type==='penaltySave'?'🧤 Penalty save!':'🧤 Save logged!');};
+window.confirmSave=async function(){if(!requireLiveTimer())return;if(!SVS.playerId)return;const evData=stampEventMinute({type:SVS.type,playerId:SVS.playerId,timestamp:Date.now()},activeSess());await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-save');toast(SVS.type==='penaltySave'?'🧤 Penalty save!':'🧤 Save logged!');};
 
 // ─── CARD MODAL ───
 window.openCard=function(preset=null){
-  if(!activeSess())return toast('No active game',true);
+  if(!requireLiveTimer())return;
   CS={playerId:null,type:preset||'yellowCard'};
   document.getElementById('card-confirm').disabled=true;
   document.getElementById('ct-yellow').className='ctbtn'+(CS.type==='yellowCard'?' yellow-sel':'');
@@ -2633,12 +2996,12 @@ window.openCard=function(preset=null){
 };
 window.pickCardType=function(type){CS.type=type;document.getElementById('ct-yellow').className='ctbtn'+(type==='yellowCard'?' yellow-sel':'');document.getElementById('ct-red').className='ctbtn'+(type==='redCard'?' red-sel':'');};
 window.cardChipClick=function(el){document.querySelectorAll('#card-chips .chip').forEach(c=>c.className='chip');el.className='chip '+(CS.type==='yellowCard'?'sel-none':'sel-red');if(CS.type==='yellowCard')el.style.borderColor='var(--yellow)';CS.playerId=el.dataset.pid;document.getElementById('card-confirm').disabled=false;};
-window.confirmCard=async function(){if(!CS.playerId)return;const min=getMatchMinute(activeSess());const evData={type:CS.type,playerId:CS.playerId,timestamp:Date.now()};if(min!=null)evData.min=min;const pname=S.players[CS.playerId]?.name||'';await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');if(CS.type==='yellowCard'){showPitchOverlay({mode:'yellow',emoji:'🟨',title:'YELLOW CARD',sub:pname});}else{showPitchOverlay({mode:'red',emoji:'🟥',title:'RED CARD',sub:pname});}};
+window.confirmCard=async function(){if(!requireLiveTimer())return;if(!CS.playerId)return;const evData=stampEventMinute({type:CS.type,playerId:CS.playerId,timestamp:Date.now()},activeSess());const pname=S.players[CS.playerId]?.name||'';await DB.push(`sessions/${S.activeId}/events`,evData);closeM('m-card');toast(CS.type==='yellowCard'?'🟨 Yellow card':'🟥 Red card',CS.type==='redCard');if(CS.type==='yellowCard'){showPitchOverlay({mode:'yellow',emoji:'🟨',title:'YELLOW CARD',sub:pname});}else{showPitchOverlay({mode:'red',emoji:'🟥',title:'RED CARD',sub:pname});}};
 
 // ─── DEF ACTION MODAL ───
 let DS = { playerId:null, type:'block' };
 window.openDefAction = function() {
-  if (!activeSess()) return toast('No active game', true);
+  if (!requireLiveTimer()) return;
   const order = { DEF:0, MID:1, FWD:2 };
   const defs = sessPlayers(activeSess())
     .filter(p => p.pos === 'DEF' || p.pos === 'MID' || p.pos === 'FWD')
@@ -2664,10 +3027,9 @@ window.defChipClick = function(el) {
   document.getElementById('def-confirm').disabled = false;
 };
 window.confirmDefAction = async function() {
+  if (!requireLiveTimer()) return;
   if (!DS.playerId) return;
-  const min = getMatchMinute(activeSess());
-  const evData = { type: DS.type, playerId: DS.playerId, timestamp: Date.now() };
-  if (min != null) evData.min = min;
+  const evData = stampEventMinute({ type: DS.type, playerId: DS.playerId, timestamp: Date.now() }, activeSess());
   await DB.push(`sessions/${S.activeId}/events`, evData);
   closeM('m-def');
   const pname = S.players[DS.playerId]?.name || '';
@@ -2913,15 +3275,15 @@ window.confirmEndGame=async function(){
   teams.forEach(t=>cleanSheets[t]=teams.every(other=>other===t||goals[other]===0));
   // Lock the timer at Full Time (preserves the final minute)
   const updates={status:'completed',goals,cleanSheets};
-  if (sess.timer && ['running','paused'].includes(sess.timer.status)) {
+  if (sess.timer && ['running','paused','stoppage'].includes(sess.timer.status)) {
     const now = Date.now();
     let endedAt = now;
-    let pausedTotal = sess.timer.pausedTotal || 0;
+    const timer = finalizeActiveStoppage(sess.timer, now);
     if (sess.timer.status === 'paused') {
       // freeze duration at the moment user originally paused
       endedAt = sess.timer.pausedAt || now;
     }
-    updates.timer = { ...sess.timer, status:'ended', endedAt, pausedTotal };
+    updates.timer = { ...timer, status:'ended', endedAt, pausedAt:null, pauseReason:null };
   }
   stopTimerTick();
   await DB.update(`sessions/${S.activeId}`,updates);
@@ -3269,7 +3631,8 @@ window.openEditMatch=function(sid){
         case 'clearance':   desc=`↩️ ${pname(ev.playerId)} — Clearance`; break;
         case 'halfTime':    desc=`⏱️ Half Time`; break;
       }
-      const minTag = ev.min != null ? `<span class="ev-min" style="margin-right:6px">${ev.min}'</span>` : '';
+      const minuteLabel = formatEventMinute(ev);
+      const minTag = minuteLabel ? `<span class="ev-min" style="margin-right:6px">${minuteLabel}</span>` : '';
       const noEdit = ev.type === 'halfTime' || ev.type === 'ownGoal'; // type dropdown doesn't support these
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:12px;display:flex;align-items:center">${minTag}${desc}</span>
@@ -3501,8 +3864,13 @@ window.saveEditMatch=async function(){
     if(type){
       const evData={type,timestamp:Date.now()};
       const existing = emEditEvId ? (S.sessions[editSessId]?.events?.[emEditEvId]) : null;
-      if (existing && existing.min != null) evData.min = existing.min;
-      else { const m = getMatchMinute(S.sessions[editSessId]); if (m != null) evData.min = m; }
+      if (existing && existing.min != null) {
+        evData.min = existing.min;
+        if (existing.stoppageBaseMin != null) evData.stoppageBaseMin = existing.stoppageBaseMin;
+        if (existing.stoppageMin != null) evData.stoppageMin = existing.stoppageMin;
+      } else {
+        stampEventMinute(evData, S.sessions[editSessId]);
+      }
       if(type==='goal'){
         if(!emPickedTeam){toast('Pick a team for the pending goal correction',true);return;}
         evData.team=emPickedTeam; evData.scorerId=emPickedPid;
@@ -3692,8 +4060,13 @@ window.addEditEvent=async function(sid){
   const evData={type,timestamp:Date.now()};
   // preserve the minute if we're editing an existing event with one, or stamp current if live timer is running
   const existing = emEditEvId ? (S.sessions[sid]?.events?.[emEditEvId]) : null;
-  if (existing && existing.min != null) evData.min = existing.min;
-  else { const m = getMatchMinute(S.sessions[sid]); if (m != null) evData.min = m; }
+  if (existing && existing.min != null) {
+    evData.min = existing.min;
+    if (existing.stoppageBaseMin != null) evData.stoppageBaseMin = existing.stoppageBaseMin;
+    if (existing.stoppageMin != null) evData.stoppageMin = existing.stoppageMin;
+  } else {
+    stampEventMinute(evData, S.sessions[sid]);
+  }
   if(type==='goal'){
     if(!emPickedTeam)return toast('Pick a team for the goal',true);
     evData.team=emPickedTeam; evData.scorerId=emPickedPid;
