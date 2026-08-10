@@ -628,6 +628,11 @@
     .payment-played { color: #6fb4f2; font-size: 9px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase; }
     .payment-visible-count { margin-top: 7px; color: var(--muted); font-size: 9px; text-align: right; }
     .payment-no-results { padding: 22px 10px; color: var(--muted); font-size: 12px; text-align: center; }
+    .payment-delete {
+      margin-top: 8px; border-color: rgba(244,67,88,0.35) !important;
+      color: #ff7b8d !important; background: rgba(244,67,88,0.06) !important;
+    }
+    .payment-delete:hover { background: rgba(244,67,88,0.12) !important; }
 
     /* ── EMPTY STATE ── */
     .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
@@ -1359,6 +1364,15 @@ const DB = {
   async remove(path){
     if(FIREBASE_CONFIGURED) return fbRemove(fbRef(_db,path));
     delNested(LD,path); saveLocal(); syncLocal(); renderAll();
+  },
+  async removeMany(paths){
+    if(FIREBASE_CONFIGURED) {
+      const updates = {};
+      paths.forEach(path => { updates[path] = null; });
+      return fbUpdate(fbRef(_db),updates);
+    }
+    paths.forEach(path => delNested(LD,path));
+    saveLocal(); syncLocal(); renderAll();
   },
   async set(path,data){
     if(FIREBASE_CONFIGURED) return fbSet(fbRef(_db,path),data);
@@ -2751,6 +2765,13 @@ function renderPaymentsModal(date, preserveDraft=false) {
   if (!S.admin || !isPaymentDate(date)) { closePayments(); return; }
   const persisted = getPaymentsForDate(date);
   const players = getPaymentPlayers(date);
+  const linkedToMatch = Object.values(S.sessions).some(sess => sess?.date === date);
+  const hasPaymentDay = Object.prototype.hasOwnProperty.call(S.paymentDays || {},date);
+  const hasLegacyPayments = Object.values(S.sessions).some(sess => sess?.date === date && Object.keys(sess.payments || {}).length > 0);
+  const canDeletePayments = hasPaymentDay || hasLegacyPayments;
+  const deleteButton = canDeletePayments
+    ? `<button class="btn btn-ghost btn-sm payment-delete" onclick="deletePaymentDate('${date}')">${linkedToMatch?'Clear payment record':'Delete payment date'}</button>`
+    : '';
   if (!preserveDraft || paymentDate !== date) paymentDraft = {};
   players.forEach(p => {
     if (!preserveDraft || !(p.pid in paymentDraft)) paymentDraft[p.pid] = paymentAmount(persisted[p.pid]);
@@ -2759,7 +2780,7 @@ function renderPaymentsModal(date, preserveDraft=false) {
   const persistedSummary = getPaymentSummaryForDate(date,persisted);
   document.getElementById('pay-title').textContent = `Payments · ${fmtDate(date)}`;
   document.getElementById('pay-body').innerHTML = players.length === 0
-    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No registered players yet.</div>`
+    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No registered players yet.</div>${deleteButton}`
     : `<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px">All registered players are listed alphabetically. Search or filter without losing unsaved amounts.</div>
       <div class="payment-tools">
         <input class="payment-search" id="payment-search" type="search" placeholder="Search player…" oninput="setPaymentSearch(this.value)">
@@ -2781,6 +2802,7 @@ function renderPaymentsModal(date, preserveDraft=false) {
         </div>
         <div class="payment-updated" id="pay-updated">${persistedSummary.updatedAt ? `Last updated ${new Date(persistedSummary.updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}` : 'No payments recorded yet'}</div>
         <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="saveAllPayments('${date}')">Save payment changes</button>
+        ${deleteButton}
       </div>`;
   const searchEl = document.getElementById('payment-search');
   if (searchEl) searchEl.value = paymentSearch;
@@ -2865,6 +2887,29 @@ window.saveAllPayments = async function(date) {
     toast('Payment changes saved');
   } catch(e) {
     toast('Payment changes could not be saved',true);
+  }
+};
+
+window.deletePaymentDate = async function(date) {
+  if (!S.admin || paymentDate !== date || !isPaymentDate(date)) return;
+  const sessions = Object.entries(S.sessions).filter(([,sess]) => sess?.date === date);
+  const linkedToMatch = sessions.length > 0;
+  const paths = [];
+  if (Object.prototype.hasOwnProperty.call(S.paymentDays || {},date)) paths.push(`paymentDays/${date}`);
+  sessions.forEach(([sid,sess]) => {
+    if (Object.keys(sess.payments || {}).length > 0) paths.push(`sessions/${sid}/payments`);
+  });
+  if (paths.length === 0) return toast('No payment record to delete',true);
+  const prompt = linkedToMatch
+    ? `Clear every payment recorded for ${fmtDate(date)}? The match, players, scores, and events will remain.`
+    : `Delete the payment date ${fmtDate(date)} and every amount recorded for it?`;
+  if (!confirm(prompt)) return;
+  closePayments();
+  try {
+    await DB.removeMany(paths);
+    toast(linkedToMatch ? 'Payment record cleared' : 'Payment date deleted');
+  } catch(e) {
+    toast('Payment date could not be deleted',true);
   }
 };
 
