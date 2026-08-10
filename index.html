@@ -599,6 +599,35 @@
     .payment-summary-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .payment-summary-total { color: var(--green); font-size: 23px; font-weight: 900; font-variant-numeric: tabular-nums; }
     .payment-updated { margin-top: 6px; color: var(--muted); font-size: 10px; text-align: right; }
+    .payment-create {
+      display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: end;
+      padding: 12px; margin-bottom: 12px; border: 1px solid rgba(0,214,143,0.22);
+      border-radius: 13px; background: rgba(0,214,143,0.06);
+    }
+    .payment-create-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: 0.8px; }
+    .payment-date-input {
+      width: 100%; min-height: 39px; padding: 9px 10px; border-radius: 10px;
+      border: 1px solid var(--border); background: rgba(8,15,30,0.72);
+      color: var(--text); color-scheme: dark; font: inherit; font-size: 12px; font-weight: 800;
+    }
+    .payment-tools {
+      position: sticky; top: -16px; z-index: 4; margin: 0 -2px 8px; padding: 8px 2px 9px;
+      background: linear-gradient(180deg, #091328 78%, rgba(9,19,40,0));
+    }
+    .payment-search {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 11px;
+      background: rgba(8,15,30,0.82); color: var(--text); font: inherit; font-size: 12px; outline: none;
+    }
+    .payment-search:focus { border-color: rgba(0,214,143,0.55); box-shadow: 0 0 0 2px rgba(0,214,143,0.08); }
+    .payment-filters { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 8px; }
+    .payment-filter {
+      padding: 8px 5px; border: 1px solid var(--border); border-radius: 9px;
+      background: rgba(23,47,82,0.35); color: var(--muted); font-size: 10px; font-weight: 900; cursor: pointer;
+    }
+    .payment-filter.active { color: var(--green); border-color: rgba(0,214,143,0.42); background: rgba(0,214,143,0.11); }
+    .payment-played { color: #6fb4f2; font-size: 9px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase; }
+    .payment-visible-count { margin-top: 7px; color: var(--muted); font-size: 9px; text-align: right; }
+    .payment-no-results { padding: 22px 10px; color: var(--muted); font-size: 12px; text-align: center; }
 
     /* ── EMPTY STATE ── */
     .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
@@ -1308,12 +1337,13 @@ function delNested(obj,path) {
   for(let i=0;i<ks.length-1;i++){if(!c[ks[i]])return;c=c[ks[i]];}
   delete c[ks[ks.length-1]];
 }
-const LD = { players:{}, sessions:{} };
+const LD = { players:{}, sessions:{}, paymentDays:{} };
 function loadLocal(){ try{const d=localStorage.getItem('befit_fc');if(d)Object.assign(LD,JSON.parse(d));}catch(e){} }
 function saveLocal(){ try{localStorage.setItem('befit_fc',JSON.stringify(LD));}catch(e){} }
 function syncLocal(){
   S.players  = JSON.parse(JSON.stringify(LD.players  ||{}));
   S.sessions = JSON.parse(JSON.stringify(LD.sessions ||{}));
+  S.paymentDays = JSON.parse(JSON.stringify(LD.paymentDays ||{}));
   S.activeId = null;
   for(const [id,s] of Object.entries(S.sessions)){ if(s?.status==='active'){S.activeId=id;break;} }
 }
@@ -1433,7 +1463,7 @@ const SEED_SESSIONS = [
 ];
 
 // ─── STATE ───
-const S = { admin:false, players:{}, sessions:{}, activeId:null };
+const S = { admin:false, players:{}, sessions:{}, paymentDays:{}, activeId:null };
 if (sessionStorage.getItem('befit_admin') === '1') S.admin = true;
 let GS  = { team:null, scorerId:null, assistId:null };
 let SVS = { playerId:null, type:'save' };
@@ -1443,7 +1473,10 @@ let editSessId = null;
 let pcPid = null;
 let playersView = 'list';
 let adminView = 'players';
-let paymentSessId = null;
+let paymentDate = null;
+let paymentSearch = '';
+let paymentFilter = 'all';
+let paymentDraft = {};
 let viewerPid = null;
 let _timerInterval = null;
 let _welcomeShown = false;
@@ -1472,6 +1505,7 @@ if ('serviceWorker' in navigator) {
       for(const [id,s] of Object.entries(S.sessions)){ if(s?.status==='active'){S.activeId=id;break;} }
       renderAll();
     });
+    onValue(ref(_db,'paymentDays'), snap => { S.paymentDays=snap.val()||{}; renderAll(); });
   } else {
     loadLocal(); syncLocal(); renderAll();
   }
@@ -1876,7 +1910,7 @@ function renderAll() {
   if (!_dataReady && (Object.keys(S.players).length > 0 || !FIREBASE_CONFIGURED)) _dataReady = true;
   renderLive(); renderPlayers(); renderTeams(); renderAdmin();
   const paymentModal = document.getElementById('m-payments');
-  if (paymentSessId && S.admin && paymentModal?.classList.contains('open')) renderPaymentsModal(paymentSessId);
+  if (paymentDate && S.admin && paymentModal?.classList.contains('open')) renderPaymentsModal(paymentDate, true);
   if (!_welcomeShown && Object.keys(S.players).length > 0) {
     _welcomeShown = true;
     checkViewer();
@@ -2467,22 +2501,65 @@ function paymentAmount(record) {
 function formatPaymentAmount(amount) {
   return new Intl.NumberFormat('en-GH', { style:'currency', currency:'GHS', minimumFractionDigits:2 }).format(amount || 0);
 }
-function getPaymentSummary(sess) {
-  const participants = sessPlayers(sess);
-  const payments = sess?.payments || {};
+function paymentRecordUpdatedAt(record) {
+  return typeof record === 'object' ? Number(record?.updatedAt) || 0 : 0;
+}
+function isPaymentDate(date) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date || '');
+}
+function getPaymentDay(date) {
+  return S.paymentDays?.[date] || {};
+}
+function mergePaymentRecord(target, pid, record) {
+  if (record == null) return;
+  const current = target[pid];
+  if (current == null || paymentRecordUpdatedAt(record) >= paymentRecordUpdatedAt(current)) target[pid] = record;
+}
+function getPaymentsForDate(date) {
+  const merged = {};
+  Object.values(S.sessions).filter(s => s?.date === date).forEach(sess => {
+    Object.entries(sess.payments || {}).forEach(([pid,record]) => mergePaymentRecord(merged,pid,record));
+  });
+  Object.entries(getPaymentDay(date).payments || {}).forEach(([pid,record]) => mergePaymentRecord(merged,pid,record));
+  return merged;
+}
+function getPaymentPlayers(date) {
+  const played = new Set();
+  Object.values(S.sessions).filter(s => s?.date === date).forEach(sess => {
+    sessPlayers(sess).forEach(p => played.add(p.pid));
+  });
+  return Object.entries(S.players)
+    .map(([pid,p]) => ({ pid, name:p.name, team:p.defaultTeam, played:played.has(pid) }))
+    .sort((a,b) => a.name.localeCompare(b.name));
+}
+function getPaymentSummaryForDate(date, records=getPaymentsForDate(date)) {
+  const players = getPaymentPlayers(date);
   let total = 0, paid = 0, updatedAt = 0;
-  participants.forEach(p => {
-    const record = payments[p.pid];
+  players.forEach(p => {
+    const record = records[p.pid];
     const amount = paymentAmount(record);
     if (amount > 0) { paid++; total += amount; }
-    if (record?.updatedAt) updatedAt = Math.max(updatedAt, Number(record.updatedAt) || 0);
+    updatedAt = Math.max(updatedAt, paymentRecordUpdatedAt(record));
   });
-  return { participants, total, paid, updatedAt };
+  updatedAt = Math.max(updatedAt, Number(getPaymentDay(date).updatedAt) || 0);
+  return { players, total, paid, updatedAt };
 }
-function getPaymentSessions() {
-  return Object.entries(S.sessions)
-    .filter(([,s]) => sessPlayers(s).length > 0)
-    .sort(([,a],[,b]) => new Date(b.date)-new Date(a.date));
+function getPaymentDates() {
+  const dates = new Set();
+  Object.entries(S.paymentDays || {}).forEach(([key,day]) => {
+    const date = day?.date || key;
+    if (isPaymentDate(date)) dates.add(date);
+  });
+  Object.values(S.sessions).forEach(sess => {
+    if (isPaymentDate(sess?.date) && (sessPlayers(sess).length > 0 || Object.keys(sess.payments || {}).length > 0)) dates.add(sess.date);
+  });
+  return [...dates].sort((a,b) => b.localeCompare(a));
+}
+function getPaymentDateStatus(date) {
+  const sessions = Object.values(S.sessions).filter(s => s?.date === date);
+  if (sessions.some(s => s.status === 'active')) return { label:'active game', cls:'mode-live' };
+  if (sessions.length > 0) return { label:'match day', cls:'mode-post' };
+  return { label:'payment day', cls:'mode-history' };
 }
 
 function renderAdmin() {
@@ -2504,7 +2581,7 @@ function renderAdmin() {
     .filter(([,s])=>s.status==='completed')
     .sort(([,a],[,b])=>new Date(b.date)-new Date(a.date))
     .slice(0,30);
-  const paymentSessions = getPaymentSessions();
+  const paymentDates = getPaymentDates();
 
   const playersPanel = `
     <div class="sh" style="margin-bottom:12px">
@@ -2553,22 +2630,29 @@ function renderAdmin() {
           </div>`;
       }).join('');
 
-  const paymentsPanel = paymentSessions.length === 0
-    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No matches with a player roster yet</div>`
-    : `<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px">Select a match to record or correct payments for everyone who played that day.</div>
-      ${paymentSessions.map(([sid,s])=>{
-        const summary = getPaymentSummary(s);
-        const statusLabel = s.status === 'active'
-          ? `<span class="sess-mode-badge mode-live">active</span>`
-          : `<span class="sess-mode-badge mode-post">completed</span>`;
-        return `<button class="payment-match-row" onclick="openPayments('${sid}')">
-          <span>
-            <span class="payment-match-date">${fmtDate(s.date)} ${statusLabel}</span>
-            <span class="payment-match-meta">${summary.paid} of ${summary.participants.length} paid</span>
-          </span>
-          <span class="payment-match-total">${formatPaymentAmount(summary.total)}</span>
-        </button>`;
-      }).join('')}`;
+  const defaultPaymentDate = new Date().toISOString().slice(0,10);
+  const paymentsPanel = `
+    <div class="payment-create">
+      <label>
+        <span class="payment-create-label">PAYMENT DATE</span>
+        <input class="payment-date-input" id="payment-date-input" type="date" value="${defaultPaymentDate}">
+      </label>
+      <button class="btn btn-primary btn-sm" style="width:auto;height:39px;padding:0 14px" onclick="openPaymentDate()">Open</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px">Choose any date to record payments before, during, or after a match. Every registered player will be included.</div>
+    ${paymentDates.length === 0
+      ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">No payment dates yet</div>`
+      : paymentDates.map(date=>{
+          const summary = getPaymentSummaryForDate(date);
+          const status = getPaymentDateStatus(date);
+          return `<button class="payment-match-row" onclick="openPayments('${date}')">
+            <span>
+              <span class="payment-match-date">${fmtDate(date)} <span class="sess-mode-badge ${status.cls}">${status.label}</span></span>
+              <span class="payment-match-meta">${summary.paid} of ${summary.players.length} paid</span>
+            </span>
+            <span class="payment-match-total">${formatPaymentAmount(summary.total)}</span>
+          </button>`;
+        }).join('')}`;
 
   el.innerHTML = `
     <div class="card">
@@ -2585,7 +2669,7 @@ function renderAdmin() {
     <div class="view-toggle">
       <button class="vtbtn ${adminView==='players'?'active':''}" onclick="setAdminView('players')">👤 Players (${plist.length})</button>
       <button class="vtbtn ${adminView==='matches'?'active':''}" onclick="setAdminView('matches')">📅 Matches (${completedSessions.length})</button>
-      <button class="vtbtn ${adminView==='payments'?'active':''}" onclick="setAdminView('payments')">Payments (${paymentSessions.length})</button>
+      <button class="vtbtn ${adminView==='payments'?'active':''}" onclick="setAdminView('payments')">Payments (${paymentDates.length})</button>
     </div>
 
     <div class="card">
@@ -2599,97 +2683,185 @@ function renderAdmin() {
 
 window.setAdminView = function(v) { adminView = v; renderAdmin(); };
 
-function renderPaymentsModal(sid) {
-  const sess = S.sessions[sid];
-  if (!S.admin || !sess) { closePayments(); return; }
-  const summary = getPaymentSummary(sess);
-  const payments = sess.payments || {};
-  const participants = [...summary.participants].sort((a,b)=>a.name.localeCompare(b.name));
-  document.getElementById('pay-title').textContent = `Match Payments · ${fmtDate(sess.date)}`;
-  document.getElementById('pay-body').innerHTML = participants.length === 0
-    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No players were recorded for this match.</div>`
-    : `<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px">Amounts remain editable at any time. Clear an amount to mark the player as not paid.</div>
-      <div id="payment-rows">
-        ${participants.map(p=>{
-          const amount = paymentAmount(payments[p.pid]);
-          const paid = amount > 0;
-          return `<div class="payment-row">
-            <div class="payment-player">
-              <div class="payment-player-name">${p.name}</div>
-              <div class="payment-player-meta">
-                ${teamTag(p.team)}
-                <span class="payment-status ${paid?'is-paid':'is-unpaid'}" id="pay-status-${p.pid}">${paid?'Paid':'Not paid'}</span>
-              </div>
+function paymentDraftSummary(date) {
+  const players = getPaymentPlayers(date);
+  let total = 0, paid = 0;
+  players.forEach(p => {
+    const amount = paymentAmount(paymentDraft[p.pid]);
+    if (amount > 0) { paid++; total += amount; }
+  });
+  return { players, total, paid };
+}
+function paymentTeamBadge(team) {
+  return team ? teamTag(team) : `<span class="team-tag">Unassigned</span>`;
+}
+function updatePaymentSummary() {
+  if (!paymentDate) return;
+  const summary = paymentDraftSummary(paymentDate);
+  const totalEl = document.getElementById('pay-total');
+  const countEl = document.getElementById('pay-count');
+  if (totalEl) totalEl.textContent = formatPaymentAmount(summary.total);
+  if (countEl) countEl.textContent = `${summary.paid} of ${summary.players.length} paid`;
+  const allBtn = document.getElementById('pay-filter-all');
+  const unpaidBtn = document.getElementById('pay-filter-unpaid');
+  const paidBtn = document.getElementById('pay-filter-paid');
+  if (allBtn) allBtn.textContent = `All ${summary.players.length}`;
+  if (unpaidBtn) unpaidBtn.textContent = `Unpaid ${summary.players.length-summary.paid}`;
+  if (paidBtn) paidBtn.textContent = `Paid ${summary.paid}`;
+}
+function renderPaymentRows() {
+  const rowsEl = document.getElementById('payment-rows');
+  if (!rowsEl || !paymentDate) return;
+  const query = paymentSearch.trim().toLowerCase();
+  const players = getPaymentPlayers(paymentDate);
+  const visible = players.filter(p => {
+    const paid = paymentAmount(paymentDraft[p.pid]) > 0;
+    const matchesSearch = !query || p.name.toLowerCase().includes(query);
+    const matchesFilter = paymentFilter === 'all' || (paymentFilter === 'paid' ? paid : !paid);
+    return matchesSearch && matchesFilter;
+  });
+  rowsEl.innerHTML = visible.length === 0
+    ? `<div class="payment-no-results">No players match this search and filter.</div>`
+    : visible.map(p=>{
+        const amount = paymentAmount(paymentDraft[p.pid]);
+        const paid = amount > 0;
+        return `<div class="payment-row">
+          <div class="payment-player">
+            <div class="payment-player-name">${p.name}</div>
+            <div class="payment-player-meta">
+              ${paymentTeamBadge(p.team)}
+              ${p.played?`<span class="payment-played">Played</span>`:''}
+              <span class="payment-status ${paid?'is-paid':'is-unpaid'}" id="pay-status-${p.pid}">${paid?'Paid':'Not paid'}</span>
             </div>
-            <div class="payment-input-wrap">
-              <span class="payment-currency">GH₵</span>
-              <input class="payment-input" data-pid="${p.pid}" type="number" inputmode="decimal" min="0" step="0.01"
-                value="${paid?amount.toFixed(2):''}" placeholder="0.00"
-                oninput="previewPayments('${sid}')">
-            </div>
-          </div>`;
-        }).join('')}
+          </div>
+          <div class="payment-input-wrap">
+            <span class="payment-currency">GH₵</span>
+            <input class="payment-input" data-pid="${p.pid}" type="number" inputmode="decimal" min="0" step="0.01"
+              value="${paid?amount.toFixed(2):''}" placeholder="0.00"
+              oninput="updatePaymentDraft('${p.pid}',this.value)">
+          </div>
+        </div>`;
+      }).join('');
+  const visibleEl = document.getElementById('pay-visible-count');
+  if (visibleEl) visibleEl.textContent = `Showing ${visible.length} of ${players.length} players`;
+  updatePaymentSummary();
+}
+
+function renderPaymentsModal(date, preserveDraft=false) {
+  if (!S.admin || !isPaymentDate(date)) { closePayments(); return; }
+  const persisted = getPaymentsForDate(date);
+  const players = getPaymentPlayers(date);
+  if (!preserveDraft || paymentDate !== date) paymentDraft = {};
+  players.forEach(p => {
+    if (!preserveDraft || !(p.pid in paymentDraft)) paymentDraft[p.pid] = paymentAmount(persisted[p.pid]);
+  });
+  paymentDate = date;
+  const persistedSummary = getPaymentSummaryForDate(date,persisted);
+  document.getElementById('pay-title').textContent = `Payments · ${fmtDate(date)}`;
+  document.getElementById('pay-body').innerHTML = players.length === 0
+    ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:18px">No registered players yet.</div>`
+    : `<div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px">All registered players are listed alphabetically. Search or filter without losing unsaved amounts.</div>
+      <div class="payment-tools">
+        <input class="payment-search" id="payment-search" type="search" placeholder="Search player…" oninput="setPaymentSearch(this.value)">
+        <div class="payment-filters">
+          <button class="payment-filter ${paymentFilter==='all'?'active':''}" id="pay-filter-all" onclick="setPaymentFilter('all')">All</button>
+          <button class="payment-filter ${paymentFilter==='unpaid'?'active':''}" id="pay-filter-unpaid" onclick="setPaymentFilter('unpaid')">Unpaid</button>
+          <button class="payment-filter ${paymentFilter==='paid'?'active':''}" id="pay-filter-paid" onclick="setPaymentFilter('paid')">Paid</button>
+        </div>
+        <div class="payment-visible-count" id="pay-visible-count"></div>
       </div>
+      <div id="payment-rows"></div>
       <div class="payment-summary">
         <div class="payment-summary-line">
           <div>
             <div style="font-size:10px;color:var(--muted);font-weight:900;letter-spacing:0.8px">TOTAL COLLECTED</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="pay-count">${summary.paid} of ${participants.length} paid</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px" id="pay-count"></div>
           </div>
-          <div class="payment-summary-total" id="pay-total">${formatPaymentAmount(summary.total)}</div>
+          <div class="payment-summary-total" id="pay-total"></div>
         </div>
-        <div class="payment-updated" id="pay-updated">${summary.updatedAt ? `Last updated ${new Date(summary.updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}` : 'No payments recorded yet'}</div>
-        <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="saveAllPayments('${sid}')">Save payment changes</button>
+        <div class="payment-updated" id="pay-updated">${persistedSummary.updatedAt ? `Last updated ${new Date(persistedSummary.updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}` : 'No payments recorded yet'}</div>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="saveAllPayments('${date}')">Save payment changes</button>
       </div>`;
+  const searchEl = document.getElementById('payment-search');
+  if (searchEl) searchEl.value = paymentSearch;
+  renderPaymentRows();
 }
 
-window.openPayments = function(sid) {
+window.openPaymentDate = async function() {
   if (!S.admin) return toast('Admin only',true);
-  paymentSessId = sid;
-  renderPaymentsModal(sid);
+  const date = document.getElementById('payment-date-input')?.value;
+  if (!isPaymentDate(date)) return toast('Choose a valid payment date',true);
+  const existing = getPaymentDay(date);
+  const day = { ...existing, date, createdAt:existing.createdAt || Date.now() };
+  S.paymentDays[date] = day;
+  renderAdmin();
+  openPayments(date);
+  try {
+    await DB.update(`paymentDays/${date}`,{date,createdAt:day.createdAt});
+  } catch(e) {
+    toast('Payment date could not be saved',true);
+  }
+};
+window.openPayments = function(date) {
+  if (!S.admin) return toast('Admin only',true);
+  if (!isPaymentDate(date)) return toast('Invalid payment date',true);
+  paymentDate = date;
+  paymentSearch = '';
+  paymentFilter = 'all';
+  paymentDraft = {};
+  renderPaymentsModal(date);
   openM('m-payments');
 };
 window.closePayments = function() {
-  paymentSessId = null;
+  paymentDate = null;
+  paymentSearch = '';
+  paymentFilter = 'all';
+  paymentDraft = {};
   closeM('m-payments');
 };
-window.previewPayments = function() {
-  const inputs = Array.from(document.querySelectorAll('#pay-body .payment-input'));
-  let total = 0, paid = 0;
-  inputs.forEach(input => {
-    const amount = Math.max(0, Number(input.value) || 0);
-    const isPaid = amount > 0;
-    if (isPaid) { paid++; total += amount; }
-    const status = document.getElementById('pay-status-'+input.dataset.pid);
-    if (status) {
-      status.textContent = isPaid ? 'Paid' : 'Not paid';
-      status.className = `payment-status ${isPaid?'is-paid':'is-unpaid'}`;
-    }
-  });
-  const totalEl = document.getElementById('pay-total');
-  const countEl = document.getElementById('pay-count');
-  if (totalEl) totalEl.textContent = formatPaymentAmount(total);
-  if (countEl) countEl.textContent = `${paid} of ${inputs.length} paid`;
+window.setPaymentSearch = function(value) {
+  paymentSearch = value || '';
+  renderPaymentRows();
 };
-window.saveAllPayments = async function(sid) {
-  if (!S.admin || !S.sessions[sid]) return;
-  const inputs = Array.from(document.querySelectorAll('#pay-body .payment-input'));
+window.setPaymentFilter = function(filter) {
+  if (!['all','unpaid','paid'].includes(filter)) return;
+  paymentFilter = filter;
+  document.querySelectorAll('.payment-filter').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('pay-filter-'+filter)?.classList.add('active');
+  renderPaymentRows();
+};
+window.updatePaymentDraft = function(pid,rawValue) {
+  const amount = Number(rawValue);
+  const paid = rawValue !== '' && Number.isFinite(amount) && amount > 0;
+  paymentDraft[pid] = paid ? amount : 0;
+  const status = document.getElementById('pay-status-'+pid);
+  if (status) {
+    status.textContent = paid ? 'Paid' : 'Not paid';
+    status.className = `payment-status ${paid?'is-paid':'is-unpaid'}`;
+  }
+  updatePaymentSummary();
+};
+window.saveAllPayments = async function(date) {
+  if (!S.admin || paymentDate !== date || !isPaymentDate(date)) return;
   const updatedAt = Date.now();
   const records = {};
-  inputs.forEach(input => {
-    const amount = Number(input.value);
-    records[input.dataset.pid] = {
-      amount:input.value !== '' && Number.isFinite(amount) && amount > 0 ? amount : 0,
-      updatedAt
-    };
+  getPaymentPlayers(date).forEach(p => {
+    records[p.pid] = { amount:paymentAmount(paymentDraft[p.pid]), updatedAt };
   });
-  S.sessions[sid].payments = { ...(S.sessions[sid].payments||{}), ...records };
-  previewPayments();
+  const existing = getPaymentDay(date);
+  const createdAt = existing.createdAt || updatedAt;
+  S.paymentDays[date] = {
+    ...existing, date, createdAt, updatedAt,
+    payments:{ ...(existing.payments||{}), ...records }
+  };
+  renderAdmin();
   const updatedEl = document.getElementById('pay-updated');
   if (updatedEl) updatedEl.textContent = 'Saving…';
   try {
-    await DB.update(`sessions/${sid}/payments`,records);
-    if (updatedEl) updatedEl.textContent = `Last updated ${new Date(updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
+    await DB.update(`paymentDays/${date}/payments`,records);
+    await DB.update(`paymentDays/${date}`,{date,createdAt,updatedAt});
+    const currentUpdatedEl = document.getElementById('pay-updated');
+    if (currentUpdatedEl) currentUpdatedEl.textContent = `Last updated ${new Date(updatedAt).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`;
     toast('Payment changes saved');
   } catch(e) {
     toast('Payment changes could not be saved',true);
@@ -2734,7 +2906,7 @@ window.doLogin = function() {
     document.getElementById('login-err').style.display='block';
   }
 };
-window.doLogout = function() { S.admin=false; sessionStorage.removeItem('befit_admin'); if(paymentSessId)closePayments(); renderAdmin(); renderLive(); };
+window.doLogout = function() { S.admin=false; sessionStorage.removeItem('befit_admin'); if(paymentDate)closePayments(); renderAdmin(); renderLive(); };
 
 // ─── CLEANUP TEST DATA ───
 window.cleanMay24Data = async function() {
