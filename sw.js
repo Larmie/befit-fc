@@ -8,7 +8,7 @@
 // Never touches the database or sign-in traffic (firebaseio.com, firebasedatabase.app, identitytoolkit,
 // securetoken): those always go straight to the network.
 // Bump CACHE when the list of files changes; old caches are deleted on activate.
-const CACHE = 'befit-fc-v4';
+const CACHE = 'befit-fc-v5';                 // v5: round 5 (homes, tables, console deck, full time, admin, settings)
 const EXT = 'befit-ext-v1';                  // Firebase SDK + Google Fonts (versioned addresses)
 const SDK_FALLBACK = '10.12.0';              // only if js/core/config.js can't be read at install
 const SDK_FILES = ['firebase-app.js', 'firebase-database.js', 'firebase-auth.js'];

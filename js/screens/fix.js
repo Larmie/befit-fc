@@ -142,7 +142,14 @@
     const teams = clone(sess.teams || {});
     teams[team] = teams[team] || {};
     teams[team].players = teams[team].players || {};
-    teams[team].players[pid] = { position: pos || (Store.player(pid) || {}).defaultPosition || 'MID' };
+    let p = pos || (Store.player(pid) || {}).defaultPosition || 'MID';
+    // Same rule as Who's here (setup.js joinPos): a usual keeper added to a small-poles night goes on the sheet as a
+    // MID (no keepers on small poles), so the classic app, which reads the stored position, scores him the same way.
+    if (p === 'GK') {
+      const f = Scoring.formatOf(sess), k = f.keepers || {};
+      if (!f.legacy && (!f.everBig || (Object.keys(k).length && k[team] !== pid))) p = 'MID';
+    }
+    teams[team].players[pid] = { position: p };
     return teams;
   }
   function fixNote(sess, ch, key, text, pid, delta) {

@@ -27,6 +27,9 @@ input[type="search"] { -webkit-appearance: none; appearance: none; }
 
 /* small numbers (minutes, columns) are Geist Mono, tabular; hero numerals use .hn (tokens.css) */
 .n, .num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+/* ...but a COUNT beside a word (chips, segments, labels, tabs, tiles, buttons, links, the Undo countdown) is Geist
+   tabular: Mono's slashed zero reads as Ø in "Green · 60" or "Timeline 10" (round 5 checklist 24). Minutes stay Mono. */
+:is(.chip, .seg, .tabs2, .lbl, .btn, .tile, .link, .ub, .head, .sub) .n { font-family: var(--font); font-variant-numeric: tabular-nums; }
 body { font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------- frame */

@@ -56,7 +56,8 @@
      UI.liveDot(text='LIVE')                  pulsing LIVE label (1.6 s halo, off under reduced motion)
      UI.sum({ rows:[{label, value}], total, label, team, hero, signed })   SUM PATTERN: values in one right column, the
                                                 total as a team-coloured hero under it, right edges aligned
-     UI.podium([{pid,name,team,value,stat,note}] (ranks 1,2,3), { tap })   STEPPED PODIUM, shown 2 · 1 · 3
+     UI.podium([{pid,name,team,value,stat,note}] (ranks 1,2,3), { tap, hero })   STEPPED PODIUM, shown 2 · 1 · 3;
+                                               hero:true makes #1 the screen's one .hero (Tables · Stats)
      UI.leaderRow({ label, name, team, value, next, tap, data })          tinted leader row (Tables · Stats)
      UI.syncChip(Store.status())              header sync chip: "✓ All sent" · "Sending 2…" · "On phone · 3 waiting" ·
                                                 "No signal · 3 saved on phone"  (data-shell="sync" → App.action('console.syncSheet'))
@@ -285,6 +286,7 @@
   }
 
   // Stepped podium: items are ranks 1, 2, 3; shown 2 · 1 · 3. Steps 64 / 92 / 44 px; #1 wider, lit, haloed.
+  // o.hero = true: #1 is also the screen's one .hero (use it only where nothing else on the screen is the hero).
   function podium(items, o) {
     o = o || {};
     items = items || [];
@@ -292,7 +294,7 @@
       if (!it) return '<div class="pcol empty"></div>';
       const tag = o.tap ? 'button' : 'div';
       const tapA = o.tap ? ` type="button" data-tap="${esc(o.tap)}" data-pid="${esc(it.pid || '')}"` : '';
-      return `<${tag} class="pcol lit r${rank}${rank === 1 ? ' first' : ''} ${teamCls(it.team)}"${tapA}>` +
+      return `<${tag} class="pcol lit r${rank}${rank === 1 ? ' first' + (o.hero ? ' hero' : '') : ''} ${teamCls(it.team)}"${tapA}>` +
         `<span class="who">${avatar(it.name, it.team)}<span class="nm">${esc(it.name)}</span><b class="hn">${esc(it.value)}</b>` +
         (it.stat ? `<span class="st">${esc(it.stat)}</span>` : '') + (it.note ? `<span class="st">${esc(it.note)}</span>` : '') +
         `</span><span class="step"><b>${rank}</b></span></${tag}>`;

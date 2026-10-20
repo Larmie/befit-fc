@@ -177,7 +177,7 @@
       note: !last ? '' : r.lastPts != null ? `${fmt.signed(r.lastPts)} on ${lastShort}` : `Didn't play ${lastShort}`,
     }));
     // the #1 podium card is this screen's one glowing hero
-    const podium = top.length ? UI.podium(top, { tap: 'open' }).replace('pcol lit r1 first', 'pcol lit r1 first hero') : UI.empty('No games yet', '');
+    const podium = top.length ? UI.podium(top, { tap: 'open', hero: true }) : UI.empty('No games yet', '');
     const leader = s => {
       const list = ranked(rows.map(r => Object.assign({}, r)), STAT[s].key);
       if (!list.length) return '';
