@@ -7,13 +7,14 @@
    SCREENS
      'ref.console'        tab match · layout phone · console. Nav hidden while the clock runs, is paused or in
                           stoppage (shell: App.isLiveMatch()). Header: "Referee ▾" · date · sync chip (no ⋯).
-                          THE DECK, titled sections, top to bottom:
+                          THE DECK (round 6: team first), top to bottom:
                             score block (UI.scoreFor, console size, running clock in the centre, the screen's
-                              one hero) + one line ("Big poles · Green 9 · Red 9" / "Clock held at 46:00 · 2nd half")
-                            GOALS & ASSISTS     one 96 px Goal tile per team (team tint + corner light, tonight's count)
-                            DEFENCE / KEEPERS & DEFENCE   Block · Clear (small poles) or Save · Block · Clear (when
-                                                keepers exist), 72 px, word + tonight's count, no icons
-                            CARDS               Yellow · Red as real card shapes (76 px), count when > 0
+                              one hero); in stoppage one amber line "Clock held at 46:00 · 2nd half"
+                            TEAM COLUMNS        one column per team tonight (any two; 3 side by side), each:
+                                                Goal 88 px (team tint + corner light, the team's goals top right)
+                                                Save 56 px "Save · Toby · 5" (big poles only; the keeper named)
+                                                Block | Clear, Yellow | Red: 60 px team-tinted pairs, per-team counts
+                                                All of it above Match controls: no scrolling at 390 px.
                             MATCH CONTROLS      row 1: + Stoppage (primary 2/3) · Pause (quiet 1/3)
                                                   in stoppage: amber "End stoppage · +1:36"; after 4 min of the SAME
                                                   stoppage it pulses: "Still in stoppage? / End · +7:10" (no banner)
@@ -34,12 +35,18 @@
    LOGGING (every log goes through Save.run: lock on first tap → Saving… → Undo 5 s, or Not saved + Retry)
      Goal     Goal · Team → scorer tile → assist tile / "No assist" (saves)            3 taps
               own goal: Goal · Team → "Own goal by a Red player ›" → player → assist    4 taps
-     Block / Clear   tile → player row or Recent chip (saves); "+1 again" on the bar     2 taps
-     Card     Yellow (or Red) tile → (team tab) → player (saves); booked players marked 2–3 taps
-     Save     Save → keeper (saves); Save | Penalty save first; only tonight's keepers   2–3 taps
+     Block / Clear   Team's tile → player row or Recent chip (saves); "+1 again" on the bar   2 taps
+     Yellow / Red    Team's tile → player (saves); "Booked 71'" marks anyone carded tonight   2 taps
+              The sheet opens on the tapped team (tinted title "Block · Green", no team tab);
+              "Wrong team? Block · Red ›" at the bottom swaps sides in one tap.
+     Save     Save · Team logs that side's one keeper at once (lock, Undo)                  1 tap
+              the toast's "Penalty" turns it into a penalty save                             2 taps
+              two keepers listed on a side → a 2-tile picker (Save | Penalty save first)     2–3 taps
      Small poles: a GK-position player plays as an outfielder (Scoring.effectivePos → MID): he is on Block / Clear.
    Double-tap guards: one sheet at a time; a sheet ignores taps for 350 ms after it opens or changes step;
-     clock buttons take one change per 0.7 s; deck tiles that open a sheet ignore a second tap for 0.5 s.
+     clock buttons take one change per 0.7 s; deck tiles that open a sheet ignore a second tap for 0.5 s;
+     a 1-tap Save ignores further Save taps on that team for 1.2 s; any deck tap within 0.5 s of a tap on the
+     Undo bar is ignored (the second tap of a double tap on "+1 again" / "Penalty" / Undo falls through to the deck).
    Event shapes (classic + additive `by`, `again`):
      goal        { type, team, scorerId, assistId?, min, [stoppageBaseMin, stoppageMin], timestamp, by }
      ownGoal     { type, team (scorer's side), benefitTeam, scorerId, assistId?, min…, timestamp, by }
@@ -173,12 +180,19 @@
     // "+1 again" bars carry two buttons, so (as designed) they drop the minute: "Block · Joshua"
     const label = `${BAR_LABEL[ev.type] || ev.type} · ${nameOf(ev.scorerId || ev.playerId)}${min && !repeatable ? ' ' + min : ''}`;
     const offline = Store.status().status === 'offline';
+    // 1-tap Save: the toast's second button turns it into a penalty save (Save · Team → Penalty = 2 taps)
+    const penalty = o.penalty && ev.type === 'save'
+      ? { label: 'Penalty', run: () => Save.run({
+        label: `Penalty save · ${nameOf(ev.playerId)}${min ? ' ' + min : ''}`,
+        write: () => Store.update(path, { type: 'penaltySave' }),
+        undo: () => Store.update(path, { type: 'save' }),
+      }) } : null;
     return Save.run({
       label, button: o.button || null, group: o.group || null, savingText: o.savingText || 'Saving…',
       timeoutMs: offline ? 2500 : 8000,
       write: () => Store.set(path, ev),
       undo: () => Store.remove(path),
-      again: repeatable ? { label: '+1 again', run: () => logEvent({ sid: o.sid, data: Object.assign({}, o.data, { again: true }), again: true }) } : null,
+      again: repeatable ? { label: '+1 again', run: () => logEvent({ sid: o.sid, data: Object.assign({}, o.data, { again: true }), again: true }) } : penalty,
       onSaved: o.onSaved || null,
     });
   }
@@ -287,24 +301,27 @@
   }
   const cardShape = kind => `<span class="cn-cs ${kind === 'red' ? 'cn-cs-red' : 'cn-cs-yel'}" aria-hidden="true"></span>`;
 
-  function openAction(sid, kind, ctype) {
+  // Round 6: team first. The deck's team column says whose Block / Clear / Yellow / Red it is, so the sheet
+  // opens straight on that team (tinted title "Block · Green", no team tab): tile → player = 2 taps.
+  // "Wrong team? Block · Red ›" at the bottom swaps sides in one tap.
+  function openAction(sid, kind, ctype, team) {
     if (!guardLog(sid)) return;
     const sess = Store.session(sid);
     const isCard = kind === 'card';
+    const type = isCard ? (ctype === 'redCard' ? 'redCard' : 'yellowCard') : kind;
     const famTypes = isCard ? ['yellowCard', 'redCard'] : ['block', 'clearance'];
     const teams = teamsOf(sess);
-    const st = {
-      team: lastSide(sess, famTypes) || lastSide(sess, Object.keys(TYPE_LABEL)) || teams[0],
-      q: '', ctype: ctype === 'redCard' ? 'redCard' : 'yellowCard',
-    };
-    if (!teams.includes(st.team)) st.team = teams[0];
-    const title = isCard ? 'Card' : TYPE_LABEL[kind];
-    const h = openSheet({ title, titleEnd: `<span class="n">${esc(minuteNow(sess))}</span>`, cls: 'sh-console sh-console-act' + (isCard ? ' sh-console-card' : ''),
-      body: '', cancel: 'Cancel', autofocus: false });
+    if (!teams.includes(team)) team = lastSide(sess, famTypes) || teams[0];
+    const word = { block: 'Block', clearance: 'Clear', yellowCard: 'Yellow', redCard: 'Red' }[type];
+    const h = openSheet({ title: `${word} · ${fmtTeam(team)}`, titleEnd: `<span class="n">${esc(minuteNow(sess))}</span>`,
+      cls: 'sh-console sh-console-act sh-console-team' + (isCard ? ' sh-console-card' : ''), body: '', cancel: 'Cancel', autofocus: false });
     if (!h) return;
+    const head = h.el.querySelector('.sheet-h');
+    if (head) head.classList.add('lit', 'cn-gbar', tcls(team));
+    if (isCard) { const t = h.el.querySelector('.sheet-title'); if (t) t.insertAdjacentHTML('afterbegin', cardShape(type === 'redCard' ? 'red' : 'yellow')); }
 
     // Block / Clear: everyone who plays outfield tonight (a GK on small poles plays as MID, so he is here too)
-    const eligible = s => playersOf(s).filter(p => isCard || p.pos !== 'GK');
+    const eligible = s => playersOf(s).filter(p => p.team === team && (isCard || p.pos !== 'GK'));
     function recent(s) {
       if (isCard) return [];
       const seen = new Set(), out = [];
@@ -321,40 +338,25 @@
       if (b.r.length) return `<span class="cn-booked">${cardShape('red')}Sent off ${esc(b.r[0])}</span>`;
       return b.y.length ? `<span class="cn-booked">${cardShape('yellow')}Booked ${esc(b.y.join(' '))}</span>` : '';
     }
-    const prow = (p, withTeam, booked) =>
+    const prow = (p, booked) =>
       `<button type="button" class="r cn-prow" data-tap="pick" data-pid="${esc(p.pid)}" data-name="${esc(p.name)}">` +
       `<span class="grow"><span class="nm" data-label>${esc(p.name)}</span><span class="tally">${esc(p.pos || '')}</span></span>` +
-      `<span class="end">${isCard ? marker(booked[p.pid]) : ''}${withTeam ? UI.teamChip(p.team) : ''}</span></button>`;
+      `<span class="end">${isCard ? marker(booked[p.pid]) : ''}</span></button>`;
 
-    function listHtml() {
-      const s = Store.session(sid);
-      const q = st.q.trim().toLowerCase();
-      const all = eligible(s);
-      const booked = isCard ? bookedOf(s) : {};
-      const list = (q ? all.filter(p => matchesQ(p.name, q)) : all.filter(p => p.team === st.team)).sort(byOrder(DEFENCE_ORDER));
-      return list.length ? `<div class="rows">${list.map(p => prow(p, !!q, booked)).join('')}</div>` : UI.empty(q ? 'No one by that name' : 'No players', '');
-    }
     function draw() {
       const s = Store.session(sid);
-      const counts = teamsOf(s).map(t => ({ team: t, count: eligible(s).filter(p => p.team === t).length }));
+      const list = eligible(s).sort(byOrder(DEFENCE_ORDER));
+      const booked = isCard ? bookedOf(s) : {};
       const rec = recent(s);
       h.setBody(
-        (isCard ? `<div class="seg cn-cardseg" role="tablist" data-seg="ctype">` +
-          `<button type="button" role="tab" class="cn-ct-y${st.ctype === 'yellowCard' ? ' on' : ''}" data-value="yellowCard">${cardShape('yellow')}<span>Yellow</span></button>` +
-          `<button type="button" role="tab" class="cn-ct-r${st.ctype === 'redCard' ? ' on' : ''}" data-value="redCard">${cardShape('red')}<span>Red</span></button></div>` : '') +
-        `<div class="cn-search">${UI.search({ name: 'who', placeholder: 'Find a player', value: st.q })}</div>` +
         (rec.length ? `<div class="lbl cn-reclbl">Recent tonight</div><div class="chips cn-recent">` +
           rec.map(pid => `<button type="button" class="chip ref" data-tap="pick" data-pid="${esc(pid)}" data-name="${esc(nameOf(pid))}">${esc(nameOf(pid))}</button>`).join('') + `</div>` : '') +
-        `<div class="cn-teams">${UI.teamSwitch('team', counts, st.team)}</div>` +
-        `<div class="cn-list" data-list>${listHtml()}</div>`);
+        `<div class="cn-list" data-list>${list.length ? `<div class="rows">${list.map(p => prow(p, booked)).join('')}</div>` : UI.empty(`No ${fmtTeam(team)} players`, '')}` +
+        `<div class="cn-wrongs">${teamsOf(s).filter(t => t !== team).map(t =>
+          `<button type="button" class="link cn-link cn-wrong" data-tap="wrong" data-team="${esc(t)}">Wrong team? ${esc(word)} · ${esc(fmtTeam(t))} ›</button>`).join('')}</div></div>`);
     }
-    const redrawList = () => { const box = h.body.querySelector('[data-list]'); if (box) box.innerHTML = listHtml(); };
-
-    UI.onSeg(h.el, 'team', v => { st.team = v; st.q = ''; const i = h.body.querySelector('[data-search]'); if (i) i.value = ''; redrawList(); });
-    UI.onSeg(h.el, 'ctype', v => { st.ctype = v; });
-    h.el.addEventListener('input', e => { if (e.target.matches('[data-search]')) { st.q = e.target.value; redrawList(); } });
+    onPick(h, 'wrong', el => { const t = el.dataset.team; h.close(); openAction(sid, kind, type, t); });
     onPick(h, 'pick', el => {
-      const type = isCard ? st.ctype : kind;
       h.save = logEvent({ sid, data: { type, playerId: el.dataset.pid }, button: el, group: h.el, again: !isCard,
         savingText: el.classList.contains('chip') ? 'Saving…' : 'Saving… ' + (el.dataset.name || ''),
         onSaved: () => h.close() });
@@ -362,14 +364,26 @@
     draw();
   }
 
+  // Save · Team: with exactly one keeper in goal for that side it logs at once (lock, Undo 5 s, "Penalty" on the
+  // toast). Two keepers listed on a side → a 2-tile picker. A second / third tap within 1.2 s does nothing.
+  const saveBusy = {};
+  function quickSave(sid, team, button) {
+    if (UI.sheet.top() || afterBar() || Date.now() < (saveBusy[team] || 0)) return null;
+    if (!guardLog(sid)) return null;
+    const ks = keepersOf(Store.session(sid)).filter(k => k.team === team);
+    if (ks.length !== 1) { openSave(sid, team); return null; }
+    saveBusy[team] = Date.now() + 1200;
+    return logEvent({ sid, data: { type: 'save', playerId: ks[0].pid }, button, penalty: true });
+  }
+
   // ---------------------------------------------------------------- Save sheet (tonight's keepers only)
-  function openSave(sid) {
+  function openSave(sid, team) {
     if (!guardLog(sid)) return;
     const sess = Store.session(sid);
     const st = { stype: 'save' };
-    const h = openSheet({ title: 'Save', titleEnd: `<span class="n">${esc(minuteNow(sess))}</span>`, cls: 'sh-console sh-console-save', body: '', cancel: 'Cancel' });
+    const h = openSheet({ title: team ? 'Save · ' + fmtTeam(team) : 'Save', titleEnd: `<span class="n">${esc(minuteNow(sess))}</span>`, cls: 'sh-console sh-console-save', body: '', cancel: 'Cancel' });
     if (!h) return;
-    const keepers = keepersOf(sess);
+    const keepers = keepersOf(sess).filter(k => !team || k.team === team);
     if (!keepers.length) {
       h.setBody(UI.empty('No keepers chosen', 'Pick tonight’s keepers first.') + UI.btn('Choose keepers', { kind: 'g', sm: true, tap: 'poles' }));
       UI.on(h.el, 'poles', () => { h.close(); App.action('setup.bigPoles', { sid }); });
@@ -492,7 +506,7 @@
       : ctlTile('Half time', 'halftime', { cls: Clock.canLog(sess) ? '' : 'is-off' });
     const adjust = `<button type="button" class="hold cn-ctile cn-adjust${active ? '' : ' is-off'}" data-hold="adjust" data-ms="${HOLD_MS}" style="--hold-ms:${HOLD_MS}ms" data-done-text="Adjust clock">` +
       `<span class="fill"></span><span class="hl">Adjust clock</span></button>`;
-    const poles = f.everBig ? ctlTile('Poles: big', 'poles', { cls: 'is-quiet' }) : ctlTile('Big poles', 'poles');
+    const poles = f.everBig ? ctlTile('Poles: big', 'poles', { cls: 'is-quiet' }) : ctlTile('Poles: small', 'poles', { cls: 'is-quiet' });
     return primaryHtml(sess) +
       `<div class="cn-grid">${ht}${adjust}${poles}${ctlTile('+ Player', 'player')}${ctlTile('Teams tonight', 'teams')}${ctlTile('Edit events', 'events')}</div>` +
       `<div class="cn-endw">${UI.hold('Hold to end the game', { name: 'end', ms: HOLD_MS, warn: true, doneText: 'Ending…' })}</div>`;
@@ -514,32 +528,40 @@
     const evs = eventsNewest(sess);
     const waiting = waitingPaths();
     const keepers = keepersOf(sess);
-    const f = Scoring.formatOf(sess);
-    const goalCols = Math.min(Math.max(teams.length, 2), 3);
-    const def = (keepers.length ? ['save'] : []).concat(['block', 'clearance']);
-    const defCount = { save: ['save', 'penaltySave'], block: ['block'], clearance: ['clearance'] };
-    const defLabel = { save: 'Save', block: 'Block', clearance: 'Clear' };
     const total = totalText(sess);
-    const yc = countOf(sess, ['yellowCard']), rc = countOf(sess, ['redCard']);
     const sec = (label, right, body, cls) =>
       `<section class="cn-sec${cls ? ' ' + cls : ''}"><div class="lbl"><span>${esc(label)}</span>${right || ''}</div>${body}</section>`;
+    // per-team counts: an event belongs to the side of the player it is about
+    const evTeams = Scoring.sessEvents(sess).map(e => ({ type: e.type, team: evTeam(sess, e) }));
+    const cnt = (t, types) => evTeams.filter(x => x.team === t && types.includes(x.type)).length;
 
     let html = `<div class="cn-score">${UI.scoreFor(sess, { size: 'console', clock: true, hero: true })}` +
-      `<div class="cn-line${st === 'stoppage' ? ' is-stop' : ''}" data-line>${esc(lineText(sess))}</div></div>`;
+      (st === 'stoppage' ? `<div class="cn-line is-stop" data-line>${esc(lineText(sess))}</div>` : '') + `</div>`;
     if (!ended) {
-      html +=
-        sec('Goals & assists', '', `<div class="cn-goals" style="--cols:${goalCols}">` + teams.map(t => {
-          const n = Scoring.teamGoals(sess, t);
-          return `<button type="button" class="cn-goal lit ${tcls(t)}${off}" data-tap="goal" data-team="${esc(t)}" aria-label="Goal ${esc(fmtTeam(t))}">` +
-            `<span class="cn-gc">${esc(n)}</span><b>Goal</b><small>${esc(fmtTeam(t))}</small></button>`;
-        }).join('') + `</div>`, 'cn-sec-goals') +
-        sec(keepers.length || f.everBig ? 'Keepers & defence' : 'Defence',
-          keepers.length ? `<b class="cn-inGoal">${esc(keepers.map(k => k.name).join(' · '))} in goal</b>` : '',
-          `<div class="cn-def" style="--cols:${def.length}">` + def.map(k =>
-            `<button type="button" class="tile cn-act${off}" data-tap="act" data-kind="${k}"><b>${defLabel[k]}</b><span class="cn-ct">${countOf(sess, defCount[k])}</span></button>`).join('') + `</div>`) +
-        sec('Cards', '', `<div class="cn-cards">` +
-          `<button type="button" class="tile cn-card${off}" data-tap="act" data-kind="card" data-ctype="yellowCard">${cardShape('yellow')}<b>Yellow${yc ? ` <span class="n">· ${yc}</span>` : ''}</b></button>` +
-          `<button type="button" class="tile cn-card${off}" data-tap="act" data-kind="card" data-ctype="redCard">${cardShape('red')}<b>Red${rc ? ` <span class="n">· ${rc}</span>` : ''}</b></button></div>`);
+      // ROUND 6 · team-first: one column per team, top to bottom Goal 88 · Save 56 (big poles) · Block | Clear 60 ·
+      // Yellow | Red 60, every tile tinted in its team. Same muscle memory as Goal: tap the team's tile, tap the player.
+      const tile = (t, kind, label, n) =>
+        `<button type="button" class="cn-tt cn-act${off}" data-tap="act" data-kind="${kind}" data-team="${esc(t)}">` +
+        `<b>${label}</b><span class="cn-ct">${n}</span></button>`;
+      const card = (t, ctype) => {
+        const n = cnt(t, [ctype]), red = ctype === 'redCard';
+        return `<button type="button" class="cn-tt cn-card${off}" data-tap="act" data-kind="card" data-ctype="${ctype}" data-team="${esc(t)}">` +
+          `${cardShape(red ? 'red' : 'yellow')}<b>${red ? 'Red' : 'Yellow'}${n ? ` <span class="cn-cn">· ${n}</span>` : ''}</b></button>`;
+      };
+      const col = t => {
+        const ks = keepers.filter(k => k.team === t);
+        const save = !keepers.length ? '' : ks.length
+          ? `<button type="button" class="cn-tt cn-save${off}" data-tap="save" data-team="${esc(t)}" aria-label="Save ${esc(fmtTeam(t))}">` +
+            `<b>Save</b><span class="cn-sk">${esc(ks.map(k => k.name).join(' · '))} · ${cnt(t, ['save', 'penaltySave'])}</span></button>`
+          : `<div class="cn-tt cn-save is-none"><span class="cn-sk">No keeper</span></div>`;
+        return `<div class="cn-col ${tcls(t)}" data-col="${esc(t)}">` +
+          `<button type="button" class="cn-goal lit ${tcls(t)}${off}" data-tap="goal" data-team="${esc(t)}" aria-label="Goal ${esc(fmtTeam(t))}">` +
+          `<span class="cn-gc">${esc(Scoring.teamGoals(sess, t))}</span><b>Goal</b><small>${esc(fmtTeam(t))}</small></button>` +
+          save +
+          `<div class="cn-pair">${tile(t, 'block', 'Block', cnt(t, ['block']))}${tile(t, 'clearance', 'Clear', cnt(t, ['clearance']))}</div>` +
+          `<div class="cn-pair">${card(t, 'yellowCard')}${card(t, 'redCard')}</div></div>`;
+      };
+      html += `<div class="cn-cols" style="--cols:${Math.min(Math.max(teams.length, 2), 3)}">${teams.map(col).join('')}</div>`;
     }
     html += sec('Match controls', `<b class="cn-total" data-total>${esc(total)}</b>`, `<div class="cn-ctl">${controlsHtml(sess)}</div>`, 'cn-sec-ctl');
     html += sec('Latest', `<button type="button" class="cn-all" data-tap="all">All${evs.length ? ' ' + evs.length : ''} ›</button>`,
@@ -579,8 +601,12 @@
 
   // deck taps that open a sheet or another screen: one at a time, and never twice in 0.5 s
   let openBusyUntil = 0;
+  // the second tap of a double tap on the Undo bar ("+1 again", "Penalty", Undo) must not land on the deck behind it
+  let barTapAt = 0;
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#app-undo')) barTapAt = Date.now(); }, true);
+  const afterBar = () => Date.now() - barTapAt < 500;
   const once = fn => (...a) => {
-    if (UI.sheet.top() || Date.now() < openBusyUntil) return;
+    if (UI.sheet.top() || Date.now() < openBusyUntil || afterBar()) return;
     openBusyUntil = Date.now() + OPEN_MS;
     fn(...a);
   };
@@ -598,12 +624,13 @@
       UI.on(el, 'teams', once(() => App.action('setup.teamsTonight', { sid: sid() })));
       UI.on(el, 'poles', once(() => App.action('setup.bigPoles', { sid: sid() })));
       UI.on(el, 'ftcheck', once(() => App.go('ref.ftcheck', { sid: sid() })));
-      UI.on(el, 'ctl', b => clockAction(sid(), b.dataset.act, b));
-      UI.on(el, 'halftime', b => { if (!b.classList.contains('is-done')) halfTime(sid(), b); });
+      UI.on(el, 'ctl', b => { if (!afterBar()) clockAction(sid(), b.dataset.act, b); });
+      UI.on(el, 'halftime', b => { if (!b.classList.contains('is-done') && !afterBar()) halfTime(sid(), b); });
       UI.on(el, 'goal', once(b => openGoal(sid(), b.dataset.team)));
+      UI.on(el, 'save', b => quickSave(sid(), b.dataset.team, b));
       UI.on(el, 'act', once(b => {
         const k = b.dataset.kind;
-        if (k === 'save') openSave(sid()); else openAction(sid(), k, b.dataset.ctype);
+        if (k === 'save') openSave(sid(), b.dataset.team); else openAction(sid(), k, b.dataset.ctype, b.dataset.team);
       }));
       // the two protected controls: a short press only explains; the 1.5 s hold does it
       el.addEventListener('click', e => {

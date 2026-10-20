@@ -13,13 +13,16 @@
 .scr-ref-console .cn-line { text-align: center; margin-top: 8px; font-size: 12.5px; color: var(--ink3); overflow-wrap: anywhere; }
 .scr-ref-console .cn-line.is-stop { color: var(--warn); }
 
-/* ---------------------------------------------------------------- Goals & assists: 96 px, team tint + corner light */
-.scr-ref-console .cn-goals { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); }
+/* ---------------------------------------------------------------- ROUND 6 · team columns (any two teams tonight) */
+/* Goal 88 (15% tint + corner light, count top right) · Save 56 "Save · keeper · n" (big poles) ·
+   Block | Clear and Yellow | Red as 60 px pairs (9% tint, 26% ring), counts per team. 2 equal columns, 8 px gap. */
+.scr-ref-console .cn-cols { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); margin-top: var(--sp-4); }
+.scr-ref-console .cn-col { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
 .scr-ref-console .cn-goal {
-  position: relative; height: 96px; min-height: 96px; width: 100%; border-radius: 16px; padding: 0 16px;
+  position: relative; height: 88px; min-height: 88px; width: 100%; border-radius: 16px; padding: 0 14px;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; overflow: hidden;
   background: radial-gradient(90% 110% at 0% 100%, color-mix(in srgb, var(--tc) var(--glow), transparent), transparent 70%),
-              color-mix(in srgb, var(--tc) var(--tint-tile), var(--s1));
+              color-mix(in srgb, var(--tc) 15%, var(--s1));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent), var(--edge);
 }
 .scr-ref-console .cn-goal b { font-size: 24px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; color: var(--ink); }
@@ -28,17 +31,25 @@
 .scr-ref-console .cn-goal .cn-gc { font-family: var(--font); font-variant-numeric: tabular-nums; font-weight: 600; position: absolute; top: 10px; right: 12px; font-size: 13px; color: var(--ink2); }
 .scr-ref-console .cn-goal:active { transform: scale(.98); filter: brightness(1.08); }
 
-/* ---------------------------------------------------------------- Defence / Keepers & defence: 72 px, word + count */
-.scr-ref-console .cn-def { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); }
-.scr-ref-console .cn-act, .scr-ref-console .cn-card { height: var(--h-action); min-height: var(--h-action); width: 100%; align-items: center; text-align: center; padding: 0 6px; }
-.scr-ref-console .cn-act b { font-size: 17px; font-weight: 650; }
-.scr-ref-console .cn-act .cn-ct { font-family: var(--font); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
-
-/* ---------------------------------------------------------------- Cards: real card shapes, 76 px */
-.scr-ref-console .cn-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
-.scr-ref-console .cn-card { height: 76px; min-height: 76px; gap: 6px; }
-.scr-ref-console .cn-card b { font-size: 15px; font-weight: 650; }
-.scr-ref-console .cn-card b .n { color: var(--ink2); font-weight: 600; }
+/* the smaller team tiles: flat 9% tint, 26% ring (no light) */
+.scr-ref-console .cn-tt {
+  width: 100%; border-radius: 14px; color: var(--ink); text-align: center; padding: 0 4px; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: color-mix(in srgb, var(--tc) 9%, var(--s1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 26%, transparent);
+}
+.scr-ref-console .cn-tt:active { transform: scale(.97); filter: brightness(1.1); }
+.scr-ref-console .cn-save { height: 56px; min-height: 56px; flex-direction: row; gap: 8px; flex-wrap: wrap; padding: 0 8px; }
+.scr-ref-console .cn-save b { font-size: 16px; font-weight: 700; }
+.scr-ref-console .cn-save .cn-sk { font-size: 12.5px; color: var(--ink2); font-weight: 550; overflow-wrap: anywhere; }
+.scr-ref-console .cn-save.is-none { opacity: .55; }
+.scr-ref-console .cn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.scr-ref-console .cn-pair .cn-tt { height: 60px; min-height: 60px; }
+.scr-ref-console .cn-act b { font-size: 15px; font-weight: 700; }
+.scr-ref-console .cn-act .cn-ct { font-family: var(--font); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12.5px; color: var(--ink3); }
+.scr-ref-console .cn-card { gap: 5px; }
+.scr-ref-console .cn-card .cn-cs { width: 14px; height: 19px; border-radius: 3px; }
+.scr-ref-console .cn-card b { font-size: 12.5px; font-weight: 650; white-space: nowrap; }
+.scr-ref-console .cn-card .cn-cn { color: var(--ink2); font-weight: 600; font-variant-numeric: tabular-nums; }
 .cn-cs { display: inline-block; width: 22px; height: 30px; border-radius: 4px; flex: none; background: var(--yel); box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
 .cn-cs.cn-cs-red { background: var(--cred); }
 [data-theme="light"] .cn-cs { box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
@@ -120,11 +131,11 @@
 /* active team tab: tinted in the team colour (flat) */
 .sh-console .seg > button.team.on { background: color-mix(in srgb, var(--tc) 22%, var(--s2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
 
-/* Goal sheet: the team-tinted title bar (the one sheet with light), title in team colour */
-.sh-console-goal .sheet-h.cn-gbar { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+/* Goal sheet and the team-locked sheets (Block · Green…): the team-tinted title bar (the one sheet with light), title in team colour */
+.sh-console .sheet-h.cn-gbar { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 24%, var(--sheet)), var(--sheet)); }
-.sh-console-goal .sheet-h.cn-gbar .sheet-title { color: var(--tc); font-weight: 700; }
-[data-theme="light"] .sh-console-goal .sheet-h.cn-gbar .sheet-title { color: color-mix(in srgb, var(--tc) 85%, #000); }
+.sh-console .sheet-h.cn-gbar .sheet-title { color: var(--tc); font-weight: 700; }
+[data-theme="light"] .sh-console .sheet-h.cn-gbar .sheet-title { color: color-mix(in srgb, var(--tc) 85%, #000); }
 .sh-console-goal .sheet-h .sh-s { color: var(--ink2); }
 .sh-console-goal .cn-steplbl { margin-top: 2px; }
 .sh-console-goal .cn-links { display: flex; flex-direction: column; align-items: center; margin-top: var(--sp-2); }
@@ -191,3 +202,9 @@
 @media (prefers-reduced-motion: reduce) {
   .scr-ref-console .btn.cn-stop.is-esc { animation: none; }
 }
+
+/* round 6: team-locked Block / Clear / Yellow / Red sheets (no team tab), card shape in the title, "Wrong team? ›" at the bottom */
+.sh-console .sheet-h.cn-gbar .sheet-title .cn-cs { width: 14px; height: 19px; border-radius: 3px; margin-right: 8px; vertical-align: -2px; box-shadow: none; }
+.sh-console-team .cn-reclbl { margin-top: 0; }
+.sh-console-team .cn-wrongs { display: flex; flex-direction: column; align-items: center; padding: var(--sp-3) 0 var(--sp-2); }
+.sh-console-team .cn-wrong { min-height: var(--h-target); padding: 0 12px; font-size: 13.5px; color: var(--ink2); }

@@ -1,6 +1,6 @@
 /* BE Fit Club · css/setup.css · OWNER: Round 5 · Console builder · ref.setup + setup sheets (.scr-ref-setup, .sh-setup-*)
    Tokens only. Team colour always comes from Teams (.t-<id> sets --tc) and sits next to the team word.
-   Light: only the Tonight card (.hero, the screen's one glow) and the VS block inside it (.lit). Everything else flat. */
+   Light: the team wash on ticked squad rows (.wash) and the team-tinted title bar of the "+ From" sheet (.lit). Everything else flat. */
 
 /* ---------------------------------------------------------------- Who's here? */
 .scr-ref-setup .su-chips { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
@@ -63,18 +63,63 @@
 .sh-setup-player .grid2, .sh-setup-player .grid3 { gap: var(--sp-2); }
 
 /* ---------------------------------------------------------------- round 5: Tonight (the hero), who plays, team tabs */
-.scr-ref-setup .su-hero { padding: var(--card-pad) var(--card-pad) 16px; }
-.scr-ref-setup .su-hero > .lbl { margin-bottom: 2px; }
-.scr-ref-setup .su-here { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
-.scr-ref-setup .su-here .hn { font-size: 48px; }
-.scr-ref-setup .su-here span { font-size: 15px; color: var(--ink2); }
-.scr-ref-setup .su-tplbl { margin-top: var(--sp-4); }
-.scr-ref-setup .su-tpick { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.scr-ref-setup .su-tp { height: var(--h-target); min-width: 76px; padding: 0 14px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink2);
   display: inline-flex; align-items: center; gap: 7px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--s3); }
-.scr-ref-setup .su-tp::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--tc); flex: none; }
-.scr-ref-setup .su-tp.on { color: var(--ink); background: color-mix(in srgb, var(--tc) var(--tint-soft), var(--s1)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
-.scr-ref-setup .su-wholbl { margin-top: var(--sp-6); }
 /* the active team tab is tinted in its team colour (flat) */
 .scr-ref-setup .seg > button.team.on, .sh-setup .seg > button.team.on { background: color-mix(in srgb, var(--tc) 22%, var(--s2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
 .scr-ref-setup .rows, .sh-setup .rows { box-shadow: var(--edge); }
+
+/* ---------------------------------------------------------------- ROUND 6 · the lineup picker */
+/* tabs: one 56 px tab per team tonight, team word in team colour, "n of 10" under it;
+   the open tab gets a 16% team fill and a 3 px team underline */
+.scr-ref-setup .su-tabs { padding: 0; gap: var(--sp-2); background: transparent; box-shadow: none; }
+.scr-ref-setup .su-tabs > .su-tab { height: 56px; min-height: 56px; flex: 1 1 0; flex-direction: column; gap: 2px; border-radius: 12px; background: var(--s1); box-shadow: var(--edge); }
+.scr-ref-setup .su-tabs > .su-tab::before { display: none; }
+.scr-ref-setup .su-tab .su-tw { font-size: 15px; font-weight: 700; color: var(--tc); }
+[data-theme="light"] .scr-ref-setup .su-tab .su-tw { color: color-mix(in srgb, var(--tc) 80%, #000); }
+.scr-ref-setup .su-tab .n { font-family: var(--font); font-size: 12.5px; color: var(--ink2); opacity: 1; font-variant-numeric: tabular-nums; }
+.scr-ref-setup .su-tabs > .su-tab.on { background: color-mix(in srgb, var(--tc) 16%, var(--s1)); box-shadow: inset 0 -3px 0 var(--tc), inset 0 0 0 1px color-mix(in srgb, var(--tc) 30%, transparent); }
+
+/* action row: "+ From Red" (team-tinted, flex 1) · "+ New person" (flex 1) · search 48 × 48 */
+.scr-ref-setup .su-acts { display: flex; gap: var(--sp-2); margin-top: var(--sp-3); }
+.scr-ref-setup .su-from, .scr-ref-setup .su-newp { flex: 1 1 0; min-width: 0; height: 48px; border-radius: 12px; font-weight: 650; font-size: 14px; color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 8px; background: var(--s1); box-shadow: var(--edge); }
+.scr-ref-setup .su-from { background: color-mix(in srgb, var(--tc, var(--s3)) 14%, var(--s1)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc, var(--s3)) 40%, transparent); }
+.scr-ref-setup .su-from.t-none, .scr-ref-setup .su-from:not([class*="t-"]) { background: var(--s1); box-shadow: var(--edge); }
+.scr-ref-setup .su-find { width: 48px; height: 48px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--s1); box-shadow: var(--edge); color: var(--ink2); }
+.scr-ref-setup .su-find svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.scr-ref-setup .su-from:active, .scr-ref-setup .su-newp:active, .scr-ref-setup .su-find:active { transform: scale(.98); filter: brightness(1.1); }
+
+/* squad rows: 60 px, avatar, name, "POS · n of last 8", a 28 px tick; ticked = team wash + 3 px edge + filled tick */
+.scr-ref-setup .su-sqlbl, .sh-setup .su-sqlbl { margin-top: var(--sp-4); }
+.scr-ref-setup .su-squad .r.su-sq, .sh-setup .su-squad .r.su-sq { min-height: 60px; gap: 12px; padding: 8px 14px; }
+.su-sq .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.su-sq .nm { font-weight: 650; overflow-wrap: anywhere; }
+.su-sq .meta { font-size: 12.5px; color: var(--ink3); }
+.su-sq .av { flex: none; }
+.su-sq.on { background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 18%, transparent), color-mix(in srgb, var(--tc) 5%, transparent)); box-shadow: inset 3px 0 0 var(--tc); }
+.su-tick { width: 28px; height: 28px; border-radius: 50%; flex: none; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--s3); font-size: 14px; font-weight: 800; color: var(--on-ink); }
+.su-tick.on { background: var(--tc); box-shadow: none; color: #0B0D10; }
+.scr-ref-setup .su-more, .sh-setup .su-more { width: 100%; min-height: 48px; margin-top: var(--sp-2); font-size: 13.5px; color: var(--ink2); font-weight: 550; border-radius: 12px; }
+.scr-ref-setup .su-more:active, .sh-setup .su-more:active { background: var(--s2); }
+
+/* the ready state: a team sheet card per side (header 18% tint with the count, keeper first) */
+.scr-ref-setup .su-tslbl { margin-top: var(--sp-6); }
+.scr-ref-setup .su-ts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+.scr-ref-setup .su-ts.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.scr-ref-setup .su-tsc { background: var(--s1); border-radius: 14px; overflow: hidden; box-shadow: var(--edge); min-width: 0; }
+.scr-ref-setup .su-tsh { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; font-size: 12.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  background: color-mix(in srgb, var(--tc) 18%, var(--s1)); }
+.scr-ref-setup .su-tsh b { font-size: 15px; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.scr-ref-setup .su-tsr { display: flex; flex-direction: column; align-items: flex-start; width: 100%; min-height: 48px; padding: 7px 12px; text-align: left; border-top: 1px solid var(--line); }
+.scr-ref-setup .su-tsr:first-of-type { border-top: 0; }
+.scr-ref-setup .su-tsr .nm { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.scr-ref-setup .su-tsr .pos { font-size: 12px; }
+.scr-ref-setup .su-tsr.gk { background: color-mix(in srgb, var(--tc) 8%, transparent); }
+.scr-ref-setup .su-tsr:active { background: var(--s2); }
+
+/* "+ From Red" sheet: team-tinted title bar ("Add to Green tonight"), a tab per other team */
+.sh-setup-from .sheet-h.su-fbar { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 24%, var(--sheet)), var(--sheet)); }
+.sh-setup-from .sheet-h.su-fbar .sheet-title { color: var(--tc); font-weight: 700; }
+[data-theme="light"] .sh-setup-from .sheet-h.su-fbar .sheet-title { color: color-mix(in srgb, var(--tc) 85%, #000); }
+.sh-setup-from .su-ftabs > button { min-height: 48px; }

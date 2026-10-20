@@ -5,7 +5,10 @@
    Styles in css/setup.css, scoped under .scr-ref-setup and .sh-setup (sheets).
 
    SCREENS
-     'ref.setup'          tab match · layout phone · console   "Who's here?" before kick-off:
+     'ref.setup'          tab match · layout phone · console   THE LINEUP PICKER (round 6) before kick-off: one 56 px tab
+                          per team ("4 of 10"), that team's usual squad (usually here first: last 8 matches), tap to tick;
+                          "+ From Red" (other teams' usual squads) · "+ New person" (duplicate check) · search; the team
+                          sheet card once both sides have players; poles + keepers; "Kick off · n players". Round 4 text:
                           Green · n | Red · n switch, search ("Add a name": existing names first, then
                           "Someone new"), "Usually here" chips (recent players first), the side's rows,
                           Small poles | Big poles (+ one keeper per side when big), "Kick off · n players"
@@ -271,7 +274,7 @@
   // ======================================================================== "Who's here?" draft
   let draft = null;
   const today = () => fmt.iso(Store.now());
-  function blankDraft() { const teams = nightTeams([]); return { date: today(), teams, side: teams[0], poles: 'small', picks: {}, keepers: {} }; }
+  function blankDraft() { const teams = nightTeams(clubTeams()); return { date: today(), teams, side: teams[0], poles: 'small', picks: {}, keepers: {} }; }
   function loadDraft() {
     try {
       const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
@@ -285,6 +288,8 @@
     // drop anyone removed from the club (e.g. an undone new person) and stale keepers
     Object.keys(draft.picks).forEach(pid => { if (!Store.player(pid)) delete draft.picks[pid]; });
     Object.keys(draft.keepers).forEach(t => { const k = draft.keepers[t]; if (k && (!draft.picks[k] || draft.picks[k].team !== t)) delete draft.keepers[t]; });
+    // tonight's tabs: every active team in Settings (2, or 3 with Blue), plus any side someone is already ticked for
+    draft.teams = Scoring.orderTeams(Array.from(new Set(nightTeams(clubTeams()).concat(Object.values(draft.picks).map(x => x.team)))));
     if (!draft.teams.includes(draft.side)) draft.side = draft.teams[0];
     return draft;
   }
@@ -324,18 +329,6 @@
     draft.keepers[team] = pid;
     saveDraft();
   }
-  // Who plays tonight (Settings has more than two teams): at least two; a side with players can't be dropped.
-  function dToggleTeam(team) {
-    if (draft.teams.includes(team)) {
-      if (draft.teams.length <= 2) { UI.toast('Two teams at least'); return false; }
-      if (dSide(team).length) { UI.toast(`Move ${T(team)}’s players first`); return false; }
-      draft.teams = draft.teams.filter(t => t !== team);
-      delete draft.keepers[team];
-    } else draft.teams = Scoring.orderTeams(draft.teams.concat(team));
-    if (!draft.teams.includes(draft.side)) draft.side = draft.teams[0];
-    saveDraft();
-    return true;
-  }
   function dAutoKeepers() {                  // big poles: a usual keeper already on a side fills its empty slot
     if (draft.poles !== 'big') return;
     draft.teams.forEach(t => {
@@ -345,28 +338,35 @@
     });
   }
 
-  // ---------------------------------------------------------------- screen
-  const ui = { q: '', extra: {} };
+  // ---------------------------------------------------------------- screen: the lineup picker (round 6)
+  // A team sheet, not a scoreline: one 56 px tab per team tonight ("Green · 4 of 10"), that team's usual squad
+  // as a list (usually here first), tap a row to tick. "+ From Red" adds a usual Red to tonight's side.
+  const ui = { extra: {}, more: {} };
+  const PER_SIDE = MAX_OUT + 1;              // "n of 10": 9 outfield + 1 keeper
+  const usualTeam = pid => (Store.player(pid) || {}).defaultTeam || null;
+  const lastN = pid => (recency()[pid] || {}).n || 0;
+  const byUsual = (a, b) => ((recency()[b] || {}).w || 0) - ((recency()[a] || {}).w || 0) || nameOf(a).localeCompare(nameOf(b));
+  // a team's usual squad (usual team = the player's defaultTeam), plus anyone ticked for it tonight
+  function squadOf(team) {
+    const all = Object.keys(Store.players()).filter(pid => { const p = Store.player(pid); return p && p.name && (usualTeam(pid) === team || dTeam(pid) === team); });
+    return all.sort(byUsual);
+  }
 
   App.registerScreen('ref.setup', {
     tab: 'match', layout: 'phone', console: true, title: 'Tonight',
     header: () => ({ center: `<span class="hd-title">${esc(fmt.date(today()))}</span>`, right: UI.syncChip(Store.status()) }),
     mount(el) {
-      UI.onSeg(el, 'side', v => { getDraft().side = v; saveDraft(); drawList(el); });
+      UI.onSeg(el, 'side', v => { getDraft().side = v; saveDraft(); drawAll(el); });
       UI.onSeg(el, 'poles', v => { getDraft().poles = v; dAutoKeepers(); saveDraft(); drawAll(el); });
-      el.addEventListener('input', e => { if (e.target.matches('[data-search="who"]')) { ui.q = e.target.value; drawList(el); } });
-      el.addEventListener('keydown', e => {          // Enter on a typed name: add the single exact match to the open side
-        if (e.key !== 'Enter' || !e.target.matches('[data-search="who"]')) return;
-        e.preventDefault();
-        const exact = search(ui.q).filter(g => g.r === 0);
-        if (exact.length === 1 && !dTeam(exact[0].pid) && dAdd(exact[0].pid, draft.side)) clearSearch(el);
-      });
-      UI.on(el, 'usual', b => { getDraft(); if (dAdd(b.dataset.pid, draft.side)) drawAll(el); });
-      UI.on(el, 'add', b => { getDraft(); if (dAdd(b.dataset.pid, b.dataset.team)) { draft.side = b.dataset.team; saveDraft(); clearSearch(el); } });
+      UI.on(el, 'tick', b => { getDraft(); if (dTick(b.dataset.pid, draft.side)) drawAll(el); });
+      UI.on(el, 'more', b => { ui.more[b.dataset.team] = true; drawList(el); });
       UI.on(el, 'pl', b => openPlayerOptions(el, b.dataset.pid));
-      UI.on(el, 'new', b => {
-        const team = b.dataset.team;
-        createPerson(ui.q, team, { button: b, group: el, onDone: pid => { getDraft(); dAdd(pid, team); draft.side = team; saveDraft(); clearSearch(el); } });
+      UI.on(el, 'from', () => { getDraft(); openFrom(el, draft.side); });
+      UI.on(el, 'find', b => {
+        getDraft();
+        const team = draft.side;
+        App.action('setup.newPerson', { team, teams: [team], title: b.dataset.kind === 'new' ? 'New person · ' + T(team) : 'Find a player · ' + T(team),
+          onDone: pid => { getDraft(); if (dAdd(pid, team)) { draft.side = team; saveDraft(); } drawAll(el); } });
       });
       UI.on(el, 'keeper', b => { getDraft(); dKeeper(b.dataset.team, b.dataset.pid); drawAll(el); });
       UI.on(el, 'someone', b => {
@@ -375,7 +375,6 @@
           onDone: pid => { getDraft(); ui.extra[team] = pid; dKeeper(team, pid); drawAll(el); } });
       });
       UI.on(el, 'kickoff', b => kickOff(el, b));
-      UI.on(el, 'tpick', b => { getDraft(); if (dToggleTeam(b.dataset.team)) drawAll(el); });
       UI.on(el, 'to-match', () => App.go('ref.console', {}, { replace: true }));
     },
     render(el) {
@@ -384,69 +383,118 @@
         return;
       }
       getDraft();
-      el.innerHTML = `<div data-r="hero"></div><div data-r="tpick"></div>` +
-        `<div class="lbl su-wholbl">Who’s here</div><div class="su-switch" data-r="switch"></div>` +
-        `<div class="su-search mt-3">${UI.search({ name: 'who', placeholder: 'Add a name', value: ui.q })}</div>` +
-        `<div class="su-list mt-3" data-r="list"></div><div class="su-foot" data-r="foot"></div>`;
+      el.innerHTML = `<div data-r="tabs"></div><div class="su-acts" data-r="acts"></div>` +
+        `<div class="su-list" data-r="list"></div><div data-r="sheet"></div><div class="su-foot" data-r="foot"></div>`;
       drawAll(el);
     },
   });
 
-  function clearSearch(el) {
-    ui.q = '';
-    const inp = el.querySelector('[data-search="who"]');
-    if (inp) inp.value = '';
-    drawAll(el);
+  // tick / untick on the open side (a player ticked for another side moves here; the 9 + 1 cap still asks twice)
+  function dTick(pid, team) {
+    if (dTeam(pid) === team) { dDrop(pid); return true; }
+    return dAdd(pid, team);
   }
-  function drawAll(el) { drawSwitch(el); drawList(el); drawFoot(el); }
-  // Tonight: "18 here" and the sides as a tinted VS block (the screen's one hero)
-  function drawHero(el) {
-    const box = el.querySelector('[data-r="hero"]');
-    if (box) {
-      const n = Object.keys(draft.picks).length;
-      box.innerHTML = `<div class="card hero su-hero"><div class="lbl">Tonight</div>` +
-        `<div class="su-here"><b class="hn">${n}</b><span>here</span></div>` +
-        UI.score({ teams: draft.teams.map(team => ({ team, goals: dSide(team).length })), centre: { top: 'VS', state: 'vs' }, size: 'compact', cls: 'su-vs' }) + `</div>`;
-    }
-    const tp = el.querySelector('[data-r="tpick"]');
-    if (!tp) return;
-    const club = clubTeams();
-    // more than two active teams in Settings: pick who plays tonight (Blue v Green…)
-    tp.innerHTML = club.length > 2 || draft.teams.some(t => !club.includes(t))
-      ? `<div class="lbl su-tplbl">Playing tonight</div><div class="su-tpick">` + Array.from(new Set(club.concat(draft.teams))).map(t =>
-        `<button type="button" class="su-tp ${tcls(t)}${draft.teams.includes(t) ? ' on' : ''}" data-tap="tpick" data-team="${esc(t)}" aria-pressed="${draft.teams.includes(t)}">${esc(T(t))}</button>`).join('') + `</div>`
-      : '';
+
+  function drawAll(el) { drawTabs(el); drawList(el); drawSheet(el); drawFoot(el); }
+  function drawTabs(el) {
+    const box = el.querySelector('[data-r="tabs"]');
+    if (box) box.innerHTML = `<div class="seg ref su-tabs n${draft.teams.length}" role="tablist" data-seg="side">` + draft.teams.map(t =>
+      `<button type="button" role="tab" aria-selected="${t === draft.side}" class="su-tab ${tcls(t)}${t === draft.side ? ' on' : ''}" data-value="${esc(t)}">` +
+      `<span class="su-tw">${esc(T(t))}</span><span class="n">${dSide(t).length} of ${PER_SIDE}</span></button>`).join('') + `</div>`;
+    const acts = el.querySelector('[data-r="acts"]');
+    if (!acts) return;
+    const others = draft.teams.filter(t => t !== draft.side);
+    const fromLabel = others.length === 1 ? `+ From ${T(others[0])}` : '+ From other teams';
+    acts.innerHTML = `<button type="button" class="su-from ${others.length === 1 ? tcls(others[0]) : ''}" data-tap="from">${esc(fromLabel)}</button>` +
+      `<button type="button" class="su-newp" data-tap="find" data-kind="new">+ New person</button>` +
+      `<button type="button" class="su-find" data-tap="find" data-kind="find" aria-label="Find a player">${UI.icon('search')}</button>`;
   }
-  function drawSwitch(el) {
-    drawHero(el);
-    const box = el.querySelector('[data-r="switch"]');
-    if (box) box.innerHTML = UI.teamSwitch('side', draft.teams.map(team => ({ team, count: dSide(team).length })), draft.side, { ref: true });
+
+  // one squad row: avatar, name, "MID · 8 of last 8" (+ "usually Red" / "on Red tonight"), a tick circle
+  function squadRow(pid, team) {
+    const on = dTeam(pid) === team;
+    const elsewhere = !on && dTeam(pid);
+    const ut = usualTeam(pid);
+    const n = lastN(pid);
+    const meta = [defPos(pid), ut && ut !== team ? 'usually ' + T(ut) : '', elsewhere ? `on ${T(elsewhere)} tonight` : '', n ? `${n} of last 8` : 'not in the last 8'].filter(Boolean).join(' · ');
+    return `<button type="button" class="r su-sq ${tcls(team)}${on ? ' on wash' : ''}" data-tap="tick" data-pid="${esc(pid)}" aria-pressed="${on}">` +
+      UI.avatar(nameOf(pid), ut || team) + `<span class="grow"><span class="nm">${esc(nameOf(pid))}</span><span class="meta">${esc(meta)}</span></span>` +
+      `<span class="su-tick${on ? ' on' : ''}" aria-hidden="true">${on ? '✓' : ''}</span></button>`;
   }
   function drawList(el) {
     const box = el.querySelector('[data-r="list"]');
     if (!box) return;
-    drawSwitch(el);
-    const side = dSide(draft.side);
-    const usualRow = usual(pid => !!draft.picks[pid], 24);
-    const empty = (usualRow.length ? `<div class="chips su-chips">${usualRow.map(pid =>
-        `<button type="button" class="chip ref" data-tap="usual" data-pid="${esc(pid)}">+ ${esc(nameOf(pid))}</button>`).join('')}</div>` : '') +
-      (side.length ? UI.rows(side.map(pid => UI.row({ tap: 'pl', data: { pid }, title: nameOf(pid), metaHtml: UI.pos(dPos(pid)), tall: true })), { cls: 'mt-3' })
-        : `<div class="su-none mt-3">No one on ${esc(T(draft.side))} yet</div>`);
-    box.innerHTML = finderHtml(ui.q, { teams: draft.teams, newTeams: draft.teams, onTeam: dTeam, onTap: 'pl', empty });
+    const team = draft.side;
+    const all = squadOf(team);
+    const shown = all.filter(pid => lastN(pid) > 0 || dTeam(pid));
+    const rest = all.filter(pid => !shown.includes(pid));
+    const list = ui.more[team] ? shown.concat(rest) : shown;
+    box.innerHTML = `<div class="lbl su-sqlbl"><span>${esc(T(team))} squad</span><b>usually here first</b></div>` +
+      (list.length ? UI.rows(list.map(pid => squadRow(pid, team)), { cls: 'su-squad' }) : `<div class="su-none">No usual ${esc(T(team))} players yet · use + From or + New person</div>`) +
+      (!ui.more[team] && rest.length ? `<button type="button" class="su-more" data-tap="more" data-team="${esc(team)}">Show ${rest.length} more ${esc(T(team))} ${rest.length === 1 ? 'player' : 'players'}</button>` : '');
+  }
+  // the ready state: a team sheet card per side with players (keeper first, "GK · in goal" on big poles)
+  function drawSheet(el) {
+    const box = el.querySelector('[data-r="sheet"]');
+    if (!box) return;
+    const sides = draft.teams.filter(t => dSide(t).length);
+    if (sides.length < 2) { box.innerHTML = ''; return; }
+    const posRank = { GK: 0, DEF: 2, MID: 3, FWD: 4 };
+    box.innerHTML = `<div class="lbl su-tslbl"><span>Team sheet · ${draft.poles === 'big' ? 'big' : 'small'} poles</span><b>Tap a name to move</b></div>` +
+      `<div class="su-ts n${sides.length}">` + sides.map(t => {
+        const list = dSide(t).slice().sort((a, b) => (draft.keepers[t] === a ? -1 : draft.keepers[t] === b ? 1 : 0) || ((posRank[dPos(a)] ?? 3) - (posRank[dPos(b)] ?? 3)) || draft.picks[a].at - draft.picks[b].at);
+        return `<div class="su-tsc ${tcls(t)}"><div class="su-tsh"><span>${esc(T(t))}</span><b>${list.length}</b></div>` + list.map(pid => {
+          const gk = draft.poles === 'big' && draft.keepers[t] === pid;
+          return `<button type="button" class="su-tsr${gk ? ' gk' : ''}" data-tap="pl" data-pid="${esc(pid)}"><span class="nm">${esc(nameOf(pid))}</span>` +
+            `<span class="pos">${gk ? 'GK · in goal' : esc(dPos(pid))}</span></button>`;
+        }).join('') + `</div>`;
+      }).join('') + `</div>`;
   }
   function drawFoot(el) {
     const box = el.querySelector('[data-r="foot"]');
     if (!box) return;
     const n = Object.keys(draft.picks).length;
-    const kNames = draft.teams.map(t => draft.keepers[t]).filter(Boolean).map(nameOf);
-    let html = `<div class="lbl mt-6">Poles</div>` + UI.seg('poles', [{ value: 'small', label: 'Small · no keepers' },
-      { value: 'big', label: kNames.length ? 'Big · ' + kNames.join(', ') : 'Big poles' }], draft.poles, { ref: true });
+    const ready = draft.teams.filter(t => dSide(t).length).length >= 2;
+    let html = `<div class="mt-6">${UI.seg('poles', [{ value: 'small', label: 'Small poles' }, { value: 'big', label: 'Big poles' }], draft.poles, { ref: true })}</div>`;
     if (draft.poles === 'big') {
       const taken = t => Object.keys(draft.keepers).filter(x => x !== t).map(x => draft.keepers[x]);
-      html += draft.teams.map(t => keeperBlock(t, keeperCands(t, dTeam, draft.keepers[t], taken(t), ui.extra[t]), draft.keepers[t])).join('');
+      html += draft.teams.filter(t => dSide(t).length || draft.teams.length <= 2).map(t => keeperBlock(t, keeperCands(t, dTeam, draft.keepers[t], taken(t), ui.extra[t]), draft.keepers[t])).join('');
     }
-    html += `<div class="su-go">${UI.btn(n ? `Kick off · ${plural(n, 'player')}` : 'Kick off', { kind: 'w', big: true, tap: 'kickoff', attrs: n ? '' : ' disabled' })}</div>`;
+    html += `<div class="su-go">${UI.btn(ready ? `Kick off · ${plural(n, 'player')}` : 'Pick both teams to kick off', { kind: 'w', big: true, tap: 'kickoff', attrs: ready ? '' : ' disabled' })}</div>`;
     box.innerHTML = html;
+  }
+
+  // "+ From Red": the other teams' usual squads; tick to add to tonight's side (tick again to take off)
+  function openFrom(el, side) {
+    if (UI.sheet.top()) return null;
+    const others = draft.teams.filter(t => t !== side);
+    let from = others.find(t => Object.keys(Store.players()).some(pid => usualTeam(pid) === t)) || others[0];
+    const h = UI.sheet.open({ title: `Add to ${T(side)} tonight`, sub: `From ${T(from)}’s usual squad`, cls: 'sh-setup sh-setup-from',
+      titleEnd: `<button type="button" class="su-done" data-tap="done">Done</button>`, body: '', theme: document.documentElement.dataset.theme });
+    const head = h.el.querySelector('.sheet-h');
+    if (head) head.classList.add('lit', 'su-fbar', tcls(side));
+    const usualOf = t => Object.keys(Store.players()).filter(pid => Store.player(pid) && Store.player(pid).name && usualTeam(pid) === t).sort(byUsual);
+    const more = {};
+    function draw() {
+      if (h.closed) return;
+      const sub = h.el.querySelector('.sh-s'); if (sub) sub.textContent = `From ${T(from)}’s usual squad`;
+      const tabs = `<div class="seg ref su-ftabs" role="tablist" data-seg="from">` + others.map(t => {
+        const n = usualOf(t).length;
+        return `<button type="button" role="tab" class="team ${tcls(t)}${t === from ? ' on' : ''}" data-value="${esc(t)}"><span>${esc(T(t))}${n ? '' : ' · none'}</span></button>`;
+      }).join('') + `</div>`;
+      const all = usualOf(from);
+      const shown = all.filter(pid => lastN(pid) > 0 || dTeam(pid) === side);
+      const rest = all.filter(pid => !shown.includes(pid));
+      const list = more[from] ? shown.concat(rest) : shown;
+      h.setBody(tabs + (list.length ? UI.rows(list.map(pid => squadRow(pid, side)), { cls: 'su-squad mt-3' }) : `<div class="su-none mt-3">No usual ${esc(T(from))} players</div>`) +
+        (!more[from] && rest.length ? `<button type="button" class="su-more" data-tap="fmore">Show ${rest.length} more</button>` : ''));
+    }
+    UI.onSeg(h.el, 'from', v => { from = v; draw(); });
+    UI.on(h.el, 'fmore', () => { more[from] = true; draw(); });
+    UI.on(h.el, 'tick', b => { getDraft(); if (dTick(b.dataset.pid, side)) { draw(); drawAll(el); } });
+    UI.on(h.el, 'done', () => h.close());
+    draw();
+    return h;
   }
 
   // Tap a name on the side: position for tonight, move, or take off the list.
