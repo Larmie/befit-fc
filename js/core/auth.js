@@ -13,6 +13,9 @@
      Auth.user()                  → { email, uid, name, role, at } | null
      Auth.by()                    → short string for `by` fields on writes ('referee' or the admin's email)
      Auth.onChange(fn)            fn(user|null) → returns unsubscribe
+     Auth.ready()                 → Promise: resolves once Firebase Auth has answered for a cached
+                                    login (so saves go with it); at once in test mode, when nobody
+                                    is signed in, or when the sign-in code can't load (no signal)
    The last signed-in user is cached per phone, so a refresh at the pitch with
    no signal keeps the referee in; Firebase Auth re-confirms when it can.
    Test mode (window.__BEFIT_TEST__): no Firebase. Tests sign in with ADMIN_PW
@@ -26,6 +29,9 @@
   let user = null;
   let fbp = null;   // Promise<{ auth, mod, db, dbMod }>
   let watching = false;
+  let resolveReady = null;
+  const readyP = new Promise(r => { resolveReady = r; });
+  function markReady() { if (resolveReady) { resolveReady(); resolveReady = null; } }
 
   try { const raw = localStorage.getItem(CFG.keys.referee); if (raw) user = JSON.parse(raw); } catch (e) { user = null; }
   if (TEST) user = TEST.referee ? { email: 'referee@test', name: 'Referee', role: 'admin', at: Date.now() } : null;
@@ -68,17 +74,19 @@
 
   // Keep the cached user in step with Firebase once it answers.
   function watch() {
-    if (TEST || !user) return;   // players never load the sign-in code
+    if (TEST || !user) { markReady(); return; }   // players never load the sign-in code
     watching = true;
+    setTimeout(markReady, 15000);   // never hold saves back forever: a refused save is retried when the login changes
     firebase().then(fb => {
       fb.mod.onAuthStateChanged(fb.auth, async fbUser => {
+        markReady();
         if (!fbUser) { if (user) set(null); return; }
         let role = user && user.uid === fbUser.uid ? user.role : null;
         try { role = await roleOf(fb, fbUser.uid); } catch (e) { /* offline: keep the cached role */ }
         if (!role) { await fb.mod.signOut(fb.auth); set(null); return; }
         set(shape(fbUser, role));
       });
-    }).catch(() => { /* no signal: keep the cached user until Firebase loads */ });
+    }).catch(() => { markReady(); /* no signal: keep the cached user until Firebase loads */ });
   }
 
   const ERRORS = {
@@ -128,6 +136,7 @@
     user: () => user,
     by: () => (user ? (user.role === 'referee' ? 'referee' : (user.email || 'admin')) : 'player'),
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+    ready: () => readyP,
   };
   watch();
 })();

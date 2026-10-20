@@ -35,6 +35,7 @@ window.BF_CONFIG = Object.freeze({
     theme: 'befit_theme',                    // 'auto' | 'light' | 'dark'
     consoleTheme: 'befit_console_theme',     // 'dark' | 'app'
     cache: 'befit_cache_v1',                 // last data seen, for "Can't connect"
+    outbox: 'befit_outbox_v1',               // saves not yet confirmed by the database, oldest first (store.js)
     lastSeen: 'befit_admin_last_seen',       // admin card "New since you last looked"
   }),
 });

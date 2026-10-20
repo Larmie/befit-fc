@@ -15,7 +15,10 @@
        onSaved: h => {}, onError: (err, h) => {}, onUndone: h => {},
        bar:     true,                         // false = no Undo bar (e.g. settings); a toast is up to you
        timeoutMs: 8000,                       // after this, show "Not saved" (Firebase keeps trying underneath)
+       minMs:   250,                          // "Saving…" shows at least this long (double-tap guard)
      });
+   Saves are kept on the phone first (Store's outbox), so with no signal they still show
+   Saved + Undo; Store.status().pending counts what is still waiting to send.
      h.state   'saving' | 'saved' | 'error' | 'undoing' | 'undone'
      h.done    Promise<'saved' | 'error'> (first outcome)
      h.undo()  h.retry()  h.dismiss()
@@ -36,7 +39,7 @@
   }
 
   function run(opts) {
-    const o = Object.assign({ bar: true, timeoutMs: 8000, savingText: 'Saving…' }, opts);
+    const o = Object.assign({ bar: true, timeoutMs: 8000, minMs: 250, savingText: 'Saving…' }, opts);
     if (o.button && active.has(o.button)) return active.get(o.button);
 
     let locked = [], original = null, settled = false, resolveDone;
@@ -133,8 +136,13 @@
       return h;
     };
 
+    // The first outcome waits at least minMs from the tap: saves now land on the phone at once,
+    // so this keeps the control locked through the second tap of a double tap.
+    const t0 = Date.now();
+    const notBefore = fn => (...a) => { const wait = o.minMs - (Date.now() - t0); if (wait > 0) setTimeout(() => fn(...a), wait); else fn(...a); };
+
     lock();
-    attempt(o.write, saved, failed);
+    attempt(o.write, notBefore(saved), notBefore(failed));
     return h;
   }
 

@@ -982,6 +982,18 @@
     render(el, info) {
       const wasOffline = lastStatus === 'offline';
       lastStatus = info.status;
+      // Signal is fine but the database refused the oldest save (e.g. the login expired): saves stay on the phone.
+      if (info.failed && info.status !== 'offline') {
+        const signIn = !Auth.isReferee();
+        const why = info.error === 'invalid' ? 'refused' : 'sign in again';
+        el.innerHTML = `<div class="offline adm-offline adm-notsent" role="alert"><span class="grow"><b>Not sent (${info.failed})</b> · <span>${why}</span></span>` +
+          `<button type="button" class="ub" ${signIn ? 'data-offline-signin' : 'data-offline-retry'}>${signIn ? 'Sign in' : retrying ? 'Trying…' : 'Retry'}</button></div>`;
+        const si = el.querySelector('[data-offline-signin]');
+        if (si) si.onclick = () => App.openSignIn();
+        const rb = el.querySelector('[data-offline-retry]');
+        if (rb) rb.onclick = () => retryNow(info.store, rb);
+        return;
+      }
       if (info.status !== 'offline') {
         el.innerHTML = '';
         if (wasOffline && info.status === 'online') UI.toast(info.pending ? `Back online · sending ${info.pending}` : 'Back online');
