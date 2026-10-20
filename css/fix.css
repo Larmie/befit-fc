@@ -11,7 +11,7 @@
 :is(.scr-ref-edit, .sh-fix) .fx-step { display: flex; align-items: center; gap: 8px; flex: none; }
 :is(.scr-ref-edit, .sh-fix) .fx-minv { min-width: 48px; text-align: center; font-weight: 600; font-size: 15px; }
 :is(.scr-ref-edit, .sh-fix) .fx-f .seg { flex: none; width: 184px; background: var(--s3); }
-:is(.scr-ref-edit, .sh-fix) .fx-f .seg > button { min-height: 44px; }
+:is(.scr-ref-edit, .sh-fix) .fx-f .seg > button { min-height: var(--h-target); }
 :is(.scr-ref-edit, .sh-fix) .fx-f .seg > button.on { background: var(--ink); color: var(--on-ink); }
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-link { min-height: var(--h-target); color: var(--ink2); font-weight: 550; }
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-link .n { color: var(--ink3); margin-left: 4px; }
@@ -69,7 +69,7 @@
 .scr-ref-edit .fx-dock { position: sticky; bottom: calc(var(--h-nav) + var(--safe-b) + 12px); margin-top: var(--sp-4); z-index: 5; }
 .scr-ref-edit .fx-dock .btn { box-shadow: var(--shadow-float); }
 .scr-ref-edit .fx-link { display: inline-flex; align-items: center; margin-top: var(--sp-2); }
-.scr-ref-edit .fx-date { font: 500 15px var(--mono); color: var(--ink); width: 100%; min-height: 40px; color-scheme: inherit; }
+.scr-ref-edit .fx-date { font: 500 15px var(--mono); color: var(--ink); width: 100%; min-height: var(--h-target); color-scheme: inherit; }
 .scr-ref-edit .fx-scorecard { display: block; width: 100%; text-align: left; }
 .scr-ref-edit .fx-scorecard:active { background: var(--s2); }
 .scr-ref-edit .fx-ft-mid, .scr-ref-ftcheck .fx-ft-mid { font-size: var(--fs-meta); color: var(--ink3); }
@@ -101,3 +101,4 @@
   .scr-ref-ftcheck { min-height: calc(100vh - var(--h-header) - 40px); }
   .scr-ref-ftcheck .fx-pub { bottom: 24px; }
 }
+.scr-ref-edit .tabs2 > button { min-height: var(--h-target); }   /* referee screen: 48 px targets */

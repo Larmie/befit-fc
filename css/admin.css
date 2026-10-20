@@ -103,7 +103,7 @@
 /* ---------------------------------------------------------------- Can't connect */
 #app-status .adm-offline { min-height: var(--h-target); padding: 4px 4px 4px 14px; }
 #app-status .adm-offline .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#app-status .adm-offline .ub { height: 40px; min-width: 72px; }
+#app-status .adm-offline .ub { height: var(--h-target); min-width: 72px; }
 #app-status .adm-nodata {
   position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--ink);
   display: flex; flex-direction: column; padding: 18px var(--gutter) calc(24px + var(--safe-b));

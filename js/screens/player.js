@@ -118,24 +118,13 @@
   }
 
   // ======================================================================== profile (Me + anyone)
+  // Me › Subs uses the same payments rule as Money (js/core/pay.js), so both screens always agree.
+  // Lists every date the player paid or owes, newest first; dates with no record ("not entered") are left out.
   function subsFor(pid) {
     const d = db();
-    const amount = r => { const v = Number(typeof r === 'number' ? r : r && r.amount); return Number.isFinite(v) && v > 0 ? v : 0; };
-    const stamp = r => (r && typeof r === 'object' ? Number(r.updatedAt) || 0 : 0);
-    const dates = new Set();
-    Object.entries(d.paymentDays || {}).forEach(([k, day]) => { const dt = (day && day.date) || k; if (/^\d{4}-\d{2}-\d{2}$/.test(dt)) dates.add(dt); });
-    Object.values(d.sessions || {}).forEach(s => { if (s && s.payments && Object.keys(s.payments).length && s.date) dates.add(s.date); });
-    const out = [];
-    [...dates].sort((a, b) => b.localeCompare(a)).forEach(date => {
-      const sess = Object.values(d.sessions || {}).filter(s => s && s.date === date);
-      const played = sess.some(s => !!teamOfIn(s, pid));
-      let rec = null;   // newest record wins, same as classic
-      sess.forEach(s => { const r = s.payments && s.payments[pid]; if (r != null && (rec == null || stamp(r) >= stamp(rec))) rec = r; });
-      const r2 = ((d.paymentDays || {})[date] || {}).payments; const r = r2 && r2[pid];
-      if (r != null && (rec == null || stamp(r) >= stamp(rec))) rec = r;
-      const amt = amount(rec);
-      if (played || amt > 0) out.push({ date, played, amount: amt });
-    });
+    const out = BF_PAY.dates(d).map(date => ({ date, status: BF_PAY.status(pid, date, d) }))
+      .filter(x => x.status === 'paid' || x.status === 'not paid')
+      .map(x => ({ date: x.date, played: BF_PAY.playedOn(x.date, d).has(pid), amount: BF_PAY.amount(pid, x.date, d) }));
     return { dates: out, unpaid: out.filter(x => x.played && !x.amount) };
   }
 
