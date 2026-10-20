@@ -68,7 +68,7 @@
 /* ---------------------------------------------------------------- money: list */
 .scr-ref-money .adm-kicker, .scr-ref-moneyDay .adm-kicker { font-size: var(--fs-meta); color: var(--ink3); }
 :is(.scr-ref-money, .scr-ref-moneyDay) .adm-big { display: flex; align-items: baseline; gap: 10px; }
-:is(.scr-ref-money, .scr-ref-moneyDay) .adm-big .n { font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-big .n { font-size: 34px; font-family: var(--font); font-weight: 700; letter-spacing: -.04em; line-height: 1.15; }   /* hero numeral: Geist 700, not Mono (round 5 item 2) */
 :is(.scr-ref-money, .scr-ref-moneyDay) .adm-big-l { color: var(--ink3); font-size: 13px; }
 .scr-ref-money .adm-money-b { margin-top: var(--sp-6); }
 .scr-ref-money .r .end .warnchip { white-space: nowrap; }

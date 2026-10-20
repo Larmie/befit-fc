@@ -4,15 +4,19 @@
    The timer is stored as start times, not a ticking counter, so a refresh loses
    nothing. sessions/{sid}/timer = { status:'idle'|'running'|'paused'|'stoppage'|'ended',
      startedAt, pausedAt, pausedTotal, htLogged, pauseReason, endedAt,
-     stoppageStartedAt, stoppageTotal, stoppageBaseTotalMs }
+     stoppageStartedAt, stoppageTotal, stoppageBaseTotalMs,
+     stoppageAtHalf }   (round 5, additive: stoppage used in the 1st half, written at half time)
 
    READ
      Clock.status(sess)                  'idle' | 'running' | 'paused' | 'stoppage' | 'ended'
      Clock.isActive(sess)                running, paused or stoppage
      Clock.canLog(sess)                  running or stoppage (events need a live clock)
      Clock.elapsedMs(sess, now?)         regular time on the clock
-     Clock.stoppageMs(sess, now?)        all stoppage so far (cumulative, as decided 3 Aug)
-     Clock.minuteParts(sess, now?)       { min, stoppageBaseMin?, stoppageMin? } | null
+     Clock.stoppageMs(sess, now?)        all stoppage so far, both halves (for "Total tonight +11:20")
+     Clock.halfStoppageMs(sess, now?)    stoppage in THIS half only (labels restart each half, decided 20 Oct)
+     Clock.stoppageNowMs(sess, now?)     how long the stoppage running now has run (0 when none): the 4-min escalation
+     Clock.minuteParts(sess, now?)       { min, stoppageBaseMin?, stoppageMin? } | null   stoppageMin restarts each half
+                                         (46+12', not 46+18'). Events already logged keep the minutes they were given.
      Clock.minute(sess, now?)            the current match minute, or null
      Clock.phase(sess)                   'Not started' | '1st half' | 'Half time' | '2nd half' | 'Paused' | 'Full time'
      Clock.fmtClock(ms)                  '72:18'
@@ -20,6 +24,8 @@
    NEW TIMER OBJECTS (pure; write the result to sessions/{sid}/timer)
      Clock.kickOff(now) · halfTime(sess, now) · pause(sess, now) · resume(sess, now)
      Clock.startStoppage(sess, now) · endStoppage(sess, now) · end(sess, now)
+     Clock.adjust(sess, now, minute)     Adjust clock: the clock reads minute:00 from now (ends a running stoppage first);
+                                         Clock.adjust(sess, now, 0) = "Reset to 0:00". Logged events keep their minutes.
      Clock.stamp(evData, sess, now)      adds min / stoppage minutes to a new event (mutates + returns it)
    ========================================================================== */
 (function () {
@@ -50,6 +56,20 @@
     return (t.stoppageTotal || 0) + current;
   }
 
+  // Stoppage in the current half: from half time on, the 1st half's stoppage no longer counts.
+  // Timers from before round 5 have no stoppageAtHalf: they keep the old cumulative count.
+  function halfStoppageMs(sess, now) {
+    const t = sess && sess.timer;
+    const all = stoppageMs(sess, now);
+    if (!t || !t.htLogged || !Number.isFinite(t.stoppageAtHalf)) return all;
+    return Math.max(0, all - t.stoppageAtHalf);
+  }
+  function stoppageNowMs(sess, now) {
+    now = now == null ? nowMs() : now;
+    const t = sess && sess.timer;
+    return t && t.status === 'stoppage' && t.stoppageStartedAt ? Math.max(0, now - t.stoppageStartedAt) : 0;
+  }
+
   function minuteParts(sess, now) {
     now = now == null ? nowMs() : now;
     const t = sess && sess.timer;
@@ -60,7 +80,7 @@
     if (t.status === 'stoppage') {
       const base = Number.isFinite(t.stoppageBaseTotalMs) ? t.stoppageBaseTotalMs : regular;
       parts.stoppageBaseMin = Math.max(1, Math.ceil(base / 60000));
-      parts.stoppageMin = Math.max(1, Math.ceil(stoppageMs(sess, now) / 60000));
+      parts.stoppageMin = Math.max(1, Math.ceil(halfStoppageMs(sess, now) / 60000));
     }
     return parts;
   }
@@ -102,14 +122,30 @@
   // ---- transitions (each returns the new timer object) ----
   const kickOff = now => ({ status: 'running', startedAt: now, pausedAt: null, pausedTotal: 0, htLogged: false,
     endedAt: null, stoppageStartedAt: null, stoppageTotal: 0, stoppageBaseTotalMs: null });
-  const halfTime = (sess, now) => Object.assign(finalizeStoppage(sess.timer, now),
-    { status: 'paused', pausedAt: now, htLogged: true, pauseReason: 'halftime' });
+  const halfTime = (sess, now) => {
+    const t = finalizeStoppage(sess.timer, now);
+    return Object.assign(t, { status: 'paused', pausedAt: now, htLogged: true, pauseReason: 'halftime', stoppageAtHalf: t.stoppageTotal || 0 });
+  };
   const pause = (sess, now) => Object.assign({}, sess.timer, { status: 'paused', pausedAt: now, pauseReason: 'pause' });
   const resume = (sess, now) => Object.assign({}, sess.timer, { status: 'running', pausedAt: null, pauseReason: null,
     pausedTotal: (sess.timer.pausedTotal || 0) + (now - (sess.timer.pausedAt || now)) });
   const startStoppage = (sess, now) => Object.assign({}, sess.timer, { status: 'stoppage', stoppageStartedAt: now,
     stoppageBaseTotalMs: elapsedMs(sess, now), pauseReason: 'stoppage' });
   const endStoppage = (sess, now) => Object.assign(finalizeStoppage(sess.timer, now), { status: 'running', pauseReason: null });
+  // Adjust clock: regular time reads `minute`:00 now. Works from running, stoppage or paused.
+  function adjust(sess, now, minute) {
+    if (!sess.timer || !sess.timer.startedAt || status(sess) === 'idle' || status(sess) === 'ended') return sess.timer || null;
+    const base = finalizeStoppage(sess.timer, now);
+    const target = Math.max(0, Math.round(Number(minute) || 0)) * 60000;
+    const ref = base.status === 'paused' ? (base.pausedAt || now) : now;
+    // pausedTotal may go below 0 when the clock is set forward (elapsed = ref - startedAt - pausedTotal).
+    const t = Object.assign(base, { pausedTotal: ref - (base.startedAt || now) - target });
+    if (t.status === 'stoppage') t.status = 'running';
+    if (t.pauseReason === 'stoppage') t.pauseReason = null;
+    if (!target) { t.stoppageTotal = 0; t.stoppageAtHalf = t.htLogged ? 0 : t.stoppageAtHalf; }
+    return t;
+  }
+
   function end(sess, now) {
     if (!sess.timer || !isActive(sess)) return sess.timer || null;
     const t = finalizeStoppage(sess.timer, now);
@@ -117,6 +153,6 @@
     return Object.assign(t, { status: 'ended', endedAt, pausedAt: null, pauseReason: null });
   }
 
-  window.Clock = { status, isActive, canLog, elapsedMs, stoppageMs, minuteParts, minute, stamp, fmtClock, fmtMinute,
+  window.Clock = { status, isActive, canLog, elapsedMs, stoppageMs, halfStoppageMs, stoppageNowMs, adjust, minuteParts, minute, stamp, fmtClock, fmtMinute,
     phase, finalizeStoppage, kickOff, halfTime, pause, resume, startStoppage, endStoppage, end };
 })();

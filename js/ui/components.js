@@ -11,7 +11,7 @@
      UI.fmt.short('2026-10-12')       '12 Oct'
      UI.fmt.time(ms)                  '21:23'
      UI.fmt.money(360)                '₵360'  (decimals only when needed)
-     UI.fmt.team('green')             'Green'
+     UI.fmt.team('green')             'Green' (the team's name from Settings, via Teams.name)
      UI.fmt.signed(-2)                '−2'  ('+3', '0')
      UI.fmt.ordinal(1)                '1st'
      UI.fmt.minute(ev)                "33'" / "45+2'" / ''
@@ -19,12 +19,15 @@
      UI.icon(name)                    svg: live table season me match squad money search chev back close more check wifi-off plus
 
    MARKS (not tappable)
-     UI.teamMark(team, {label})       8 px square in the team colour + the team word. Never colour alone.
-     UI.resultMark('W'|'D'|'L')       22 px: W ink fill · D outline · L grey
+     UI.teamMark(team, {label})       8 px square in the team colour + the team word (inline text, headings)
+     UI.teamChip(team, {label})       24 px TEAM CHIP: soft team tint, team ring, 7 px square + word (lists, rows) ← round 5
+     UI.resultMark(r, team?)          24 px W / D / L. With a team: W = team fill, D = team outline, L = faint team tint
+                                      (the team that row is about; on a player's history, the team he played for).
+                                      Without a team: ink (old look; avoid in new screens).
      UI.move(n)                       ▲n (ink) / ▼n (ink3) / '' when unchanged. Goes under the rank.
      UI.pos('MID')                    position letters, mono, ink3
      UI.pill(text, {kind:'warn'|'ink'})   28 px status pill, not tappable
-     UI.avatar(name, team)            28 px initial with a team-colour ring
+     UI.avatar(name, team, {size})    32 px initial on a team tint with a team ring (size: px number, e.g. 44, 58)
      UI.cardGlyph('yellow'|'red')     9×13 card shape (the only place card colours appear)
 
    CONTROLS (tap targets: 48 px referee, 44 px player)
@@ -38,7 +41,29 @@
      UI.search({ name, placeholder, value })                                   48 px search box
      UI.btn(label, { kind:'w'|'g'|'o'|'warn', sm, big, tap, data, cls, attrs })
      UI.hold(label, { name, ms:2000, warn, doneText:'Ending…' })               hold-to-confirm (End game, Clear payment record)
-     UI.score({ teams:[{team,goals}], mid })                                   score block (team words uppercase, 52 px numbers)
+     ---- round 5 shared pieces (see css/components.css "round 5") ----
+     UI.score({ teams, centre|mid, size, scorers, names, hero, tap, data, cls })   THE joined score block (one piece everywhere)
+         teams   [{team, goals}] left → right (Scoring.orderTeams). Any number of teams (3+ sit side by side).
+         centre  { top:'FT', sub:'19 Oct', state:'ft'|'live'|'ht'|'paused'|'stoppage'|'vs'|'idle' }  (stoppage = amber)
+         mid     legacy: raw HTML for the centre (old callers; prefer centre)
+         size    'full' (76 px, 56 px numerals: Home, Match) · 'console' (66 / 46) · 'compact' (60 / 40: cards, FT check)
+         scorers { team: [{ name, og, mins:[ev] }] } (Scoring.scorers) → names under their own half, minutes in Mono
+         names   false hides the names row above the halves · hero: true = this screen's one glowing hero
+     UI.scoreFor(sess, { size, scorers:true, hero, clock, now, tap, data, cls })  the block for a session (centre from the clock)
+     UI.scoreCentre(sess, { now, clock })     → { top, sub, state }   FT · 72' 2nd half · HT 45:00 · +7:10 Stoppage · VS
+                                                clock:true = the running clock ("30:01") instead of the minute (console)
+     UI.miniScore(sessOrTeams)                two 28 px tinted squares with the numbers; the losing side's number ink2 (lists)
+     UI.liveDot(text='LIVE')                  pulsing LIVE label (1.6 s halo, off under reduced motion)
+     UI.sum({ rows:[{label, value}], total, label, team, hero, signed })   SUM PATTERN: values in one right column, the
+                                                total as a team-coloured hero under it, right edges aligned
+     UI.podium([{pid,name,team,value,stat,note}] (ranks 1,2,3), { tap })   STEPPED PODIUM, shown 2 · 1 · 3
+     UI.leaderRow({ label, name, team, value, next, tap, data })          tinted leader row (Tables · Stats)
+     UI.syncChip(Store.status())              header sync chip: "✓ All sent" · "Sending 2…" · "On phone · 3 waiting" ·
+                                                "No signal · 3 saved on phone"  (data-shell="sync" → App.action('console.syncSheet'))
+     UI.nextGame(now?)                        'YYYY-MM-DD' of the next match day (Settings › club.matchDay, Monday by default;
+                                                today if today is match day and tonight's game isn't finished)
+     CSS-only (components.css): .hero (the one glow) · .lit (allowed light on listed components) · .wash (team row wash) ·
+       .you-row (the "you" row) · .tnum (team-coloured numeral) · .hn (hero numeral) · .sheen · .tc (team chip)
      UI.empty(title, text)
 
    EVENTS (delegated; `root` is any element, usually your screen element)
@@ -83,7 +108,7 @@
     iso(ms) { const x = new Date(ms); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; },
     time(ms) { const x = new Date(ms); return `${String(x.getHours()).padStart(2, '0')}:${String(x.getMinutes()).padStart(2, '0')}`; },
     money(n) { const v = Number(n) || 0; return (CFG ? CFG.currency : '₵') + (Number.isInteger(v) ? v.toLocaleString('en-GB') : v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); },
-    team(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; },
+    team(t) { return !t ? '' : window.Teams ? window.Teams.name(t) : t.charAt(0).toUpperCase() + t.slice(1); },
     signed(n) { return n > 0 ? '+' + n : n < 0 ? MINUS + Math.abs(n) : '0'; },
     ordinal(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); },
     minute(ev) { return window.Scoring ? window.Scoring.minuteText(ev) : ''; },
@@ -96,6 +121,10 @@
     table: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
     season: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7"/>',
     me: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    home: '<path d="M4 11l8-6.5 8 6.5M6 9.5V20h12V9.5M10 20v-5h4v5"/>',
+    tables: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M4.2 7.5l1.9 1.1M17.9 15.4l1.9 1.1M4.2 16.5l1.9-1.1M17.9 8.6l1.9-1.1"/>',
+    person: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
     match: '<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V10M10 3.5h4M18 6.5l1.5-1.5"/>',
     squad: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M15.5 5.5a3 3 0 0 1 0 6M17 14a5.5 5.5 0 0 1 3.5 5"/>',
     money: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/>',
@@ -111,12 +140,14 @@
   const icon = (name, cls) => `<svg class="ic ${cls || ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 
   // ---------------------------------------------------------------- marks
-  const teamMark = (team, o) => team ? `<span class="tm t-${esc(team)}">${esc((o && o.label) || fmt.team(team))}</span>` : '';
-  const resultMark = r => r ? `<span class="wdl ${esc(r)}" aria-label="${r === 'W' ? 'Won' : r === 'L' ? 'Lost' : 'Drawn'}">${esc(r)}</span>` : '';
+  const teamMark = (team, o) => team ? `<span class="tm ${teamCls(team)}">${esc((o && o.label) || fmt.team(team))}</span>` : '';
+  const teamCls = t => (window.Teams ? window.Teams.cls(t) : 't-' + String(t || '').replace(/[^A-Za-z0-9_-]/g, ''));
+  const teamChip = (team, o) => team ? `<span class="tc ${teamCls(team)}">${esc((o && o.label) || fmt.team(team))}</span>` : '';
+  const resultMark = (r, team) => r ? `<span class="wdl ${esc(r)}${team ? ' tcol ' + teamCls(team) : ''}" aria-label="${r === 'W' ? 'Won' : r === 'L' ? 'Lost' : 'Drawn'}">${esc(r)}</span>` : '';
   const move = n => !n ? '' : n > 0 ? `<span class="mv up" aria-label="Up ${n}">▲${n}</span>` : `<span class="mv dn" aria-label="Down ${-n}">▼${-n}</span>`;
   const pos = p => p ? `<span class="pos">${esc(p)}</span>` : '';
   const pill = (text, o) => `<span class="pill-s ${o && o.kind ? esc(o.kind) : ''}">${esc(text)}</span>`;
-  const avatar = (name, team) => `<span class="av t-${esc(team || 'none')}">${esc(String(name || '?').trim().charAt(0).toUpperCase())}</span>`;
+  const avatar = (name, team, o) => `<span class="av ${team ? teamCls(team) : 't-none'}"${o && o.size ? ` style="--av:${Number(o.size)}px"` : ''}>${esc(String(name || '?').trim().charAt(0).toUpperCase())}</span>`;
   const cardGlyph = kind => `<span class="card-glyph ${kind === 'red' ? 'red' : ''}" aria-label="${kind === 'red' ? 'Red card' : 'Yellow card'}"></span>`;
 
   // ---------------------------------------------------------------- controls
@@ -168,11 +199,137 @@
       `<span class="fill"></span><span class="hl">${esc(label)}</span></button>`;
   };
 
+  // ---------------------------------------------------------------- round 5: the joined score block
+  // One piece everywhere (Home, Match, the console, the goal moment, FT check, share card previews).
+  const SB_SIZES = { full: 'sb-full', console: 'sb-console', compact: 'sb-compact' };
+  function scorersHtml(teams, by) {
+    if (!by) return '';
+    const col = (t, rt) => {
+      const list = (t && by[t.team]) || [];
+      return `<div class="${rt ? 'rt' : 'lt'}">` + list.map(r => `<div class="sc-r"><span class="sc-n">${esc(r.name)}${r.og ? ' (og)' : ''}</span> ` +
+        `<span class="n">${(r.mins || []).map(e => esc(fmt.minute(e))).filter(Boolean).join(' ')}</span></div>`).join('') + '</div>';
+    };
+    if (!teams.some(t => (by[t.team] || []).length)) return '';
+    if (teams.length !== 2) return `<div class="sb-scorers multi">${teams.map(t => col(t)).join('')}</div>`;
+    return `<div class="sb-scorers">${col(teams[0])}<div></div>${col(teams[1], true)}</div>`;
+  }
   function score(o) {
-    const teams = o.teams || [];
-    const side = (t, rt) => t ? `<div class="side${rt ? ' rt' : ''} t-${esc(t.team)}"><span class="t">${esc(fmt.team(t.team))}</span><span class="g">${esc(t.goals)}</span></div>` : '<div></div>';
-    if (teams.length <= 2) return `<div class="score">${side(teams[0])}<div class="mid">${o.mid || ''}</div>${side(teams[1], true)}</div>`;
-    return `<div class="score multi">${teams.map(t => side(t)).join('')}<div class="mid">${o.mid || ''}</div></div>`;
+    o = o || {};
+    const teams = (o.teams || []).filter(Boolean);
+    const n = Math.max(2, teams.length);
+    const c = o.centre || null;
+    const mid = c ? `<b>${esc(c.top || '')}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}` : (o.mid || '');
+    const midCls = 'sb-mid' + (c && c.state ? ' is-' + esc(c.state) : '');
+    const half = t => t ? `<div class="sb-half ${teamCls(t.team)}"><b class="hn tnum">${esc(t.goals)}</b></div>` : '<div class="sb-half"></div>';
+    const name = (t, rt) => t ? `<span class="sb-nm ${teamCls(t.team)}${rt ? ' rt' : ''}">${esc(fmt.team(t.team))}</span>` : '<span></span>';
+    const cols = n === 2 ? '' : ` style="--sb-cols:1fr var(--sb-mid) repeat(${n - 1}, 1fr)"`;
+    const names = o.names === false ? '' :
+      `<div class="sb-names"${cols}>${name(teams[0])}<span></span>${teams.slice(1).map((t, i) => name(t, n === 2 && i === 0)).join('')}</div>`;
+    const blk = `<div class="sb-blk"${cols}>${half(teams[0])}<div class="${midCls}">${mid}</div>` +
+      `${teams.slice(1).map(half).join('')}${teams.length < 2 ? half(null) : ''}</div>`;
+    const cls = ['sb', 'lit', SB_SIZES[o.size] || 'sb-full', o.hero ? 'hero' : '', n > 2 ? 'sb-multi' : '', o.cls || '']
+      .filter(Boolean).join(' ');
+    const tag = o.tap ? 'button' : 'div';
+    const tapA = o.tap ? ` type="button" data-tap="${esc(o.tap)}"` : '';
+    const label = teams.map(t => `${fmt.team(t.team)} ${t.goals}`).join(', ') + (c ? ', ' + [c.top, c.sub].filter(Boolean).join(' ') : '');
+    return `<${tag} class="${cls}"${tapA}${dataAttrs(o.data)} aria-label="${esc(label)}">${names}${blk}${scorersHtml(teams, o.scorers)}</${tag}>`;
+  }
+
+  // The centre of the block from a session's clock: FT · 72' 2nd half · HT 45:00 · +7:10 Stoppage · VS.
+  function scoreCentre(sess, o) {
+    o = o || {};
+    const C = window.Clock;
+    const now = o.now != null ? o.now : (window.Store ? window.Store.now() : Date.now());
+    const mode = (sess && sess.mode) || 'live';
+    const date = sess && sess.date ? fmt.short(sess.date) : '';
+    if (!sess || !C || mode !== 'live' || sess.status === 'completed') return { top: 'FT', sub: date, state: 'ft' };
+    const st = C.status(sess), t = sess.timer || {};
+    if (st === 'ended') return { top: 'FT', sub: date, state: 'ft' };
+    if (st === 'idle') return { top: 'VS', sub: o.idleSub || '', state: 'vs' };
+    const half = t.htLogged ? '2nd half' : '1st half';
+    if (st === 'stoppage') return { top: '+' + C.fmtClock(C.halfStoppageMs(sess, now)), sub: 'Stoppage', state: 'stoppage' };
+    if (st === 'paused' && t.pauseReason === 'halftime') return { top: 'HT', sub: C.fmtClock(C.elapsedMs(sess, now)), state: 'ht' };
+    if (st === 'paused') return { top: 'Paused', sub: o.clock ? C.fmtClock(C.elapsedMs(sess, now)) : (C.minute(sess, now) || 0) + "'", state: 'paused' };
+    return { top: o.clock ? C.fmtClock(C.elapsedMs(sess, now)) : (C.minute(sess, now) || 1) + "'", sub: half, state: 'live' };
+  }
+  function sessTeams(sess) {
+    const S = window.Scoring;
+    if (!S || !sess) return [];
+    return S.orderTeams(S.teamsOf(sess)).map(team => ({ team, goals: S.teamGoals(sess, team) }));
+  }
+  function scoreFor(sess, o) {
+    o = o || {};
+    const S = window.Scoring;
+    return score(Object.assign({}, o, { teams: sessTeams(sess), centre: o.centre || scoreCentre(sess, o),
+      scorers: o.scorers === true && S ? S.scorers(sess) : (o.scorers || null) }));
+  }
+
+  // Mini score for lists: two 28 px tinted squares; the losing side's number in ink2.
+  function miniScore(x) {
+    const teams = Array.isArray(x) ? x : sessTeams(x);
+    const g = t => Number(t.goals) || 0;
+    const max = teams.length ? Math.max(...teams.map(g)) : 0;
+    const tie = teams.filter(t => g(t) === max).length > 1;
+    return `<span class="ms" aria-label="${esc(teams.map(t => fmt.team(t.team) + ' ' + t.goals).join(', '))}">` +
+      teams.map(t => `<i class="${teamCls(t.team)}${!tie && g(t) < max ? ' lose' : ''}">${esc(t.goals)}</i>`).join('') + '</span>';
+  }
+  const liveDot = text => `<span class="live pulse">${esc(text || 'LIVE')}</span>`;
+
+  // Sum pattern: values in one right-aligned column, the total as the hero under it, right edges aligned.
+  function sum(o) {
+    o = o || {};
+    const v = x => (typeof x === 'number' && o.signed !== false ? fmt.signed(x) : x);
+    return `<div class="sum lit${o.hero ? ' hero' : ''}${o.team ? ' ' + teamCls(o.team) : ''}">` +
+      (o.rows || []).map(r => `<div class="sr"><span class="sr-l">${r.html || esc(r.label)}</span><span class="v">${esc(v(r.value))}</span></div>`).join('') +
+      `<div class="sum-tot"><span class="lab">${esc(o.label || 'Total')}</span><b class="hn tnum">${esc(o.total)}</b></div></div>`;
+  }
+
+  // Stepped podium: items are ranks 1, 2, 3; shown 2 · 1 · 3. Steps 64 / 92 / 44 px; #1 wider, lit, haloed.
+  function podium(items, o) {
+    o = o || {};
+    items = items || [];
+    const col = (it, rank) => {
+      if (!it) return '<div class="pcol empty"></div>';
+      const tag = o.tap ? 'button' : 'div';
+      const tapA = o.tap ? ` type="button" data-tap="${esc(o.tap)}" data-pid="${esc(it.pid || '')}"` : '';
+      return `<${tag} class="pcol lit r${rank}${rank === 1 ? ' first' : ''} ${teamCls(it.team)}"${tapA}>` +
+        `<span class="who">${avatar(it.name, it.team)}<span class="nm">${esc(it.name)}</span><b class="hn">${esc(it.value)}</b>` +
+        (it.stat ? `<span class="st">${esc(it.stat)}</span>` : '') + (it.note ? `<span class="st">${esc(it.note)}</span>` : '') +
+        `</span><span class="step"><b>${rank}</b></span></${tag}>`;
+    };
+    return `<div class="pod">${col(items[1], 2)}${col(items[0], 1)}${col(items[2], 3)}</div>`;
+  }
+  // Leader row (Tables · Stats): tinted 22% → 0, glowing top edge, 40 px number with a soft team text-glow.
+  function leaderRow(o) {
+    const tag = o.tap ? 'button' : 'div';
+    return `<${tag} class="ldr lit ${teamCls(o.team)}"${o.tap ? ` type="button" data-tap="${esc(o.tap)}"` : ''}${dataAttrs(o.data)}>` +
+      `${avatar(o.name, o.team, { size: 44 })}<span class="grow"><span class="k">${esc(o.label)}</span><span class="w">${esc(o.name)}</span>` +
+      (o.next ? `<span class="nx">${esc(o.next)}</span>` : '') + `</span><b class="hn">${esc(o.value)}</b></${tag}>`;
+  }
+
+  // Header sync chip (referee). Quiet when all sent; amber outline + dot while saves wait on the phone.
+  function syncChip(info) {
+    info = info || {};
+    const n = info.pending || 0;
+    let text, wait = false;
+    if (!n) { text = info.status === 'offline' ? 'No signal' : '✓ All sent'; wait = info.status === 'offline'; }
+    else if (info.status === 'online' && !info.failed) text = `Sending ${n}…`;
+    else if (info.source === 'cache' || info.source === 'none') { text = `No signal · ${n} saved on phone`; wait = true; }
+    else { text = `On phone · ${n} waiting`; wait = true; }
+    return `<button type="button" class="hd-syncbtn" data-shell="sync" data-sync aria-label="${esc(text)}"><span class="sync${wait ? ' wait' : ''}">${esc(text)}</span></button>`;
+  }
+
+  // The next match day as 'YYYY-MM-DD' (today if it is match day and tonight's game isn't finished).
+  function nextGame(now) {
+    now = now != null ? now : (window.Store ? window.Store.now() : Date.now());
+    const day = window.Teams ? window.Teams.club().matchDay : 1;
+    const d = new Date(now); d.setHours(12, 0, 0, 0);
+    const iso = fmt.iso(d.getTime());
+    const done = !!window.Store && Object.values(window.Store.sessions()).some(x => x && x.date === iso && x.status === 'completed');
+    let add = (day - d.getDay() + 7) % 7;
+    if (add === 0 && done) add = 7;
+    d.setDate(d.getDate() + add);
+    return fmt.iso(d.getTime());
   }
   const empty = (title, text) => `<div class="empty"><b>${esc(title)}</b>${text ? esc(text) : ''}</div>`;
 
@@ -342,8 +499,9 @@
 
   window.UI = {
     esc, fmt, icon, dataAttrs,
-    teamMark, resultMark, move, pos, pill, avatar, cardGlyph,
+    teamMark, teamChip, resultMark, move, pos, pill, avatar, cardGlyph,
     row, rows, tile, tiles, chips, seg, teamSwitch, search, btn, hold, score, empty,
+    scoreFor, scoreCentre, miniScore, liveDot, sum, podium, leaderRow, syncChip, nextGame,
     on, onSeg: onCustom('ui:seg'), onChip: onCustom('ui:chip'),
     onHold: (root, name, fn) => root.addEventListener('ui:hold', e => { if (e.detail && e.detail.name === name) fn(e.target); }),
     sheet, undoBar, toast,

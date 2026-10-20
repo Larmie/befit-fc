@@ -13,10 +13,10 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.svg">
 
-  <!-- Type: Geist for words, Geist Mono for every number -->
+  <!-- Type: Geist for words and hero numerals (700), Geist Mono for minutes and columns -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
 
   <!-- Styles: tokens → base → shared components → one file per screen area -->
   <link rel="stylesheet" href="css/tokens.css">
@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/welcome.css">
   <link rel="stylesheet" href="css/player.css">
+  <link rel="stylesheet" href="css/tables.css">
   <link rel="stylesheet" href="css/setup.css">
   <link rel="stylesheet" href="css/console.css">
   <link rel="stylesheet" href="css/fix.css">
@@ -35,6 +36,7 @@
 
   <!-- Core (order matters) -->
   <script defer src="js/core/store.js"></script>
+  <script defer src="js/core/teams.js"></script>
   <script defer src="js/core/scoring.js"></script>
   <script defer src="js/core/pay.js"></script>
   <script defer src="js/core/clock.js"></script>
@@ -46,6 +48,7 @@
   <!-- Screens (each file registers its screens; the shell starts on DOMContentLoaded) -->
   <script defer src="js/screens/welcome.js"></script>
   <script defer src="js/screens/player.js"></script>
+  <script defer src="js/screens/tables.js"></script>
   <script defer src="js/screens/setup.js"></script>
   <script defer src="js/screens/console.js"></script>
   <script defer src="js/screens/fix.js"></script>

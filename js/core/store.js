@@ -6,7 +6,9 @@
    window.__BEFIT_TEST__ in test mode (no Firebase at all; the "database" is in memory).
 
    READ
-     Store.state                    → { players, sessions, paymentDays } (replaced on every change; never mutate it)
+     Store.state                    → { players, sessions, paymentDays, settings } (replaced on every change; never mutate it)
+                                      settings (round 5, optional): { club, teams }. Read it through window.Teams, not directly.
+                                      If the database refuses or lacks it, it stays {} and Teams falls back to Red/Green.
      Store.version                  → increments on every change
      Store.get('sessions/abc/events')
      Store.players() / sessions() / paymentDays()
@@ -68,10 +70,12 @@
   'use strict';
   const CFG = window.BF_CONFIG;
   const TEST = window.__BEFIT_TEST__ || null;
-  const ROOTS = ['players', 'sessions', 'paymentDays'];
+  const REQUIRED = ['players', 'sessions', 'paymentDays'];   // the app is "live" once these three arrive
+  const OPTIONAL = ['settings'];                              // round 5: may be missing or refused; never blocks or flags offline
+  const ROOTS = REQUIRED.concat(OPTIONAL);
   const T0 = Date.now();
 
-  let state = { players: {}, sessions: {}, paymentDays: {} };
+  let state = { players: {}, sessions: {}, paymentDays: {}, settings: {} };
   let version = 0;
   let status = 'connecting', source = 'none', savedAt = 0, inflight = 0;
   let fb = null, connecting = false, connected = false, everConnected = false;
@@ -399,11 +403,15 @@
       const db = dbMod.getDatabase(app);
       fb = Object.assign({ db }, dbMod);
       const arrived = new Set();
-      ROOTS.forEach(root => {
+      OPTIONAL.forEach(root => {
+        dbMod.onValue(dbMod.ref(db, root), snap => { replaceRoot(root, snap.val() || {}); },
+          err => { console.warn('BE Fit: optional root not readable (falls back to defaults)', root, err && err.message); });
+      });
+      REQUIRED.forEach(root => {
         dbMod.onValue(dbMod.ref(db, root), snap => {
           arrived.add(root);
           replaceRoot(root, snap.val() || {});
-          if (arrived.size === ROOTS.length) {
+          if (arrived.size === REQUIRED.length) {
             source = 'live'; savedAt = Date.now(); markReady(); saveCacheSoon();
             if (status !== 'online') { status = 'online'; clearRetry(); }
             emitStatus();
@@ -502,6 +510,7 @@
     players: () => state.players || {},
     sessions: () => state.sessions || {},
     paymentDays: () => state.paymentDays || {},
+    settings: () => state.settings || {},
     player: pid => (state.players || {})[pid] || null,
     session: sid => (state.sessions || {})[sid] || null,
     activeSessionId,

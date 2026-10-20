@@ -15,7 +15,7 @@
 .pl-more-l { color: var(--ink3); font-weight: 400; }
 .pl-dash { color: var(--ink3); font: 500 18px var(--mono); }
 .pl-og { font-size: var(--fs-meta); color: var(--ink3); }
-.pl-big { font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
+.pl-big { font-size: 26px; font-family: var(--font); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }   /* hero numeral: Geist 700, not Mono (round 5 item 2) */
 :is(.scr-player-live, .scr-player-table, .scr-player-season, .scr-player-me, .scr-player-match, .scr-player-profile, .pl-gm) .grow { flex: 1; min-width: 0; }
 .pl-tm { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 2px; }
 
@@ -90,7 +90,7 @@
 .pl-name { font-size: var(--fs-head); font-weight: 650; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .pl-pcard { margin-top: var(--sp-4); }
 .pl-ptop { display: flex; align-items: baseline; gap: 8px; }
-.pl-hero { font-size: var(--fs-profile); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.pl-hero { font-size: var(--fs-profile); font-family: var(--font); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; }   /* round 5 item 2 */
 .pl-info { margin-left: auto; min-height: var(--h-target-player); min-width: var(--h-target-player); display: grid; place-items: center end; font-size: 13px; color: var(--ink3); margin-top: -12px; margin-bottom: -12px; }
 .pl-hr { margin: 16px 0; }
 .pl-stats { gap: 0; }

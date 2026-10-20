@@ -10,6 +10,7 @@
      Auth.signOut()               → Promise
      Auth.isReferee()             → bool  (admin counts as referee too)
      Auth.isAdmin()               → bool  (Reuben only)
+     Auth.role()                  → 'referee' | 'admin' | null
      Auth.user()                  → { email, uid, name, role, at } | null
      Auth.by()                    → short string for `by` fields on writes ('referee' or the admin's email)
      Auth.onChange(fn)            fn(user|null) → returns unsubscribe
@@ -18,8 +19,11 @@
                                     is signed in, or when the sign-in code can't load (no signal)
    The last signed-in user is cached per phone, so a refresh at the pitch with
    no signal keeps the referee in; Firebase Auth re-confirms when it can.
-   Test mode (window.__BEFIT_TEST__): no Firebase. Tests sign in with ADMIN_PW
-   as an admin; practice mode accepts any password (nothing can be saved there).
+   Test mode (window.__BEFIT_TEST__): no Firebase. Tests sign in with ADMIN_PW: no email (the
+   referee sheet) or the shared referee email = role 'referee'; any other email (the admin sheet) =
+   'admin'. Practice mode accepts any password (nothing can be saved there).
+   Starting signed in: __BEFIT_TEST__.referee = true or 'admin' → admin (can also referee);
+   'referee' → the shared referee login (Match · Money tonight only).
    ========================================================================== */
 (function () {
   'use strict';
@@ -34,7 +38,9 @@
   function markReady() { if (resolveReady) { resolveReady(); resolveReady = null; } }
 
   try { const raw = localStorage.getItem(CFG.keys.referee); if (raw) user = JSON.parse(raw); } catch (e) { user = null; }
-  if (TEST) user = TEST.referee ? { email: 'referee@test', name: 'Referee', role: 'admin', at: Date.now() } : null;
+  if (TEST) user = !TEST.referee ? null : TEST.referee === 'referee'
+    ? { email: CFG.refereeEmail, name: 'Referee', role: 'referee', at: Date.now() }
+    : { email: 'referee@test', name: 'Referee', role: 'admin', at: Date.now() };
 
   function emit() { listeners.forEach(fn => { try { fn(user); } catch (e) { console.error(e); } }); }
   function persist() {
@@ -107,7 +113,7 @@
       await new Promise(r => setTimeout(r, 250));
       const isReferee = !em || em === CFG.refereeEmail;
       if (!TEST.practice && pw !== CFG.ADMIN_PW) throw new Error('Wrong email or password');
-      set({ email: isReferee ? CFG.refereeEmail : em, name: isReferee ? 'Referee' : em.split('@')[0], role: isReferee && TEST.practice ? 'referee' : 'admin', at: Date.now() });
+      set({ email: isReferee ? CFG.refereeEmail : em, name: isReferee ? 'Referee' : em.split('@')[0], role: isReferee ? 'referee' : 'admin', at: Date.now() });
       return user;
     }
 
@@ -133,6 +139,7 @@
     signIn, signOut,
     isReferee: () => !!user,
     isAdmin: () => !!user && user.role === 'admin',
+    role: () => (user ? (user.role === 'admin' ? 'admin' : 'referee') : null),
     user: () => user,
     by: () => (user ? (user.role === 'referee' ? 'referee' : (user.email || 'admin')) : 'player'),
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },

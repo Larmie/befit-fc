@@ -20,12 +20,23 @@
      - start 'small', never switched → no saves, no conceded, no clean sheets.
    Goals always count for the score and the scorer.
 
+   NEW small-poles keeper rule (decided 20–21 Oct, round 5): on small poles there are no
+   keepers, so a GK-position player plays AND scores as a MID (goal 5, defence bonus for
+   blocks and clearances, no saves / conceded / clean sheet). Exactly:
+     - legacy match (no `format`) or start 'big' with no keepers recorded → GK stays GK (old points unchanged)
+     - start 'small', never switched                                     → every GK-position player scores as MID
+     - big poles (from the start or after the switch) with format.keepers → only the chosen keeper of each
+       side scores as GK (whole match); any other GK-position player scores as MID
+     - big poles with no keepers recorded                                → GK stays GK
+   matchPoints().pos is the position he SCORED as; .listedPos is the one on the team sheet.
+
    PUBLIC API (window.Scoring, or module.exports in Node)
      SCORE, TEAM_ORDER, defActionPoints(pos, blocks, clearances)
      sessPlayers(sess, db)            → [{pid,name,pos,team}]
      sessEvents(sess)                 → [{id, ...event}]
      teamsOf(sess)                    → teams in the match (stored order)
-     orderTeams(teams)                → Green, Red, Blue, Gold order for display
+     orderTeams(teams)                → left-to-right order: Settings › Teams order (window.Teams), else Green, Red, Blue, Gold
+     playsAs(sess, pid, db)           → the position a player scores as tonight (the small-poles keeper rule above)
      teamGoals(sess, team)            → goals for a team (events for live, stored for post/history)
      result(sess)                     → { teams:[{team,goals}], winner|null, draw }
      formatOf(sess)                   → { start, switchedAt, bigFrom, everBig, keepers, legacy }
@@ -105,6 +116,8 @@
   }
 
   function orderTeams(teams) {
+    const T = root.Teams;
+    if (T && typeof T.order === 'function') return T.order(teams);
     const rank = t => { const i = TEAM_ORDER.indexOf(t); return i < 0 ? 99 : i; };
     return [...teams].sort((a, b) => rank(a) - rank(b) || String(a).localeCompare(String(b)));
   }
@@ -151,6 +164,21 @@
     if (!f.bigFrom) return true;
     if (!ev || ev.min == null) return true;
     return Number(ev.min) >= f.bigFrom;
+  }
+
+  // The small-poles keeper rule (see the header). sp = { pid, pos, team } from sessPlayers.
+  function effectivePos(sess, sp) {
+    if (!sp || sp.pos !== 'GK') return sp ? sp.pos : null;
+    const f = formatOf(sess);
+    if (f.legacy) return 'GK';
+    if (!f.everBig) return 'MID';
+    const k = f.keepers || {};
+    if (!Object.keys(k).length) return 'GK';
+    return k[sp.team] === sp.pid ? 'GK' : 'MID';
+  }
+  function playsAs(sess, pid, db) {
+    const sp = sessPlayers(sess, db).find(p => p.pid === pid);
+    return sp ? effectivePos(sess, sp) : null;
   }
 
   const concedes = (ev, team) =>
@@ -216,8 +244,9 @@
 
   function matchPoints(sess, pid, db) {
     if (!sess) return null;
-    const sp = sessPlayers(sess, db).find(p => p.pid === pid);
-    if (!sp) return null;
+    const listed = sessPlayers(sess, db).find(p => p.pid === pid);
+    if (!listed) return null;
+    const sp = Object.assign({}, listed, { pos: effectivePos(sess, listed) });
     if (modeOf(sess) === 'history') return null;
     const rules = SCORE[sp.pos];
     if (!rules) return null;
@@ -254,7 +283,7 @@
       cs = cleanSheet(sess, sp.team);
       if (cs) add('cleanSheet', 'Clean sheet' + from, 1, rules.cleanSheet);
     }
-    return { pid, name: sp.name, pos: sp.pos, team: sp.team, total, breakdown, tally: t, cleanSheet: cs };
+    return { pid, name: sp.name, pos: sp.pos, listedPos: listed.pos, team: sp.team, total, breakdown, tally: t, cleanSheet: cs };
   }
 
   function minuteText(ev) {
@@ -393,7 +422,8 @@
     db = getDb(db);
     const T = {};
     const blank = () => ({ w:0, d:0, l:0, gf:0, ga:0, pts:0, played:0 });
-    TEAM_ORDER.forEach(t => { T[t] = blank(); });
+    const known = root.Teams ? TEAM_ORDER.concat(root.Teams.all().map(t => t.id)) : TEAM_ORDER;
+    known.forEach(t => { if (!T[t]) T[t] = blank(); });
     for (const sess of Object.values(db.sessions || {})) {
       if (!sess || sess.status !== 'completed') continue;
       const res = result(sess);
@@ -500,7 +530,7 @@
 
   const Scoring = {
     SCORE, OWN_GOAL, TEAM_ORDER, DOUBLE_TAP_MS,
-    defActionPoints, sessPlayers, sessEvents, teamsOf, orderTeams, teamGoals, result, outcomeFor,
+    defActionPoints, sessPlayers, sessEvents, teamsOf, orderTeams, playsAs, effectivePos, teamGoals, result, outcomeFor,
     formatOf, isBigPolesEvent, cleanSheet, storedFields,
     matchPoints, matchBreakdown, scorers, livePoints, minuteText,
     compute, seasonStats, seasonTable, lastGame, completedSessions, playerHistory,

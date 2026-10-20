@@ -8,19 +8,22 @@
   'use strict';
   if (!/[?&]practice\b/.test(location.search) || window.__BEFIT_TEST__) return;
 
-  let data = { players: {}, sessions: {}, paymentDays: {} };
+  let data = { players: {}, sessions: {}, paymentDays: {}, settings: {} };
   let loaded = false;
+  const read = root => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', window.BF_CONFIG.firebase.databaseURL + '/' + root + '.json', false);
+    xhr.send();
+    if (xhr.status !== 200) return false;
+    data[root] = JSON.parse(xhr.responseText) || {};
+    return true;
+  };
   try {
     // Synchronous on purpose: Store.start() must see the data on its first read.
     // One read per area: the locked rules allow these, not a read of the whole database.
-    loaded = ['players', 'sessions', 'paymentDays'].every(root => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', window.BF_CONFIG.firebase.databaseURL + '/' + root + '.json', false);
-      xhr.send();
-      if (xhr.status !== 200) return false;
-      data[root] = JSON.parse(xhr.responseText) || {};
-      return true;
-    });
+    loaded = ['players', 'sessions', 'paymentDays'].every(read);
+    // Round 5 settings (club + teams) are optional: missing or not readable = today's Red/Green defaults.
+    if (loaded) { try { read('settings'); } catch (e) { /* defaults */ } }
   } catch (e) { /* stay on empty data; the banner says so */ }
 
   window.__BEFIT_TEST__ = { data, practice: true };

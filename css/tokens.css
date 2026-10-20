@@ -3,8 +3,12 @@
    ----------------------------------------------------------------------------
    Theme = data-theme on <html>: "dark" or "light" (the shell resolves Auto).
    Any element can re-scope with its own data-theme (e.g. the referee console).
-   Rules: colour = team only · ink = action · orange = needs attention.
-   No glows, no gradients, no emoji, no old brand green.
+   Rules: colour = team only · ink = action · amber = needs attention.
+   Round 5 "Floodlight with aura": light (glows, gradients) ONLY on elements marked
+   .hero (one per screen) or .lit (the listed components: score block, Goal tiles,
+   team washes, the "you" row, podium, leader rows, sum total, stoppage escalation,
+   Goal sheet title bar, share cards, the front-door brand card). Everything else
+   stays flat. No emoji, no old brand green, no medal colours (Gold is a team).
    ========================================================================== */
 :root,
 [data-theme="dark"] {
@@ -37,6 +41,17 @@
   --halo: rgba(242,243,245,.18);
   --ring: none;           /* light theme draws a 1 px ring on cards */
   --shadow-float: 0 10px 30px rgba(0,0,0,.5);
+
+  /* round 5: light recipes (percentages are used inside color-mix with the team colour --tc) */
+  --tint-hero: 18%;       /* score halves, share-card areas */
+  --tint-tile: 14%;       /* Goal tiles, Save keeper tiles */
+  --tint-soft: 10%;       /* team chips, active team tab */
+  --tint-ring: 40%;       /* 1 px ring on chips and Goal tiles */
+  --glow: 26%;            /* bottom glow strength (heroes only) */
+  --sheen: linear-gradient(180deg, rgba(255,255,255,.035), transparent 45%);   /* hero cards */
+  --edge: inset 0 1px 0 rgba(255,255,255,.06);                                 /* every card, row group, tile */
+  --attn: color-mix(in srgb, var(--warn) 10%, var(--s1));                     /* sync waiting, stoppage nudge, money owed */
+  --cred: #E5484D;        /* red card shape */
 }
 
 [data-theme="light"] {
@@ -69,10 +84,21 @@
   --halo: rgba(11,13,16,.14);
   --ring: 0 0 0 1px var(--line);
   --shadow-float: 0 10px 30px rgba(11,13,16,.18);
+
+  --tint-hero: 12%;
+  --tint-tile: 10%;
+  --tint-soft: 8%;
+  --tint-ring: 35%;
+  --glow: 14%;            /* light halves the glow */
+  --sheen: linear-gradient(180deg, #fff, #F7F8FA);
+  --edge: 0 0 0 1px var(--line);
+  --attn: color-mix(in srgb, #FF9F43 14%, #fff);
+  --cred: #D93B41;
 }
 
 :root {
-  /* type: Geist for words, Geist Mono for every number (tabular) */
+  /* type: Geist for words; Geist Mono for minutes and columns (never above 24 px);
+     hero numerals (score, points, podium, share cards) in Geist 700 tabular (.hn) */
   --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --fs-xs: 12px;          /* positions, tiny labels (12 px floor, audit rule 10) */
@@ -80,9 +106,13 @@
   --fs-body: 14px;
   --fs-title: 18px;       /* sheet titles, tile labels */
   --fs-head: 26px;        /* page heads */
-  --fs-score: 52px;
-  --fs-profile: 44px;
-  --fs-share: 86px;
+  --fs-score: 56px;       /* score block, Home and Match (console 46, compact 40) */
+  --fs-score-console: 46px;
+  --fs-score-compact: 40px;
+  --fs-profile: 64px;     /* your points hero (64–72) */
+  --fs-podium: 30px;      /* podium #1 34, others 24 */
+  --fs-leader: 34px;
+  --fs-share: 96px;       /* share cards 96–140 */
 
   /* spacing: 4 px grid · gutter 16 · card padding 14 · card gap 10 */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px; --sp-8: 32px;
@@ -97,7 +127,7 @@
   --r-sheet: 22px;
 
   /* heights */
-  --h-header: 52px;
+  --h-header: 56px;
   --h-nav: 64px;
   --h-row: 48px;
   --h-trow: 46px;
@@ -117,8 +147,18 @@
   --phone-max: 480px;
 }
 
-/* Team colour hooks: set --tc on anything team-coloured (always with the team word). */
+/* Team colour hooks: set --tc on anything team-coloured (always with the team word).
+   These four are the built-in colours. js/core/teams.js also writes a .t-<teamId> rule for
+   every team in settings/teams (so a team's id and its colour can differ), after this file. */
 .t-green { --tc: var(--green); }
 .t-red   { --tc: var(--red); }
 .t-blue  { --tc: var(--blue); }
 .t-gold  { --tc: var(--gold); }
+
+/* Team-coloured numerals: light theme darkens them 15% for contrast (never team text under 18 px in light). */
+.tnum { color: var(--tc); }
+[data-theme="light"] .tnum { color: color-mix(in srgb, var(--tc) 85%, #000); }
+
+/* Hero numerals: Geist 700, tabular, tight (score 56 / 46 / 40, your points 64–72, podium 30 / 24,
+   leader 34, share cards 96–140). Not Geist Mono: its slashed zero reads as Ø. */
+.hn { font-family: var(--font); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; }

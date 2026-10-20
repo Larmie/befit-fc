@@ -1,48 +1,59 @@
 /* ============================================================================
    BE Fit Club · js/ui/shell.js · the app frame (window.App)
    ----------------------------------------------------------------------------
-   Two modes: Player (Live · Table · Season · Me) and Referee, after sign-in
-   (Match · Squad · Money). Phone: header + bottom nav. Laptop (>= 960 px): left
-   rail, content max 1040 px; screens with layout:'phone' (the console) stay
-   phone-width and centred.
+   Round 5: FOUR ROLES, each with its own tabs and header pill.
+     guest    (just browsing)        Home · Match · Tables                 header: "Browsing ▾" (outlined)
+     player   (picked their name)    Home · Match · Tables · Me            header: name chip "Andrew ▾" (team tint)
+     referee  (shared login)         Match · Money tonight                 header: "Referee ▾" · date · sync chip
+                                     The nav hides while a match is live (clock running, paused or in stoppage).
+     admin    (Reuben)               Home · Squad · Money · Settings       header: "Admin ▾" · page title
+                                     The admin can also referee: "Admin ▾ › Referee console" switches to the
+                                     referee tabs (role 'referee', still signed in as admin).
+   Phone: header + bottom nav. Laptop (>= 960 px): left rail, content max 1040 px; screens with
+   layout:'phone' (the console) stay phone-width and centred.
 
    SCREENS
      App.registerScreen(id, {
-       mode:    'player' | 'referee' | 'any'   (referee screens need sign-in; default from the id prefix)
-       tab:     which nav tab lights up, e.g. 'table' (sub-screens set the tab they belong to)
+       mode:    'player' | 'referee' | 'admin' | 'any'   who may open it (default from the id prefix:
+                'player.' 'guest.' 'tables.' → player (anyone; shows guest or player tabs) · 'ref.' → referee
+                (referee or admin) · 'admin.' → admin). ref.squad, ref.player, ref.pastGame are admin-only.
+       tab:     which nav tab lights up: 'home' | 'match' | 'tables' | 'me' | 'money' | 'squad' | 'settings'
+                (old ids still work: live → match, table → tables, season → tables; player.match → match)
+       title:   admin header centre text (e.g. 'Squad'); referee header shows the date
        layout:  'wide' (default) | 'phone'     ('phone' = stays phone-width on a laptop)
        console: true                           (follows "Referee console: Always dark")
        nav:     false                          (hide the bottom nav / rail, e.g. Welcome)
        flush:   true                           (no page padding)
-       header(ctx) → { left, center, right } HTML, or false for no header (default per mode)
-       mount(el, ctx)   once per visit: attach listeners here (UI.on(el, ...)); el survives re-renders
-       render(el, ctx)  draw; called on show and after every data change (set el.innerHTML)
-       onData(el, ctx)  optional: called on data changes INSTEAD of render (keep inputs alive)
-       onHide(el, ctx)  optional cleanup
+       header(ctx) → { left, center, right } HTML, or false for no header (default per role, see above)
+       mount(el, ctx) · render(el, ctx) · onData(el, ctx) · onHide(el, ctx)   (unchanged from round 4)
      })
-     ctx = { id, params, mode, wide, viewer, viewerState, isReferee, store:Store, scoring:Scoring,
+     ctx = { id, params, mode, role, wide, viewer, viewerState, isReferee, isAdmin, store:Store, scoring:Scoring,
              go, back, rerender, openSheet, every(ms, fn), onCleanup(fn) }
-       ctx.every / ctx.onCleanup are cleared automatically when the screen is left.
-     A data change re-renders the open screen once per frame, but never while one of
-     its inputs has focus (it waits for blur), so typing is never interrupted.
+       ctx.role = 'guest' | 'player' | 'referee' | 'admin' (the tabs on show) · ctx.mode = 'referee' for
+       referee AND admin, 'player' for guest AND player (round 4 meaning, kept).
+     PLACEHOLDERS: every new round 5 screen id is registered here with a working stand-in (most wrap the
+     round 4 screen they replace) until its owner registers the real one: registerScreen() simply replaces
+     it, no warning. App.PLACEHOLDERS lists them with their owners.
 
-   NAVIGATION (hash routes: #/player.table, #/player.match?sid=abc)
+   NAVIGATION (hash routes: #/tables.players, #/player.match?sid=abc)
      App.go(id, params?, { replace }) · App.back() · App.current() → { id, params }
-     App.tabs(mode) · App.goTab(tabId)
-   ACTIONS (cross-screen calls between Phase 2 files; names are fixed in PHASE2-CONTRACT.md)
-     App.registerAction(name, fn) · App.action(name, args) → whatever fn returns
-   MODE, VIEWER, SIGN-IN
-     App.mode() · App.setMode('player'|'referee')
+     App.tabs(role?) · App.goTab(tabId)   (goTab('table') → Tables · Players, goTab('season') → Tables · Teams)
+     'player.table' → 'tables.players' and 'player.season' → 'tables.teams' once player.js stops registering them.
+     'ref.home' (round 4) routes to the role's home (admin → admin.home, referee → the Match tab) as soon as the
+     real admin.home is registered; until then it still opens the round 4 referee home.
+   ACTIONS
+     App.registerAction(name, fn) · App.action(name, args) → whatever fn returns ("Not built yet" toast if missing)
+   ROLE, VIEWER, SIGN-IN
+     App.role() → 'guest'|'player'|'referee'|'admin' · App.setRole(r) (ignored if not signed in for it)
+     App.mode() → 'player'|'referee' (round 4) · App.setMode('player'|'referee'|'admin')
      App.viewer() → pid | null · App.viewerState() → pid | 'guest' | null (never chose) · App.setViewer(pid | 'guest')
-     App.openSignIn() · App.signOut()
+     App.openSignIn({ as:'referee'|'admin', onSignedIn })   referee = password only; admin = email + password
+     App.openPill()     the header pill's sheet for the current role · App.signOut() · App.isLiveMatch()
    THEME
      App.theme.get() / set('auto'|'light'|'dark') · App.theme.getConsole() / setConsole('dark'|'app')
-     App.theme.effective() → 'light' | 'dark' · App.openAppearance()   (the Me › Appearance sheet)
-   LAYERS
-     App.openSheet(opts) = UI.sheet.open(opts)
-   SHELL BUTTONS (work anywhere, incl. headers): data-shell="back" | "player-view" | "ref-mode"
-     | "sign-in" | "sign-out" | "welcome" | "appearance"
-     e.g. header: () => ({ left: `<button type="button" class="hd-btn" data-shell="back">‹ Mon 12 Oct</button>` })
+     App.theme.effective() → 'light' | 'dark' · App.openAppearance()
+   SHELL BUTTONS (work anywhere, incl. headers): data-shell="back" | "player-view" | "ref-mode" | "admin-mode"
+     | "sign-in" | "sign-in-admin" | "sign-out" | "welcome" | "appearance" | "pill" | "sync"
    ========================================================================== */
 (function () {
   'use strict';
@@ -52,18 +63,48 @@
   const esc = UI.esc;
 
   const screens = {}, actions = {};
+  let lastTables = 'tables.teams';
   const TABS = {
+    guest: [
+      { id: 'home', label: 'Home', icon: 'home', screen: 'guest.home' },
+      { id: 'match', label: 'Match', icon: 'match', screen: 'player.live' },
+      { id: 'tables', label: 'Tables', icon: 'tables', screen: () => lastTables },
+    ],
     player: [
-      { id: 'live', label: 'Live', icon: 'live', screen: 'player.live' },
-      { id: 'table', label: 'Table', icon: 'table', screen: 'player.table' },
-      { id: 'season', label: 'Season', icon: 'season', screen: 'player.season' },
+      { id: 'home', label: 'Home', icon: 'home', screen: 'player.home' },
+      { id: 'match', label: 'Match', icon: 'match', screen: 'player.live' },
+      { id: 'tables', label: 'Tables', icon: 'tables', screen: () => lastTables },
       { id: 'me', label: 'Me', icon: 'me', screen: 'player.me' },
     ],
     referee: [
-      { id: 'match', label: 'Match', icon: 'match', screen: () => (Store.activeSessionId() ? 'ref.console' : 'ref.home') },
+      { id: 'match', label: 'Match', icon: 'match', screen: () => (Store.activeSessionId() ? 'ref.console' : 'ref.setup') },
+      { id: 'money', label: 'Money tonight', icon: 'money', screen: 'ref.money' },
+    ],
+    admin: [
+      { id: 'home', label: 'Home', icon: 'home', screen: 'admin.home' },
       { id: 'squad', label: 'Squad', icon: 'squad', screen: 'ref.squad' },
       { id: 'money', label: 'Money', icon: 'money', screen: 'ref.money' },
+      { id: 'settings', label: 'Settings', icon: 'settings', screen: 'admin.settings' },
     ],
+  };
+  const ROLES = Object.keys(TABS);
+  // Round 4 tab ids still used by some screens / links.
+  const TAB_ALIAS = { live: 'match', table: 'tables', season: 'tables' };
+  const SCREEN_TAB = { 'player.match': 'match', 'player.live': 'match' };
+  const ADMIN_ONLY = new Set(['ref.squad', 'ref.player', 'ref.pastGame']);
+  // Round 4 ids that retire in round 5: when nobody registers them any more, links to them land here.
+  const RETIRED = { 'player.table': 'tables.players', 'player.season': 'tables.teams' };
+  const REFEREE_DESK = new Set(['ref.console', 'ref.setup', 'ref.events']);   // always shown with the referee tabs
+
+  // Stand-ins for the new round 5 screens (owners in R5-CONTRACT.md). Replaced by registerScreen.
+  const PLACEHOLDERS = {
+    'guest.home':     { owner: 'home',   tab: 'home',     mode: 'player', wrap: 'player.live' },
+    'player.home':    { owner: 'home',   tab: 'home',     mode: 'player', wrap: 'player.live' },
+    'tables.teams':   { owner: 'tables', tab: 'tables',   mode: 'player', wrap: 'player.season' },
+    'tables.players': { owner: 'tables', tab: 'tables',   mode: 'player', wrap: 'player.table' },
+    'tables.stats':   { owner: 'tables', tab: 'tables',   mode: 'player', demo: 'stats' },
+    'admin.home':     { owner: 'admin',  tab: 'home',     mode: 'admin',  wrap: 'ref.home', title: null },
+    'admin.settings': { owner: 'admin',  tab: 'settings', mode: 'admin',  demo: 'settings', title: 'Settings' },
   };
 
   const ls = {
@@ -72,16 +113,22 @@
   };
 
   let route = { id: null, params: {} };
-  let cur = null;                    // { id, def, el, cleanups:[], key }
-  let lastTab = { player: 'live', referee: 'match' };
+  let cur = null;                    // { id, def, el, cleanups:[], key, role, tab }
+  const lastTab = { guest: 'home', player: 'home', referee: 'match', admin: 'home' };
   let renderQueued = false, deferredWhileTyping = false, started = false;
   const wideMQ = window.matchMedia('(min-width: 960px)');
   const lightMQ = window.matchMedia('(prefers-color-scheme: light)');
 
   // ---------------------------------------------------------------- registry
+  function defaultMode(id) {
+    if (id.startsWith('ref.')) return 'referee';
+    if (id.startsWith('admin.')) return 'admin';
+    if (/^(player|guest|tables)\./.test(id)) return 'player';
+    return 'any';
+  }
   function registerScreen(id, def) {
-    if (screens[id]) console.warn('BE Fit: screen registered twice:', id);
-    screens[id] = Object.assign({ mode: id.startsWith('ref.') ? 'referee' : id.startsWith('player.') ? 'player' : 'any', layout: 'wide' }, def);
+    if (screens[id] && !screens[id].placeholder) console.warn('BE Fit: screen registered twice:', id);
+    screens[id] = Object.assign({ mode: defaultMode(id), layout: 'wide' }, def);
     if (started && route.id === id) scheduleRender(true);
   }
   function registerAction(name, fn) { actions[name] = fn; }
@@ -91,13 +138,7 @@
     return fn(args || {});
   }
 
-  // ---------------------------------------------------------------- mode, viewer
-  function mode() {
-    const m = ls.get(K.mode);
-    return m === 'referee' && Auth.isReferee() ? 'referee' : 'player';
-  }
-  function setMode(m) { ls.set(K.mode, m === 'referee' ? 'referee' : 'player'); }
-
+  // ---------------------------------------------------------------- role, viewer
   function viewerState() {
     if (TEST && TEST.viewer !== undefined && !viewerState._set) return TEST.viewer;
     try {
@@ -108,11 +149,37 @@
     } catch (e) { return null; }
   }
   const viewer = () => { const v = viewerState(); return v && v !== 'guest' ? v : null; };
+  const viewerRole = () => (viewer() ? 'player' : 'guest');
+
+  function role() {
+    const m = ls.get(K.mode), a = Auth.role();
+    if (a === 'admin' && (m === 'admin' || m === 'referee')) return m;
+    if (a === 'admin' && m == null) return 'admin';
+    if (a && (m === 'referee' || m === 'admin' || m == null)) return 'referee';
+    return viewerRole();
+  }
+  function setRole(r) {
+    const a = Auth.role();
+    if (r === 'admin' && a !== 'admin') r = a ? 'referee' : viewerRole();
+    if (r === 'referee' && !a) r = viewerRole();
+    if (r === 'guest' || r === 'player') r = viewerRole();
+    ls.set(K.mode, r);
+  }
+  const mode = () => (role() === 'referee' || role() === 'admin' ? 'referee' : 'player');
+  function setMode(m) { setRole(m === 'admin' ? 'admin' : m === 'referee' ? 'referee' : 'player'); }
+
   function setViewer(pid) {
     viewerState._set = true;
     ls.set(K.viewer, JSON.stringify({ pid: pid || 'guest' }));
     if (TEST) TEST.viewer = pid || 'guest';
+    ls.set(K.mode, pid && pid !== 'guest' ? 'player' : 'guest');
     scheduleRender(true);
+  }
+
+  // A match is "live" for the referee while its clock runs, is paused or is in stoppage.
+  function isLiveMatch() {
+    const s = Store.activeSession();
+    return !!s && !!window.Clock && Clock.isActive(s);
   }
 
   // ---------------------------------------------------------------- theme
@@ -146,20 +213,43 @@
     return '#/' + id + (qs ? '?' + qs : '');
   }
   function tabScreen(t) { return typeof t.screen === 'function' ? t.screen() : t.screen; }
-  function tabs(m) { return TABS[m || mode()]; }
-  function homeFor(m) {
-    const list = TABS[m];
-    const t = list.find(x => x.id === lastTab[m]) || list[0];
+  function tabs(r) { return TABS[r || role()] || TABS.guest; }
+  function homeFor(r) {
+    const list = tabs(r);
+    const t = list.find(x => x.id === lastTab[r]) || list[0];
     return tabScreen(t);
   }
   function needsWelcome() { return viewerState() === null && !Auth.isReferee(); }
 
+  function access(id, def) {
+    if (def.mode === 'admin' || ADMIN_ONLY.has(id)) return 'admin';
+    if (def.mode === 'referee') return 'referee';
+    if (def.mode === 'player') return 'viewer';
+    return 'any';
+  }
+  // Which tabs to show with a screen.
+  function roleFor(id, def) {
+    const acc = access(id, def), r = role();
+    if (acc === 'admin') return 'admin';
+    if (acc === 'viewer') return viewerRole();
+    if (acc === 'referee') {
+      if (REFEREE_DESK.has(id)) return 'referee';
+      return r === 'admin' || r === 'referee' ? r : (Auth.isAdmin() ? 'admin' : 'referee');
+    }
+    return r;
+  }
+
   function resolve(r) {
     let { id, params } = r;
-    if (!id) id = needsWelcome() ? 'welcome' : homeFor(mode());
+    // Round 4's 'ref.home' becomes the role's home once the admin builder's real admin.home exists.
+    if (id === 'ref.home' && screens['admin.home'] && !screens['admin.home'].placeholder) id = Auth.isAdmin() && role() !== 'referee' ? 'admin.home' : homeFor('referee');
+    if (!id) id = needsWelcome() ? 'welcome' : homeFor(role());
+    if (!screens[id] && RETIRED[id]) id = RETIRED[id];
     const def = screens[id];
     if (!def) return { id, params, def: null };
-    if (def.mode === 'referee' && !Auth.isReferee()) return resolve({ id: homeFor('player'), params: {} });
+    const acc = access(id, def);
+    if (acc === 'admin' && !Auth.isAdmin()) return resolve({ id: Auth.isReferee() ? homeFor('referee') : homeFor(viewerRole()), params: {} });
+    if (acc === 'referee' && !Auth.isReferee()) return resolve({ id: homeFor(viewerRole()), params: {} });
     return { id, params, def };
   }
 
@@ -177,14 +267,16 @@
   }
   function back() {
     if (trail.length > 1) { history.back(); return; }
-    const d = cur && cur.def;
-    const m = d && d.mode === 'referee' ? 'referee' : 'player';
-    go(homeFor(m), {}, { replace: true });
+    go(homeFor(cur ? cur.role : role()), {}, { replace: true });
   }
   function goTab(tabId) {
-    const m = mode();
-    const t = TABS[m].find(x => x.id === tabId) || TABS[m][0];
-    lastTab[m] = t.id;
+    if (tabId === 'table') lastTables = 'tables.players';
+    if (tabId === 'season') lastTables = 'tables.teams';
+    tabId = TAB_ALIAS[tabId] || tabId;
+    const r = cur ? cur.role : role();
+    const list = tabs(r);
+    const t = list.find(x => x.id === tabId) || list[0];
+    lastTab[r] = t.id;
     go(tabScreen(t), {}, { replace: true });
   }
   function onHash() {
@@ -209,10 +301,10 @@
     render(kind === 'nav');
   }
 
-  function makeCtx(r, el, cleanups) {
+  function makeCtx(r, el, cleanups, rl) {
     return {
-      id: r.id, params: r.params, mode: (r.def && r.def.mode === 'referee') ? 'referee' : 'player',
-      wide: wideMQ.matches, viewer: viewer(), viewerState: viewerState(), isReferee: Auth.isReferee(),
+      id: r.id, params: r.params, role: rl, mode: rl === 'referee' || rl === 'admin' ? 'referee' : 'player',
+      wide: wideMQ.matches, viewer: viewer(), viewerState: viewerState(), isReferee: Auth.isReferee(), isAdmin: Auth.isAdmin(),
       store: Store, scoring: Scoring, go, back, openSheet: UI.sheet.open,
       rerender: () => scheduleRender(false),
       every(ms, fn) { const t = setInterval(fn, ms); cleanups.push(() => clearInterval(t)); return t; },
@@ -224,6 +316,15 @@
     const a = document.activeElement;
     return a && el.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
   }
+  function tabOf(id, def, rl) {
+    let t = def.tab ? (TAB_ALIAS[def.tab] || def.tab) : null;
+    if (def.tab && SCREEN_TAB[id] && (def.tab === 'season' || def.tab === 'live')) t = SCREEN_TAB[id];
+    if (id === 'ref.money' && rl === 'referee') t = 'money';
+    const list = tabs(rl);
+    if (t && list.some(x => x.id === t)) return t;
+    const own = list.find(x => tabScreen(x) === id);
+    return own ? own.id : null;
+  }
 
   function render(isNav) {
     const r = resolve(route);
@@ -232,8 +333,9 @@
       host.innerHTML = UI.empty('Not found', '');
       return;
     }
-    const m = r.def.mode === 'referee' ? 'referee' : r.def.mode === 'player' ? 'player' : mode();
-    if (r.def.mode === 'referee' || r.def.mode === 'player') { setMode(m); }
+    const rl = roleFor(r.id, r.def);
+    if (r.def.mode !== 'any') ls.set(K.mode, rl);
+    if (r.id.startsWith('tables.')) lastTables = r.id;
     const key = r.id + '?' + JSON.stringify(r.params);
     const same = cur && cur.key === key && !isNav;
     const sameScreen = cur && cur.key === key;
@@ -244,129 +346,240 @@
       el.className = 'screen scr-' + r.id.replace(/\./g, '-');
       el.dataset.screen = r.id;
       const cleanups = [];
-      cur = { id: r.id, def: r.def, el, key, cleanups };
-      cur.ctx = makeCtx(r, el, cleanups);
+      cur = { id: r.id, def: r.def, el, key, cleanups, role: rl };
+      cur.ctx = makeCtx(r, el, cleanups, rl);
       host.replaceChildren(el);
       host.className = 'screen-host' + (r.def.layout === 'phone' ? ' is-phone' : '') + (r.def.flush ? ' is-flush' : '');
       window.scrollTo(0, 0);
       UI.sheet.closeAll();
-      const t = r.def.tab || (TABS[m].find(x => tabScreen(x) === r.id) || {}).id;
-      if (t) lastTab[m] = t;
-      cur.tab = t || lastTab[m];
+      const t = tabOf(r.id, r.def, rl);
+      if (t) lastTab[rl] = t;
+      cur.tab = t;
       applyTheme();
-      frame(m);
+      frame(rl);
       try { if (r.def.mount) r.def.mount(el, cur.ctx); r.def.render(el, cur.ctx); }
       catch (e) { console.error(e); el.innerHTML = UI.empty('Something went wrong', 'Pull down to refresh.'); }
       el.addEventListener('focusout', () => { if (deferredWhileTyping) setTimeout(() => { if (!typingIn(el)) { deferredWhileTyping = false; scheduleRender(false); } }, 0); });
       return;
     }
     // same screen: data changed (or re-entered)
-    cur.ctx = Object.assign(cur.ctx, makeCtx(r, cur.el, cur.cleanups), { every: cur.ctx.every, onCleanup: cur.ctx.onCleanup });
-    frame(m);
+    cur.role = rl;
+    cur.ctx = Object.assign(cur.ctx, makeCtx(r, cur.el, cur.cleanups, rl), { every: cur.ctx.every, onCleanup: cur.ctx.onCleanup });
+    frame(rl);
     if (typingIn(cur.el)) { deferredWhileTyping = true; return; }
     try {
       if (same && r.def.onData) r.def.onData(cur.el, cur.ctx); else r.def.render(cur.el, cur.ctx);
     } catch (e) { console.error(e); }
   }
 
-  // header, nav, rail
-  function frame(m) {
+  // ---------------------------------------------------------------- header, nav, rail
+  function frame(rl) {
     const d = cur.def, ctx = cur.ctx;
-    document.body.classList.toggle('no-nav', d.nav === false);
-    document.body.dataset.mode = m;
+    const hideLive = rl === 'referee' && isLiveMatch() && d.nav !== false;
+    document.body.classList.toggle('no-nav', d.nav === false || hideLive);
+    document.body.classList.toggle('nav-hidden', hideLive);
+    document.body.dataset.mode = rl === 'referee' || rl === 'admin' ? 'referee' : 'player';
+    document.body.dataset.role = rl;
     const hd = document.getElementById('app-header');
     let parts = d.header ? d.header(ctx) : null;
     if (parts === false) { hd.hidden = true; }
     else {
       hd.hidden = false;
-      parts = Object.assign(m === 'referee' ? refHeader() : playerHeader(), parts || {});
+      parts = Object.assign(defaultHeader(rl, d), parts || {});
+      hd.className = 'hd hd-' + rl;
       hd.innerHTML = `<div class="hd-l">${parts.left || ''}</div><div class="hd-c">${parts.center || ''}</div><div class="hd-r">${parts.right || ''}</div>`;
     }
     const nav = document.getElementById('app-nav');
     const rail = document.getElementById('app-rail');
-    if (d.nav === false) { nav.hidden = true; rail.hidden = true; return; }
+    if (d.nav === false || hideLive) { nav.hidden = true; rail.hidden = true; return; }
     nav.hidden = false; rail.hidden = false;
-    const list = TABS[m];
+    const list = tabs(rl);
     const link = (t, cls) => `<a class="${cls}${t.id === cur.tab ? ' on' : ''}" href="${hashFor(tabScreen(t))}" data-tab="${t.id}"${t.id === cur.tab ? ' aria-current="page"' : ''}>${UI.icon(t.icon)}<span>${esc(t.label)}</span></a>`;
-    nav.className = 'nav' + (m === 'referee' ? ' ref' : '');
+    const staff = rl === 'referee' || rl === 'admin';
+    nav.className = 'nav' + (staff ? ' ref' : '') + ' n' + list.length;
     nav.innerHTML = list.map(t => link(t, 'nav-a')).join('');
-    rail.className = 'rail' + (m === 'referee' ? ' ref' : '');
-    const v = viewer() ? Store.player(viewer()) : null;
-    const foot = m === 'referee'
-      ? `<button type="button" class="rail-a" data-shell="player-view">${UI.icon('live')}<span>Player view</span></button>` +
-        `<button type="button" class="rail-a" data-shell="sign-out">${UI.icon('close')}<span>Sign out</span></button>`
-      : (Auth.isReferee() ? `<button type="button" class="rail-a" data-shell="ref-mode">${UI.icon('match')}<span>Referee</span></button>` : '') +
-        (v ? `<a class="rail-a" href="${hashFor('player.me')}">${UI.avatar(v.name, v.defaultTeam)}<span>${esc(v.name)}</span></a>` : '');
+    rail.className = 'rail' + (staff ? ' ref' : '');
     rail.innerHTML = `<span class="wm">BE FIT <em>CLUB</em></span>` + list.map(t => link(t, 'rail-a')).join('') +
-      `<span class="rail-sp"></span><div class="rail-foot">${foot}</div>`;
+      `<span class="rail-sp"></span><div class="rail-foot">${pillButton(rl)}</div>`;
   }
 
-  function playerHeader() {
+  // The header pill for a role: Browsing ▾ · name chip ▾ · Referee ▾ · Admin ▾
+  function pillButton(rl) {
+    const car = '<span class="car" aria-hidden="true">▾</span>';
+    if (rl === 'referee' || rl === 'admin') {
+      const label = Auth.isAdmin() ? 'Admin' : 'Referee';
+      return `<button type="button" class="hd-pillbtn" data-shell="pill" aria-haspopup="dialog"><span class="pill role">${label}${car}</span></button>`;
+    }
     const v = viewer() ? Store.player(viewer()) : null;
-    const ref = Auth.isReferee() ? `<button type="button" class="ref-pill hd-pill" data-shell="ref-mode">Referee</button>` : '';
-    const me = v ? `<a class="hd-btn" href="${hashFor('player.me')}" aria-label="Me">${esc(v.name)} ${UI.avatar(v.name, v.defaultTeam)}</a>`
-      : `<button type="button" class="hd-btn" data-shell="welcome">Who are you?</button>`;
-    return { left: `<span class="wm hd-mark">BE FIT <em>CLUB</em></span>`, center: '', right: ref + me };
+    if (v) return `<button type="button" class="hd-pillbtn" data-shell="pill" aria-haspopup="dialog"><span class="pill me ${UI.esc(window.Teams ? Teams.cls(v.defaultTeam) : 't-' + v.defaultTeam)}">${UI.avatar(v.name, v.defaultTeam)}${esc(v.name)}${car}</span></button>`;
+    return `<button type="button" class="hd-pillbtn" data-shell="pill" aria-haspopup="dialog"><span class="pill out">${UI.icon('person')}Browsing${car}</span></button>`;
   }
-  function refHeader() {
-    const s = Store.activeSession();
-    const date = s ? UI.fmt.date(s.date) : UI.fmt.date(UI.fmt.iso(Store.now()));
-    return { left: `<span class="ref-pill">Referee</span>`, center: esc(date), right: `<button type="button" class="hd-btn" data-shell="player-view">Player view</button>` };
+  function defaultHeader(rl, d) {
+    if (rl === 'referee') {
+      const s = Store.activeSession();
+      const date = s ? UI.fmt.date(s.date) : UI.fmt.date(UI.fmt.iso(Store.now()));
+      return { left: pillButton(rl), center: `<span class="hd-title">${esc(date)}</span>`, right: UI.syncChip(Store.status()) };
+    }
+    if (rl === 'admin') {
+      const title = d && d.title ? d.title : UI.fmt.date(UI.fmt.iso(Store.now()));
+      return { left: pillButton(rl), center: `<span class="hd-title">${esc(title)}</span>`, right: '' };
+    }
+    return { left: `<span class="wm hd-mark">BE FIT <em>CLUB</em></span>`, center: '', right: pillButton(rl) };
   }
 
-  // shell buttons (header, rail)
+  // ---------------------------------------------------------------- shell buttons
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-shell]');
     if (b) {
       const a = b.dataset.shell;
-      if (a === 'player-view') { setMode('player'); go(homeFor('player'), {}, { replace: true }); }
-      if (a === 'ref-mode') { setMode('referee'); go(homeFor('referee'), {}, { replace: true }); }
+      if (a === 'player-view') toPlayerView();
+      if (a === 'ref-mode') { setRole('referee'); go(homeFor('referee'), {}, { replace: true }); }
+      if (a === 'admin-mode') { setRole('admin'); go(homeFor('admin'), {}, { replace: true }); }
       if (a === 'sign-out') signOut();
       if (a === 'welcome') go('welcome');
       if (a === 'back') back();
       if (a === 'appearance') openAppearance();
-      if (a === 'sign-in') openSignIn();
+      if (a === 'sign-in') openSignIn({ as: 'referee' });
+      if (a === 'sign-in-admin') openSignIn({ as: 'admin' });
+      if (a === 'pill') openPill();
+      if (a === 'sync') { if (actions['console.syncSheet']) action('console.syncSheet', {}); else openWaiting(); }
       return;
     }
     const t = e.target.closest('[data-tab]');
     if (t && !e.metaKey && !e.ctrlKey) { e.preventDefault(); goTab(t.dataset.tab); }
   });
+  function toPlayerView() { setRole(viewerRole()); lastTab[viewerRole()] = 'home'; go(homeFor(viewerRole()), {}, { replace: true }); }
 
-  // ---------------------------------------------------------------- sign-in & appearance sheets
+  // ---------------------------------------------------------------- the pill sheets
+  const optRow = (tap, title, o) => UI.row(Object.assign({ tap, titleHtml: esc(title), chevron: true }, o || {}));
+  function staffRows(h) {
+    // Rows for someone already signed in, seen from the player side.
+    if (!Auth.isReferee()) return '';
+    return UI.rows([
+      Auth.isAdmin() ? optRow('to-admin', 'Back to admin') : '',
+      optRow('to-ref', 'Referee console'),
+      UI.row({ tap: 'signout', titleHtml: 'Sign out' }),
+    ].filter(Boolean), { cls: 'mt-3' });
+  }
+  function wireStaff(h) {
+    UI.on(h.el, 'to-admin', () => { h.close(); setRole('admin'); lastTab.admin = 'home'; go(homeFor('admin'), {}, { replace: true }); });
+    UI.on(h.el, 'to-ref', () => { h.close(); setRole('referee'); go(homeFor('referee'), {}, { replace: true }); });
+    UI.on(h.el, 'signout', () => { h.close(); signOut(); });
+    UI.on(h.el, 'as-ref', () => { h.close(); openSignIn({ as: 'referee' }); });
+    UI.on(h.el, 'as-admin', () => { h.close(); openSignIn({ as: 'admin' }); });
+    UI.on(h.el, 'appearance', () => { h.close(); openAppearance(); });
+  }
+  function personRow(p) {
+    return UI.row({ tap: 'pick', data: { pid: p.pid }, left: UI.avatar(p.name, p.defaultTeam), titleHtml: esc(p.name), metaHtml: esc(p.defaultPosition || ''), right: UI.teamChip(p.defaultTeam) });
+  }
+  // Up to 6 matches, only once something is typed (never the whole list of names).
+  function findPeople(q, max) {
+    const s = String(q || '').trim().toLowerCase();
+    if (!s) return { list: [], total: 0 };
+    const all = Object.entries(Store.players()).map(([pid, p]) => Object.assign({ pid }, p))
+      .filter(p => String(p.name || '').toLowerCase().includes(s))
+      .sort((a, b) => {
+        const as = String(a.name).toLowerCase().startsWith(s), bs = String(b.name).toLowerCase().startsWith(s);
+        return (bs - as) || String(a.name).localeCompare(String(b.name));
+      });
+    return { list: all.slice(0, max || 6), total: all.length };
+  }
+  function resultsHtml(q, max) {
+    const r = findPeople(q, max);
+    if (!String(q || '').trim()) return '';
+    if (!r.total) return UI.empty(`No one called "${String(q).trim()}"`, '');
+    return `<div class="lbl">${r.total === 1 ? '1 match' : r.total + ' matches'}${r.total > r.list.length ? ` <b>keep typing</b>` : ''}</div>` + UI.rows(r.list.map(personRow));
+  }
+  function pickViewer(pid) { setViewer(pid); go('player.home', {}, { replace: true }); }
+
+  function openPill() {
+    const rl = cur ? cur.role : role();
+    if (rl === 'referee' || rl === 'admin') {
+      const admin = Auth.isAdmin();
+      const h = UI.sheet.open({ title: admin ? 'Admin' : 'Referee', cls: 'sh-shell-pill', body: UI.rows([
+        admin && rl === 'referee' ? optRow('to-admin', 'Admin home') : '',
+        admin && rl === 'admin' ? optRow('to-ref', 'Referee console') : '',
+        optRow('pv', 'Player view'),
+        UI.row({ tap: 'signout', titleHtml: 'Sign out' }),
+      ].filter(Boolean)) });
+      wireStaff(h);
+      UI.on(h.el, 'pv', () => { h.close(); toPlayerView(); });
+      return h;
+    }
+    const v = viewer() ? Store.player(viewer()) : null;
+    if (v) {
+      const row = (Scoring.seasonTable() || []).find(x => x.pid === viewer());
+      const sub = [v.defaultPosition, UI.fmt.team(v.defaultTeam), row ? UI.fmt.ordinal(row.rank) : ''].filter(Boolean).join(' · ');
+      const first = String(v.name).split(' ')[0];
+      const h = UI.sheet.open({ cls: 'sh-shell-pill', body:
+        `<div class="pill-who">${UI.avatar(v.name, v.defaultTeam, { size: 44 })}<span class="grow"><b>${esc(v.name)}</b><span class="meta">${esc(sub)}</span></span></div>` +
+        UI.rows([optRow('mypage', 'My page'), optRow('share', 'Share card'), optRow('appearance', 'Appearance')]) +
+        UI.rows([optRow('switch', `Not ${first}? Switch`, { cls: 'quiet' }),
+          Auth.isReferee() ? '' : optRow('signin', 'Referee or admin sign-in', { cls: 'quiet' })].filter(Boolean), { cls: 'mt-3' }) +
+        staffRows() });
+      wireStaff(h);
+      UI.on(h.el, 'mypage', () => { h.close(); go('player.me'); });
+      UI.on(h.el, 'share', () => { h.close(); action('player.shareCard', { pid: viewer() }); });
+      UI.on(h.el, 'switch', () => { h.close(); go('welcome'); });
+      UI.on(h.el, 'signin', () => { h.close(); openStaffChooser(); });
+      return h;
+    }
+    // guest: "You're browsing"
+    const tl = { auto: 'Auto', light: 'Light', dark: 'Dark' }[theme.get()];
+    const h = UI.sheet.open({ title: 'You’re browsing', cls: 'sh-shell-pill', body:
+      UI.search({ name: 'pill-find', placeholder: 'Find your name' }) + `<div class="mt-3" data-pill-res></div>` +
+      `<div data-pill-opts>` + UI.rows([
+        Auth.isReferee() ? '' : optRow('as-ref', 'I’m the referee'),
+        Auth.isReferee() ? '' : optRow('as-admin', 'I’m the admin'),
+        optRow('appearance', 'Appearance', { right: `<span class="meta">${esc(tl)}</span>` }),
+      ].filter(Boolean), { cls: 'mt-3' }) + staffRows() + `</div>` });
+    wireStaff(h);
+    UI.on(h.el, 'pick', b => { h.close(); pickViewer(b.dataset.pid); });
+    h.el.addEventListener('input', e => {
+      if (!e.target.matches('[data-search="pill-find"]')) return;
+      h.el.querySelector('[data-pill-res]').innerHTML = resultsHtml(e.target.value);
+      h.el.querySelector('[data-pill-opts]').hidden = !!e.target.value.trim();
+    });
+    return h;
+  }
+  function openStaffChooser() {
+    const h = UI.sheet.open({ title: 'Sign in', cls: 'sh-shell-pill', body: UI.rows([optRow('as-ref', 'I’m the referee', { meta: 'Run tonight’s game' }), optRow('as-admin', 'I’m the admin', { meta: 'Squad, money, settings' })]) });
+    wireStaff(h);
+    return h;
+  }
+  function openWaiting() {
+    const st = Store.status(), list = Store.outbox();
+    UI.sheet.open({ title: list.length ? `${list.length} waiting to send` : 'All sent', cls: 'sh-shell-sync',
+      body: list.length ? UI.rows(list.map(x => UI.row({ titleHtml: `Saved ${esc(UI.fmt.time(x.at))}`, metaHtml: esc(x.paths.length === 1 ? '1 change' : x.paths.length + ' changes') })))
+        : UI.empty(st.status === 'offline' ? 'No signal' : 'Everything is sent', '') });
+  }
+
+  // ---------------------------------------------------------------- sign-in sheets
+  // Referee: password only (Auth fills the shared email). Admin: email + password. Each its own sheet.
   function openSignIn(opts) {
     opts = opts || {};
-    // Referee: password only (the shared email is filled in by Auth). Admin: email + password.
+    const admin = opts.as === 'admin';
     const h = UI.sheet.open({
-      title: 'Referee sign-in',
+      title: admin ? 'Admin' : 'Referee', cls: 'sh-shell-signin',
       body: `<form class="stack" data-signin novalidate style="padding-top:8px">
-          <label class="inp" data-email-row hidden><input type="email" name="email" autocomplete="username" placeholder="Email" aria-label="Email"></label>
-          <label class="inp"><input type="password" name="password" autocomplete="current-password" placeholder="Referee password" aria-label="Password"></label>
+          ${admin ? `<label class="inp"><input type="email" name="email" autocomplete="username" placeholder="Email" aria-label="Email"></label>` : ''}
+          <label class="inp"><input type="password" name="password" autocomplete="current-password" placeholder="${admin ? 'Password' : 'Referee password'}" aria-label="Password"></label>
           <div class="field-err" data-err></div>
-          <button type="submit" class="btn w">Sign in</button>
-          <button type="button" class="link" data-admin-toggle style="min-height:48px;align-self:center">Sign in as admin ›</button>
+          <button type="submit" class="btn w big">Sign in</button>
         </form>`,
     });
     const form = h.el.querySelector('[data-signin]');
-    form.querySelector('[data-admin-toggle]').addEventListener('click', e => {
-      const row = form.querySelector('[data-email-row]');
-      const admin = row.hidden;
-      row.hidden = !admin;
-      form.email.value = '';
-      form.password.placeholder = admin ? 'Password' : 'Referee password';
-      e.currentTarget.textContent = admin ? '‹ Referee sign-in' : 'Sign in as admin ›';
-      h.setTitle(admin ? 'Admin sign-in' : 'Referee sign-in');
-      (admin ? form.email : form.password).focus();
-    });
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const btn = form.querySelector('button[type=submit]');
       const err = form.querySelector('[data-err]');
       btn.classList.add('is-saving'); btn.textContent = 'Signing in…'; err.textContent = '';
       try {
-        await Auth.signIn(form.email.value, form.password.value);
+        await Auth.signIn(admin ? form.email.value : '', form.password.value);
         h.close();
-        setMode('referee');
-        if (opts.onSignedIn) opts.onSignedIn(); else go(homeFor('referee'), {}, { replace: true });
+        const r = Auth.isAdmin() && admin ? 'admin' : 'referee';
+        setRole(r);
+        if (opts.onSignedIn) opts.onSignedIn(); else go(homeFor(r), {}, { replace: true });
       } catch (x) {
         err.textContent = x.message || 'Wrong email or password';
         btn.classList.remove('is-saving'); btn.textContent = 'Sign in';
@@ -377,8 +590,8 @@
   }
   async function signOut() {
     await Auth.signOut();
-    setMode('player');
-    go(homeFor('player'), {}, { replace: true });
+    setRole(viewerRole());
+    go(needsWelcome() ? 'welcome' : homeFor(viewerRole()), {}, { replace: true });
   }
 
   function openAppearance() {
@@ -402,9 +615,51 @@
     return h;
   }
 
+  // ---------------------------------------------------------------- placeholders
+  function placeholderDef(id, p) {
+    const def = { placeholder: true, owner: p.owner, tab: p.tab, mode: p.mode, title: p.title };
+    if (p.wrap) {
+      const w = () => screens[p.wrap];
+      def.header = ctx => (w() && w().header ? w().header(ctx) : null);
+      def.layout = (screens[p.wrap] || {}).layout || 'wide';
+      def.mount = (el, ctx) => { el.classList.add('scr-' + p.wrap.replace(/\./g, '-')); if (w() && w().mount) w().mount(el, ctx); };
+      def.render = (el, ctx) => { if (w()) w().render(el, ctx); else el.innerHTML = UI.empty('Coming in round 5', ''); };
+      def.onData = (el, ctx) => { const x = w(); if (x && x.onData) x.onData(el, ctx); else if (x) x.render(el, ctx); };
+      def.onHide = (el, ctx) => { const x = w(); if (x && x.onHide) x.onHide(el, ctx); };
+      return def;
+    }
+    def.render = el => { el.innerHTML = p.demo === 'stats' ? statsDemo() : settingsDemo(); };
+    def.mount = el => {
+      UI.on(el, 'open', b => go('player.profile', { pid: b.dataset.pid }));
+      UI.on(el, 'appearance', () => openAppearance());
+    };
+    return def;
+  }
+  function statsDemo() {
+    const rows = Scoring.seasonTable();
+    const last = rows.lastGame;
+    const top = rows.slice(0, 3).map(r => ({ pid: r.pid, name: r.name, team: r.team, value: r.pts,
+      stat: `${UI.fmt.plural(r.g, 'goal')} · ${UI.fmt.plural(r.a, 'assist')}`,
+      note: r.lastPts != null && last ? `${UI.fmt.signed(r.lastPts)} on ${UI.fmt.short(last.date)}` : '' }));
+    const L = Scoring.leaders();
+    const lr = (label, x) => x.players.length ? UI.leaderRow({ label, name: x.players[0].name, team: x.players[0].team, value: x.value, tap: 'open', data: { pid: x.players[0].pid } }) : '';
+    return `<div class="lbl">Points</div>${UI.podium(top, { tap: 'open' })}<div class="lbl mt-6">Leaders</div>${lr('Goals', L.goals)}${lr('Assists', L.assists)}${lr('Saves', L.saves)}`;
+  }
+  function settingsDemo() {
+    const c = Teams.club();
+    return `<div class="lbl">Club</div>` + UI.rows([
+      UI.row({ title: 'Season', right: `<span class="meta">${esc(c.seasonLabel)}</span>` }),
+      UI.row({ title: 'Fee', right: `<span class="meta">${esc(UI.fmt.money(c.fee))}</span>` }),
+      UI.row({ title: 'Quick amounts', right: `<span class="meta">${esc(c.quickAmounts.join(' · '))}</span>` }),
+    ]) + `<div class="lbl mt-6">Teams</div>` + UI.rows(Teams.all().map(t =>
+      UI.row({ cls: 'wash ' + Teams.cls(t.id), titleHtml: UI.teamChip(t.id), right: `<span class="meta">${t.active ? 'Active' : 'Not active'}</span>` }))) +
+      `<div class="lbl mt-6">Appearance</div>` + UI.rows([UI.row({ tap: 'appearance', title: 'Appearance', chevron: true })]);
+  }
+
   // ---------------------------------------------------------------- start
   function start() {
     if (started) return; started = true;
+    Object.entries(PLACEHOLDERS).forEach(([id, p]) => { if (!screens[id]) screens[id] = Object.assign({ layout: 'wide' }, placeholderDef(id, p)); });
     route = parseHash(); trail.push(location.hash);
     window.addEventListener('hashchange', () => { onHash(); });
     wideMQ.addEventListener && wideMQ.addEventListener('change', () => scheduleRender(false));
@@ -412,6 +667,7 @@
     Store.onStatus(renderStatus);
     Auth.onChange(() => scheduleRender(true));
     Store.start();
+    if (window.Teams) Teams.applyCss();
     renderStatus(Store.status());
     applyTheme();
     render(true);
@@ -420,6 +676,7 @@
     }
   }
   function renderStatus(info) {
+    document.querySelectorAll('#app-header [data-sync]').forEach(el => { el.outerHTML = UI.syncChip(info); });
     const el = document.getElementById('app-status');
     const def = screens['app.offline'];
     if (!el || !def) return;
@@ -429,9 +686,10 @@
   window.App = {
     registerScreen, registerAction, action, screens, actions,
     go, back, goTab, tabs, current: () => ({ id: route.id || (cur && cur.id), params: route.params }),
-    mode, setMode, viewer, viewerState, setViewer,
-    openSignIn, signOut, openAppearance, openSheet: o => UI.sheet.open(o),
-    theme, rerender: () => scheduleRender(false), start,
+    role, setRole, mode, setMode, viewer, viewerState, setViewer, isLiveMatch,
+    openSignIn, signOut, openAppearance, openPill, openSheet: o => UI.sheet.open(o),
+    findPeople, theme, rerender: () => scheduleRender(false), start,
+    PLACEHOLDERS: Object.freeze(Object.assign({}, PLACEHOLDERS)), ROLES,
   };
   document.addEventListener('DOMContentLoaded', start);
 })();

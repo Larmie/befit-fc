@@ -18,10 +18,16 @@ input, select, textarea { background: none; border: 0; outline: none; min-width:
 a { color: inherit; text-decoration: none; }
 svg { flex: none; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+/* Search / text boxes show focus on the box (.inp:focus-within ring), never as a white line on the
+   inner input, and never with the browser's own clear button (review round 5, bug 1 / checklist 23). */
+.inp input:focus-visible, .inp input:focus { outline: none; }
+input[type="search"]::-webkit-search-cancel-button, input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+input[type="search"] { -webkit-appearance: none; appearance: none; }
 [hidden] { display: none !important; }
 
-/* numbers are always Geist Mono, tabular */
+/* small numbers (minutes, columns) are Geist Mono, tabular; hero numerals use .hn (tokens.css) */
 .n, .num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+body { font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------- frame */
 .app { min-height: 100vh; min-height: 100dvh; }
@@ -43,7 +49,7 @@ body.no-nav .screen-host { padding-bottom: calc(var(--safe-b) + 96px); }
 .hd-btn { min-height: var(--h-target-player); display: inline-flex; align-items: center; gap: var(--sp-2); font-size: 13px; color: var(--ink2); padding: 0 2px; }
 .hd-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
 body[data-mode="referee"] .hd-btn { min-height: var(--h-target); }   /* referee targets: 48 */
-.wm { font-weight: 650; font-size: 13px; letter-spacing: .18em; white-space: nowrap; }
+.wm { font-weight: 700; font-size: 13px; letter-spacing: .2em; white-space: nowrap; }
 .wm em { font-style: normal; color: var(--ink3); }
 
 /* bottom nav: 64 high */
@@ -59,7 +65,13 @@ body[data-mode="referee"] .hd-btn { min-height: var(--h-target); }   /* referee 
   font-size: 12px; color: var(--ink3);
 }
 .nav-a svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; }
-.nav-a.on { color: var(--ink); }
+.nav-a { position: relative; }
+.nav-a.on { color: var(--ink); font-weight: 600; }
+.nav-a.on::before { content: ''; position: absolute; top: -1px; left: 30%; right: 30%; height: 2px; border-radius: 2px; background: var(--ink); }
+body.nav-hidden .nav, body.nav-hidden .rail { display: none !important; }
+body.nav-hidden .screen-host { padding-bottom: calc(var(--safe-b) + 96px); }
+body.nav-hidden { --float-bottom: calc(12px + var(--safe-b)); }
+@media (min-width: 960px) { body.no-nav .app, body.nav-hidden .app { grid-template-columns: minmax(0, 1fr); } }   /* no rail: the page uses the full width (Welcome, live console) */
 
 /* status slot (offline bar) sits under the header */
 #app-status:empty { display: none; }
@@ -100,10 +112,12 @@ body[data-mode="referee"] .hd-btn { min-height: var(--h-target); }   /* referee 
 }
 
 /* ---------------------------------------------------------------- utilities */
-.lbl { font-size: var(--fs-meta); color: var(--ink3); margin: 0 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); }
-.lbl b { color: var(--ink2); font-weight: 500; }
+/* section labels: 12/650 caps +0.09em ink3 (round 5); the right-hand count or link stays sentence case */
+.lbl { font-size: var(--fs-meta); font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); margin: 0 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); }
+.lbl b, .lbl a, .lbl button, .lbl .tm, .lbl .tc { color: var(--ink2); font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 12.5px; }
+.lbl a, .lbl button { min-height: var(--h-target-player); display: inline-flex; align-items: center; }
 .rows + .lbl, .card + .lbl, .grid2 + .lbl, .grid4 + .lbl, .chips + .lbl, .seg + .lbl, .btn + .lbl { margin-top: var(--sp-6); }
-.head { font-size: var(--fs-head); font-weight: 650; letter-spacing: -.025em; line-height: 1.15; }
+.head { font-size: var(--fs-head); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
 .sub { font-size: 13px; color: var(--ink3); }
 .muted { color: var(--ink2); }
 .faint { color: var(--ink3); }

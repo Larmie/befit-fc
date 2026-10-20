@@ -1,10 +1,27 @@
-/* BE Fit Club · css/welcome.css · Welcome ("Who are you?") — Phase 1, lead */
+/* BE Fit Club · css/welcome.css · the front door (round 5, lead) */
 .scr-welcome { max-width: 560px; margin: 0 auto; }
-.scr-welcome .wl-title { font-size: 28px; font-weight: 650; letter-spacing: -.025em; line-height: 1.15; margin: 6px 0 2px; }
-.scr-welcome .wl-sub { color: var(--ink3); font-size: 13px; margin-bottom: var(--sp-3); }
-.scr-welcome .wl-exits .btn { white-space: normal; text-align: center; line-height: 1.2; }
-.scr-welcome .wl-search { margin-top: 14px; }
-.scr-welcome .wl-lists { margin-top: 14px; }
-.scr-welcome .wl-lists .rows + .lbl { margin-top: var(--sp-6); }
-.scr-welcome .r .end { gap: 12px; }
-.scr-welcome .r .end .tm { min-width: 52px; }
+/* branded hero: two soft team glows at opposite corners (first team top-left, second bottom-right) */
+.scr-welcome .fd-brand { border-radius: 16px; padding: 16px; overflow: hidden; position: relative;
+  background:
+    radial-gradient(60% 70% at 0% 0%, color-mix(in srgb, var(--c1) 20%, transparent), transparent 70%),
+    radial-gradient(60% 70% at 100% 100%, color-mix(in srgb, var(--c2) 18%, transparent), transparent 70%),
+    var(--s1);
+  box-shadow: var(--edge), inset 0 0 0 1px var(--line); }
+[data-theme="light"] .scr-welcome .fd-brand {
+  background:
+    radial-gradient(60% 70% at 0% 0%, color-mix(in srgb, var(--c1) 12%, transparent), transparent 70%),
+    radial-gradient(60% 70% at 100% 100%, color-mix(in srgb, var(--c2) 10%, transparent), transparent 70%),
+    var(--s1); }
+.scr-welcome .fd-kick { font-size: 12px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); }
+.scr-welcome .fd-name { font-size: 26px; font-weight: 700; letter-spacing: -.025em; line-height: 1.15; margin: 4px 0 14px; }
+.scr-welcome .fd-next { font-size: 13px; color: var(--ink2); margin-top: 12px; }
+.scr-welcome .fd-find { margin-top: 16px; }
+.scr-welcome.is-typing .fd-find { margin-top: 0; }
+.scr-welcome .fd-find .inp { height: 56px; border-radius: 14px; background: var(--s1); box-shadow: inset 0 0 0 1.5px var(--s3); font-size: 15px; }
+.scr-welcome .fd-find .inp:focus-within { box-shadow: inset 0 0 0 1.5px var(--ink2); }
+.scr-welcome [data-fd-res]:not(:empty) { margin-top: 16px; }
+.scr-welcome [data-fd-opts] { margin-top: 16px; }
+.scr-welcome .fd-opt { min-height: 68px; gap: 12px; }
+.scr-welcome .fd-opt .nm { font-size: 15px; font-weight: 650; }
+.scr-welcome .r .end { gap: 8px; }
+.scr-welcome .fd-notyou { display: flex; justify-content: center; margin: 8px auto 0; }
