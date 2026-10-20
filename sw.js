@@ -9,7 +9,7 @@ const SHELL = [
   '/', '/classic.html', '/manifest.json', '/icon.svg',
   '/css/tokens.css', '/css/base.css', '/css/components.css', '/css/welcome.css', '/css/player.css',
   '/css/setup.css', '/css/console.css', '/css/fix.css', '/css/admin.css',
-  '/js/core/config.js', '/js/core/store.js', '/js/core/scoring.js', '/js/core/pay.js', '/js/core/clock.js',
+  '/js/core/config.js', '/js/core/practice.js', '/js/core/store.js', '/js/core/scoring.js', '/js/core/pay.js', '/js/core/clock.js',
   '/js/core/auth.js', '/js/core/save.js', '/js/ui/components.js', '/js/ui/shell.js',
   '/js/screens/welcome.js', '/js/screens/player.js', '/js/screens/setup.js', '/js/screens/console.js',
   '/js/screens/fix.js', '/js/screens/admin.js',
