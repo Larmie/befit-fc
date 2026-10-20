@@ -1,3 +1,96 @@
 /* BE Fit Club · css/console.css · OWNER: Phase 2 · Console builder · ref.console, ref.events (.scr-ref-console, .scr-ref-events, .sh-console-*)
    Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
    no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+
+/* ---------------------------------------------------------------- header ⋯ (console only) */
+.hd .cn-more { width: var(--h-target); height: var(--h-target); justify-content: center; padding: 0; border-radius: var(--r-chip); background: var(--s1); color: var(--ink); box-shadow: var(--ring); }
+.hd .cn-more svg { width: 22px; height: 22px; stroke-width: 2.4; }
+.hd .cn-more:active { background: var(--s2); }
+
+/* ---------------------------------------------------------------- score + clock */
+.scr-ref-console .cn-score { padding: 2px 0 14px; }
+.scr-ref-console .cn-score .clock { font-size: 22px; }
+.scr-ref-console .cn-pill { text-align: center; margin-top: 10px; }
+
+/* ---------------------------------------------------------------- Pause · + Stoppage · + Player */
+.scr-ref-console .cn-ctl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+.scr-ref-console .cn-ctl > .btn { padding: 0 6px; }
+.scr-ref-console .cn-ctl .btn.cn-on { background: var(--ink); color: var(--on-ink); }
+.scr-ref-console .cn-ctl-idle { grid-template-columns: 2fr 1fr; }
+.scr-ref-console .cn-ctl-idle > .btn { height: 56px; }
+.scr-ref-console .cn-ctl-ft { grid-template-columns: 1fr; }
+.scr-ref-console .cn-kick { height: 56px; font-weight: 650; }
+
+/* ---------------------------------------------------------------- Goal tiles (92) + action row (72) */
+.scr-ref-console .cn-goals { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
+.scr-ref-console .cn-goal { height: var(--h-goal); min-height: var(--h-goal); width: 100%; padding: 0 16px; }
+.scr-ref-console .cn-goal b { font-size: var(--fs-title); }
+.scr-ref-console .cn-goal small { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+.scr-ref-console .cn-acts { grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); margin-top: var(--sp-2); }
+.scr-ref-console .cn-act { height: var(--h-action); min-height: var(--h-action); width: 100%; }
+.scr-ref-console .cn-act svg { margin-bottom: 6px; }
+.scr-ref-console .cn-off { opacity: .45; }
+.scr-ref-console .cn-off:active { transform: none; }
+
+/* ---------------------------------------------------------------- Latest feed */
+.scr-ref-console .cn-latest { margin: var(--sp-4) 0 var(--sp-1); align-items: center; }
+.scr-ref-console .cn-all { min-height: var(--h-target); min-width: var(--h-target); padding: 0 2px 0 12px; margin: -10px 0; font-size: 13px; color: var(--ink2); font-weight: 500; }
+.scr-ref-console .cn-none { color: var(--ink3); }
+.cn-evr .grow { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 2px; }
+.cn-evr .nm { font-weight: 550; overflow-wrap: anywhere; }
+.cn-evr .kind { display: inline-flex; align-items: baseline; gap: 5px; font-size: 13px; color: var(--ink3); }
+.cn-evr .card-glyph { align-self: center; }
+.cn-evr .min { align-self: center; width: auto; min-width: 40px; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- All events */
+.scr-ref-events .cn-evtop { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.scr-ref-events .cn-filters .chips { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
+.scr-ref-events .chip.ref { background: var(--s1); box-shadow: var(--ring); }
+.scr-ref-events .chip.ref.on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.scr-ref-events .cn-evlist .r { min-height: 52px; }
+
+/* ---------------------------------------------------------------- sheets: shared */
+.sh-console h4 .bar-team { flex: none; }
+.sh-console .lbl { margin-bottom: var(--sp-2); }
+.sh-console .r.is-saving, .sh-console .chip.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); }
+.sh-console .r.is-saving .tally { color: inherit; opacity: .7; }
+.sh-console .ptile.is-saving .pt-name { -webkit-line-clamp: 2; }
+
+/* Goal sheet */
+.sh-console-goal .cn-steplbl { margin-top: 2px; }
+.sh-console-goal .cn-links { display: flex; flex-direction: column; align-items: center; margin-top: var(--sp-2); }
+.sh-console-goal .cn-link { min-height: var(--h-target); padding: 0 12px; font-size: 13.5px; }
+.sh-console-goal .cn-scorer { margin: 4px 0 var(--sp-4); }
+.sh-console-goal .cn-scorer .r { min-height: 56px; }
+.sh-console-goal .cn-scorer .meta { display: block; }
+.sh-console-goal .cn-scorer .nm { display: block; font-size: 16px; }
+.sh-console-goal .cn-change { min-height: var(--h-target); padding: 0 14px; margin-right: -8px; font-size: 13.5px; color: var(--ink2); font-weight: 550; border-radius: 10px; }
+.sh-console-goal .cn-change:active { background: var(--s3); }
+.sh-console-goal .cn-noassist { margin-bottom: var(--sp-2); height: 56px; min-height: 56px; }
+
+/* Block / Clear / Card: list scrolls, everything above it stays put, Cancel pinned */
+.sh-console-act { height: 90vh; height: 90dvh; }
+.sh-console-act .sheet-b { display: flex; flex-direction: column; overflow: hidden; }
+.sh-console-act .sheet-b > * { flex: none; }
+.sh-console-act .cn-cardseg { margin-bottom: var(--sp-3); }
+.sh-console-act .cn-cardseg > button .card-glyph { flex: none; }
+.sh-console-act .cn-reclbl { margin: var(--sp-4) 0 var(--sp-2); }
+.sh-console-act .cn-recent { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
+.sh-console-act .cn-teams { margin-top: var(--sp-3); }
+.sh-console-act .cn-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: var(--sp-3) calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter); }
+.sh-console-act .cn-prow { min-height: 60px; padding: 8px 16px; }
+.sh-console-act .cn-prow .grow { display: flex; flex-direction: column; gap: 3px; }
+.sh-console-act .cn-prow .tally { color: var(--ink3); }
+.sh-console-act .sheet-f .btn { flex: none; }
+
+/* Save: keepers by team */
+.sh-console-save .cn-keepers { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.sh-console-save .cn-kcol { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.sh-console-save .cn-kcol .lbl { margin-bottom: 0; }
+.sh-console-save .cn-kcol .ptile .pt-name { font-size: 17px; }
+
+/* ⋯ menu */
+.sh-console-menu .cn-first { min-height: 56px; background: var(--hl); box-shadow: inset 3px 0 0 var(--ink); }
+.sh-console-menu .r .meta { white-space: nowrap; }
+.sh-console-menu .sheet-f { padding-top: var(--sp-3); }
+.hd .cn-back { min-height: var(--h-target); padding-right: 12px; }

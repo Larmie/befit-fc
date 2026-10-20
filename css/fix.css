@@ -1,3 +1,103 @@
 /* BE Fit Club · css/fix.css · OWNER: Phase 2 · Fix builder · ref.ftcheck, ref.edit + event/player/add-missed sheets (.scr-ref-ftcheck, .scr-ref-edit, .sh-fix-*)
    Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
    no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+
+/* ---------------------------------------------------------------- shared: field rows, steppers, links */
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-f { min-height: 52px; gap: 12px; }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-k { width: 64px; flex: none; font-size: 13px; color: var(--ink3); }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-v { font-weight: 550; overflow-wrap: anywhere; min-width: 0; }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-v b { font-weight: 650; }
+:is(.scr-ref-edit, .sh-fix) .fx-ph { color: var(--ink3); font-weight: 400; }
+:is(.scr-ref-edit, .sh-fix) .fx-step { display: flex; align-items: center; gap: 8px; flex: none; }
+:is(.scr-ref-edit, .sh-fix) .fx-minv { min-width: 48px; text-align: center; font-weight: 600; font-size: 15px; }
+:is(.scr-ref-edit, .sh-fix) .fx-f .seg { flex: none; width: 184px; background: var(--s3); }
+:is(.scr-ref-edit, .sh-fix) .fx-f .seg > button { min-height: 44px; }
+:is(.scr-ref-edit, .sh-fix) .fx-f .seg > button.on { background: var(--ink); color: var(--on-ink); }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-link { min-height: var(--h-target); color: var(--ink2); font-weight: 550; }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-link .n { color: var(--ink3); margin-left: 4px; }
+.sh-fix .link { min-height: var(--h-target); }
+
+/* event rows (Timeline, player sheet, flags) */
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-ev { align-items: center; }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-ev .kind { margin-left: 2px; }
+:is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-evm { display: block; font-size: var(--fs-meta); color: var(--ink3); margin-top: 2px; overflow-wrap: anywhere; }
+
+/* points change panel */
+.sh-fix .fx-delta { margin-top: var(--sp-3); }
+.sh-fix .fx-dh { font-size: var(--fs-meta); color: var(--ink3); margin-bottom: 2px; }
+.sh-fix .fx-dn { min-width: 0; overflow-wrap: anywhere; }
+.sh-fix .fx-dv { color: var(--ink2); white-space: nowrap; flex: none; }
+.sh-fix .fx-dv b { color: var(--ink); display: inline-block; min-width: 30px; text-align: right; }
+.sh-fix .fx-score .fx-dv b { min-width: 0; }
+
+/* ---------------------------------------------------------------- sheets */
+.sh-fix h4 .end { flex: none; }
+.sh-fix .fx-logged { font: 400 var(--fs-meta) var(--font); color: var(--ink3); }
+.sh-fix .fx-ptsbig { font: 600 var(--fs-title) var(--mono); color: var(--ink); }
+.sh-fix .fx-ptsl { font: 400 var(--fs-meta) var(--font); color: var(--ink3); }
+.sh-fix .fx-foot { display: flex; flex-direction: column; gap: var(--sp-2); }
+.sh-fix .fx-foot:empty { display: none; }
+.sh-fix .fx-acts { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); }
+.sh-fix .fx-acts .link { font-size: 14px; font-weight: 600; }
+.sh-fix .fx-acts .link:not(.warn) { color: var(--ink2); font-weight: 500; flex: none; }
+.sh-fix .fx-rm { flex-direction: column; align-items: flex-start; justify-content: center; text-align: left; min-width: 0; padding: 4px 0; }
+.sh-fix .fx-rm .fx-eff { font-size: var(--fs-meta); font-weight: 500; color: var(--ink2); overflow-wrap: anywhere; }
+.sh-fix .fx-nonewrap { margin-bottom: var(--sp-2); }
+.sh-fix .fx-none { height: var(--h-tile); }
+.sh-fix .fx-sq-h { justify-content: flex-start; margin-top: 2px; }
+.sh-fix .fx-sq [hidden] { display: none; }
+.sh-fix .fx-type { height: var(--h-target); font-size: 13.5px; padding: 0 4px; white-space: normal; line-height: 1.15; text-align: center; }
+.sh-fix .fx-types { gap: var(--sp-2); }
+.sh-fix .fx-math { background: var(--s2); border-radius: var(--r-btn); padding: 8px 12px; }
+.sh-fix .fx-mr { display: flex; justify-content: space-between; gap: var(--sp-3); font-size: 13px; color: var(--ink2); padding: 3px 0; }
+.sh-fix .fx-mr .n { color: var(--ink); font-weight: 600; flex: none; }
+.sh-fix .fx-none-ev { font-size: 13px; color: var(--ink3); padding: 12px 0 0; }
+.sh-fix .fx-off { margin-top: var(--sp-3); font-weight: 600; }
+.sh-fix .fx-tick { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--s3); }
+.sh-fix .fx-tick.on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.sh-fix [data-tap="up-tick"][hidden], .sh-fix [data-tap="ap-pick"][hidden] { display: none; }
+.sh-fix .seg.ref > button { min-height: var(--h-target); }
+
+/* ---------------------------------------------------------------- Edit match */
+.scr-ref-edit .fx-tabn { font-size: var(--fs-meta); color: var(--ink3); margin-left: 4px; }
+.scr-ref-edit .tabs2 > button.on .fx-tabn { color: var(--ink2); }
+.scr-ref-edit .fx-players .r { min-height: 56px; }
+.scr-ref-edit .fx-players .tally { display: block; margin-top: 3px; }
+.scr-ref-edit .chips { margin-bottom: var(--sp-3); }
+.scr-ref-edit .fx-gl { margin-top: var(--sp-4); }
+.scr-ref-edit .fx-tl > .fx-gl:first-child { margin-top: 0; }
+.scr-ref-edit .fx-dock { position: sticky; bottom: calc(var(--h-nav) + var(--safe-b) + 12px); margin-top: var(--sp-4); z-index: 5; }
+.scr-ref-edit .fx-dock .btn { box-shadow: var(--shadow-float); }
+.scr-ref-edit .fx-link { display: inline-flex; align-items: center; margin-top: var(--sp-2); }
+.scr-ref-edit .fx-date { font: 500 15px var(--mono); color: var(--ink); width: 100%; min-height: 40px; color-scheme: inherit; }
+.scr-ref-edit .fx-scorecard { display: block; width: 100%; text-align: left; }
+.scr-ref-edit .fx-scorecard:active { background: var(--s2); }
+.scr-ref-edit .fx-ft-mid, .scr-ref-ftcheck .fx-ft-mid { font-size: var(--fs-meta); color: var(--ink3); }
+.scr-ref-edit .empty + .btn { margin-top: var(--sp-2); }
+.scr-ref-edit .fx-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+@media (min-width: 960px) {
+  .scr-ref-edit .fx-dock { position: static; }
+  .scr-ref-edit .fx-dock .btn { box-shadow: none; }
+}
+
+/* ---------------------------------------------------------------- Full-time check */
+.scr-ref-ftcheck .fx-ftline { font-size: var(--fs-meta); color: var(--ink3); text-align: center; margin-top: var(--sp-3); }
+.scr-ref-ftcheck .fx-ft-t { font-weight: 600; }
+.scr-ref-ftcheck .fx-ft-s { font-size: 13px; color: var(--ink2); margin: 4px 0 12px; overflow-wrap: anywhere; }
+.scr-ref-ftcheck .fx-two { height: auto; min-height: 56px; flex-direction: column; gap: 2px; white-space: normal; text-align: center; line-height: 1.2; padding: 6px 8px; }
+.scr-ref-ftcheck .fx-eff { font-size: var(--fs-meta); font-weight: 500; opacity: .75; }
+.scr-ref-ftcheck .flag .rows { background: var(--s2); box-shadow: none; }
+.scr-ref-ftcheck .fx-links { display: flex; justify-content: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-6); }
+/* Publish is pinned: the page fills the screen and the button sits 12 px above the nav (sticky when the list is long) */
+.scr-ref-ftcheck { display: flex; flex-direction: column; min-height: calc(100vh - var(--h-header) - var(--h-nav) - var(--safe-b) - 28px); min-height: calc(100dvh - var(--h-header) - var(--h-nav) - var(--safe-b) - 28px); }
+.scr-ref-ftcheck .fx-pub { position: sticky; bottom: calc(var(--h-nav) + var(--safe-b) + 12px); margin-top: auto; padding-top: var(--sp-6); z-index: 5; }
+.scr-ref-ftcheck .fx-pub .btn { box-shadow: var(--shadow-float); }
+.scr-ref-ftcheck .fx-pubhead { display: flex; gap: var(--sp-3); align-items: center; margin: 8px 0 4px; }
+.scr-ref-ftcheck .fx-bigtick { width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; font-size: 18px; font-weight: 700; flex: none; }
+.scr-ref-ftcheck .fx-pubt { font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+.scr-ref-ftcheck .fx-mv { color: var(--ink2); font-size: 13px; white-space: nowrap; }
+.scr-ref-ftcheck .bk { font-weight: 600; }
+@media (min-width: 960px) {
+  .scr-ref-ftcheck { min-height: calc(100vh - var(--h-header) - 40px); }
+  .scr-ref-ftcheck .fx-pub { bottom: 24px; }
+}

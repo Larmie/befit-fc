@@ -1,3 +1,119 @@
 /* BE Fit Club · css/admin.css · OWNER: Phase 2 · Admin builder · ref.home, ref.pastGame, ref.squad, ref.player, ref.money, ref.moneyDay, offline bar (.scr-ref-*, .offline-*)
    Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
    no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+
+/* ---------------------------------------------------------------- shared bits (scoped per admin screen) */
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-moneyDay, .scr-ref-squad, .scr-ref-player, .scr-ref-pastGame) .adm-narrow { max-width: 640px; margin: 0 auto; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) button.card,
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) .card.adm-line { width: 100%; text-align: left; display: flex; align-items: center; gap: 10px; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) .adm-line { min-height: var(--h-target); padding: 12px 14px; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) button.adm-line:active { background: var(--s2); }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) .adm-line .grow { flex: 1; min-width: 0; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) .adm-line-t { font-weight: 550; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) .adm-line-r { font-size: var(--fs-meta); color: var(--ink2); text-align: right; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-squad, .scr-ref-player) .warnchip.adm-ink { color: var(--ink); font-size: 13px; }
+:is(.scr-ref-home, .scr-ref-money, .scr-ref-moneyDay, .scr-ref-squad, .scr-ref-player, .scr-ref-pastGame, .sh-admin-stats) .link { min-height: var(--h-target); }
+
+/* colour squares + score (match rows, admin card) */
+:is(.scr-ref-home, .scr-ref-money) .adm-score { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; white-space: nowrap; }
+:is(.scr-ref-home, .scr-ref-money) .adm-sq { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--tc); flex: none; }
+:is(.scr-ref-home, .scr-ref-money) .adm-dash { color: var(--ink3); }
+
+/* ---------------------------------------------------------------- ref.home */
+.scr-ref-home .adm-start { height: 60px; font-size: 16px; }
+.scr-ref-home .adm-card-wrap:not(:empty) { margin-top: var(--sp-6); }
+.scr-ref-home .adm-home-b { margin-top: var(--sp-6); }
+.scr-ref-home .adm-stack > * + * { margin-top: var(--card-gap); }
+.scr-ref-home .adm-new { box-shadow: inset 3px 0 0 var(--ink), var(--ring); }
+.scr-ref-home .adm-new-t { font-size: 15px; font-weight: 600; }
+.scr-ref-home .adm-new-time { font-size: var(--fs-meta); }
+.scr-ref-home .adm-new-score { margin: 10px 0 8px; }
+.scr-ref-home .adm-ft { font-size: var(--fs-meta); color: var(--ink3); }
+.scr-ref-home .adm-new-by { font-size: 13px; color: var(--ink2); }
+.scr-ref-home .adm-new-fix { font-size: var(--fs-meta); color: var(--ink3); margin-top: 4px; overflow-wrap: anywhere; }
+@media (min-width: 960px) {
+  .scr-ref-home .adm-home { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+  .scr-ref-home .adm-home-a { position: sticky; top: calc(var(--h-header) + var(--sp-6)); }
+  .scr-ref-home .adm-home-b { margin-top: 0; }
+}
+
+/* ---------------------------------------------------------------- ref.pastGame */
+:is(.scr-ref-pastGame, .sh-admin-date) .adm-date { gap: 12px; }
+:is(.scr-ref-pastGame, .sh-admin-date) .adm-date-l { font-size: var(--fs-meta); color: var(--ink3); flex: none; }
+:is(.scr-ref-pastGame, .sh-admin-date) .adm-date input { font-family: var(--mono); font-size: 16px; color-scheme: inherit; }
+.scr-ref-pastGame .adm-addteam { margin-top: 4px; min-height: var(--h-target); }
+.scr-ref-pastGame .adm-plus { width: 32px; height: 32px; border-radius: 50%; background: var(--s2); display: grid; place-items: center; }
+.scr-ref-pastGame .adm-plus svg { width: 16px; height: 16px; stroke: var(--ink2); }
+.scr-ref-pastGame .card .score .g { font-size: 44px; }
+.scr-ref-pastGame .adm-ft { font-size: var(--fs-meta); color: var(--ink3); }
+.sh-admin-stats .adm-steps .r { min-height: 60px; gap: 12px; }
+.sh-admin-stats .adm-stepv { width: 32px; text-align: center; font-size: 18px; font-weight: 600; }
+.sh-admin-stats .adm-center { align-self: center; }
+
+/* ---------------------------------------------------------------- ref.squad · ref.player */
+:is(.scr-ref-squad, .scr-ref-player) .adm-warn { color: var(--warn); }
+:is(.scr-ref-squad, .scr-ref-player) .r .meta { margin-top: 3px; }
+.scr-ref-squad .adm-side > .card .lbl:first-child { margin-top: 0; }
+.scr-ref-player .adm-ed-name { overflow-wrap: anywhere; }
+.scr-ref-player .adm-ed-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); font-size: 13px; color: var(--ink2); flex-wrap: wrap; }
+.scr-ref-player .adm-twins { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 6px; }
+.scr-ref-player .adm-twin { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; min-width: var(--h-target); min-height: var(--h-target); justify-content: center; padding: 0 4px; }
+.scr-ref-player .adm-delflag { margin-bottom: var(--sp-3); font-size: 13px; }
+.scr-ref-player .adm-edcard { padding: var(--sp-6); }
+.sh-admin-merge .delta .dr span { min-width: 0; overflow-wrap: anywhere; }
+.sh-admin-merge .delta .dr .faint { display: block; font-size: var(--fs-meta); }
+.sh-admin-merge .adm-total { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 8px; font-weight: 600; }
+.sh-admin-more .sub { margin-bottom: var(--sp-3); }
+
+/* ---------------------------------------------------------------- money: list */
+.scr-ref-money .adm-kicker, .scr-ref-moneyDay .adm-kicker { font-size: var(--fs-meta); color: var(--ink3); }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-big { display: flex; align-items: baseline; gap: 10px; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-big .n { font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-big-l { color: var(--ink3); font-size: 13px; }
+.scr-ref-money .adm-money-b { margin-top: var(--sp-6); }
+.scr-ref-money .r .end .warnchip { white-space: nowrap; }
+@media (min-width: 960px) {
+  .scr-ref-money .adm-money { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: var(--sp-6); align-items: start; }
+  .scr-ref-money .adm-money-a { position: sticky; top: calc(var(--h-header) + var(--sp-6)); }
+  .scr-ref-money .adm-money-b { margin-top: 0; }
+}
+
+/* ---------------------------------------------------------------- money: the register */
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-progline { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); font-size: var(--fs-meta); color: var(--ink2); margin: 8px 0; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-pay { min-height: 64px; gap: 12px; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 3px; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-amt {
+  height: var(--h-target); width: 72px; flex: none; border-radius: var(--r-btn);
+  background: var(--s2); color: var(--ink); font-size: 14px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+  transition: transform .08s ease;
+}
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-amt:active { transform: scale(.97); background: var(--s3); }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-amt.on { background: var(--ink); color: var(--on-ink); }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-amt.on:active { background: var(--ink-pressed); }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-ck { font-family: var(--font); }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-done { display: flex; gap: 12px; align-items: center; margin: 8px 0 14px; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-done-tick { width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; font-size: 18px; font-weight: 700; flex: none; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-done-t { font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+:is(.scr-ref-money, .scr-ref-moneyDay) .adm-savebar b { font-weight: 650; }
+.sh-admin-amount .adm-amtrow > button { flex: 1; min-width: 72px; font-size: 15px; }
+.sh-admin-amount .adm-cur { color: var(--ink3); font-family: var(--mono); }
+.sh-admin-amount .adm-other input { font-family: var(--mono); }
+
+/* ---------------------------------------------------------------- Can't connect */
+#app-status .adm-offline { min-height: var(--h-target); padding: 4px 4px 4px 14px; }
+#app-status .adm-offline .grow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#app-status .adm-offline .ub { height: 40px; min-width: 72px; }
+#app-status .adm-nodata {
+  position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--ink);
+  display: flex; flex-direction: column; padding: 18px var(--gutter) calc(24px + var(--safe-b));
+}
+#app-status .adm-nodata .wm { align-self: flex-start; }
+#app-status .adm-nodata-c { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+#app-status .adm-nodata-c svg { width: 40px; height: 40px; stroke: var(--warn); fill: none; stroke-width: 1.6; margin-bottom: 4px; }
+#app-status .adm-nodata-c b { font-size: var(--fs-head); font-weight: 650; letter-spacing: -.02em; }
+#app-status .adm-nodata .adm-retry { width: auto; min-width: 160px; margin-top: 14px; }
+
+/* header ⋯ on the payment register (Clear payment record lives behind it) */
+#app-header .adm-more { min-width: var(--h-target); min-height: var(--h-target); justify-content: center; }
+#app-header .adm-more svg { width: 24px; height: 24px; }

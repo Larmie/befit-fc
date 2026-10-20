@@ -1,37 +1,693 @@
 /* ============================================================================
    BE Fit Club · js/screens/setup.js · NIGHT SETUP             OWNER: Phase 2 · Setup builder
    ----------------------------------------------------------------------------
-   STUB from Phase 1. Replace the placeholders; keep the ids, params and action names.
-   Styles in css/setup.css, scoped under .scr-ref-setup and .sh-setup-* (sheets).
+   How the referee gets the night going and copes with people arriving all match.
+   Styles in css/setup.css, scoped under .scr-ref-setup and .sh-setup (sheets).
 
    SCREENS
      'ref.setup'          tab match · layout phone · console   "Who's here?" before kick-off:
-                          Green · n | Red · n switch, "Usually here" chips, search, add a name,
-                          Small poles | Big poles, "Kick off · n players" → creates the session
-                          (status 'active', mode 'live', teams, format:{start}) and opens 'ref.console'.
+                          Green · n | Red · n switch, search ("Add a name": existing names first, then
+                          "Someone new"), "Usually here" chips (recent players first), the side's rows,
+                          Small poles | Big poles (+ one keeper per side when big), "Kick off · n players"
+                          → creates the session like classic (status 'active', mode 'live', teams) plus
+                          format:{start, keepers?} and a running timer, then opens 'ref.console'.
+                          The list being built is kept on the phone (localStorage) until kick-off.
    ACTIONS (others call these with App.action(name, args))
-     'setup.newPerson'    ({ name?, team?, onDone(pid) })  "Add someone": existing names first (duplicate
-                          check as you type, case-insensitive, also "contains"), else name only + side.
-                          New players get defaultPosition 'MID', defaultTeam = side, needsDetails:true.
-     'setup.addArrival'   ({ sid })   "Who's arrived?" mid-match sheet (the console's "+ Player")
-     'setup.teamsTonight' ({ sid })   move players between sides, "Moved 27'" tag, 9 outfield + 1 keeper per side
-     'setup.bigPoles'     ({ sid })   pick one keeper per side → format.switchedAt = first big-poles minute,
-                          format.keepers = { team: pid }, and set those players' position to 'GK'.
+     'setup.newPerson'    ({ name?, team?, teams?, sid?, position?, onDone(pid, team)? })
+                          "Add someone": existing names first (duplicate check as you type, case-insensitive,
+                          "contains"; same-name entries grouped: "3 entries with this name"), else name only +
+                          one tap on "+ Green" / "+ Red". New players: defaultPosition 'MID' (or `position`),
+                          defaultTeam = side, needsDetails:true, createdBy, createdAt.
+                          With onDone: picking an existing name calls onDone(pid) (no write); a new name is
+                          written, then onDone(pid, team). Without onDone, inside a match (sid, or the active
+                          session) the person is also put on that side tonight, in the same write.
+     'setup.addArrival'   ({ sid })   "Who's arrived?": usually-here rows not on yet + search; one tap on a side
+                          adds them at once (Save.run: Saving… → Undo 5 s), the sheet stays open for the next.
+     'setup.teamsTonight' ({ sid })   one team per tab, full-width rows, a quiet "→ Red" per row, "Moved 27'" tag.
+     'setup.bigPoles'     ({ sid })   one keeper per side → format.switchedAt (first big-poles minute),
+                          format.keepers = { team: pid }, those players' position 'GK'. Score untouched.
+   RULES KEPT HERE (one place)
+     · Up to 9 outfield + 1 keeper per side: the 10th outfield add or move needs a second tap (toast says so).
+     · A keeper slot exists only on big poles. Someone whose usual position is GK joins as MID on small poles,
+       or when his side already has a keeper; on big poles he fills an empty keeper slot.
+     · Every write goes through Save.run (lock → Saving… → Undo 5 s → or Not saved + Retry); undo writes back
+       exactly what was there before (one atomic multi-path write each way).
+   DATA WRITTEN (all additive; classic still reads every session)
+     sessions/{sid} = { date, status:'active', mode:'live', teams:{team:{players:{pid:{position}}}},
+                        format:{ start:'small'|'big', keepers?:{team:pid} }, timer: Clock.kickOff(now) }
+     sessions/{sid}/teams/{team}/players/{pid} = { position, arrived?:{at:min}, moved?:{from, at:min} }
+     sessions/{sid}/format/switchedAt = min · format/keepers/{team} = pid
+     players/{pid} = { name, defaultPosition, defaultTeam, needsDetails:true, createdBy, createdAt }
    Design: section 03 flows 1, 2, 3 and "New game and team picking". Checklist items 5–8.
    ========================================================================== */
 (function () {
   'use strict';
-  const ph = (title, what) => `<div class="placeholder"><b>${UI.esc(title)}</b> · ${UI.esc(what)}</div>`;
+  const esc = UI.esc, fmt = UI.fmt, T = UI.fmt.team;
+  const CFG = window.BF_CONFIG;
+  const MAX_OUT = CFG.maxOutfield || 9;
+  const POSITIONS = ['GK', 'DEF', 'MID', 'FWD'];
+  const DRAFT_KEY = 'befit_setup_draft';       // the "Who's here?" list being built (this phone only)
+  const KICK_OFF_STARTS_CLOCK = true;          // "Kick off · n players" also starts the match clock
+
+  // ======================================================================== people
+  const norm = s => String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase();
+  const cleanName = s => { const t = String(s || '').trim().replace(/\s+/g, ' '); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; };
+  const nameOf = pid => (Store.player(pid) || {}).name || '?';
+  const defPos = pid => { const p = (Store.player(pid) || {}).defaultPosition; return POSITIONS.includes(p) ? p : 'MID'; };
+  function appsOf(pid) { try { return (Scoring.seasonStats(pid) || {}).apps || 0; } catch (e) { return 0; } }
+  const plural = (n, w) => fmt.plural(n, w);
+
+  // Recent players first: weighted appearances over the last 8 matches (newest counts most).
+  let recCache = { v: -1, map: {} };
+  function recency() {
+    if (recCache.v === Store.version) return recCache.map;
+    const map = {};
+    Scoring.completedSessions().filter(x => (x.sess.mode || 'live') !== 'history').slice(0, 8).forEach(({ sess }, i) => {
+      Scoring.sessPlayers(sess).forEach(p => {
+        const r = map[p.pid] || (map[p.pid] = { n: 0, w: 0, last: sess.date || '' });
+        r.n++; r.w += 8 - i;
+      });
+    });
+    recCache = { v: Store.version, map };
+    return map;
+  }
+  function usual(exclude, limit) {
+    const rec = recency();
+    return Object.keys(rec).filter(pid => Store.player(pid) && !exclude(pid))
+      .sort((a, b) => rec[b].w - rec[a].w || String(rec[b].last).localeCompare(String(rec[a].last)) || nameOf(a).localeCompare(nameOf(b)))
+      .slice(0, limit || 30);
+  }
+  function lastPlayed(pid) { const r = recency()[pid]; return r ? r.last : ''; }
+
+  // Duplicate check: case-insensitive "contains" (both ways), same names grouped together.
+  function search(q, limit) {
+    const nq = norm(q);
+    if (!nq) return [];
+    const groups = new Map();
+    for (const [pid, p] of Object.entries(Store.players())) {
+      if (!p || !p.name) continue;
+      const nn = norm(p.name);
+      if (!(nn.includes(nq) || (nn.length >= 3 && nq.includes(nn)))) continue;
+      if (!groups.has(nn)) groups.set(nn, []);
+      groups.get(nn).push(pid);
+    }
+    const rank = nn => nn === nq ? 0 : nn.startsWith(nq) ? 1 : (' ' + nn).includes(' ' + nq) ? 2 : nn.includes(nq) ? 3 : 4;
+    return Array.from(groups.entries()).map(([nn, pids]) => {
+      pids.sort((a, b) => appsOf(b) - appsOf(a) || String(lastPlayed(b)).localeCompare(String(lastPlayed(a))) || a.localeCompare(b));
+      return { nn, pids, pid: pids[0], r: rank(nn), apps: Math.max(...pids.map(appsOf)) };
+    }).sort((a, b) => a.r - b.r || b.apps - a.apps || a.nn.localeCompare(b.nn)).slice(0, limit || 8);
+  }
+
+  // ======================================================================== teams in a match
+  // Teams of a night: what the session has, topped up to two from the club's order (never hard-coded).
+  function nightTeams(keys) {
+    const list = Array.from(new Set((keys || []).filter(Boolean)));
+    for (const t of CFG.teams) { if (list.length >= 2) break; if (!list.includes(t)) list.push(t); }
+    return Scoring.orderTeams(list);
+  }
+  const matchTeams = sess => nightTeams(Object.keys((sess && sess.teams) || {}));
+  function rosterOf(sess) {                               // pid → { team, entry }
+    const out = {};
+    for (const [team, td] of Object.entries((sess && sess.teams) || {})) {
+      for (const [pid, e] of Object.entries((td && td.players) || {})) out[pid] = { team, entry: e || {} };
+    }
+    return out;
+  }
+  function counts(list) {                                 // list of positions → { out, gk, all }
+    const gk = list.filter(p => p === 'GK').length;
+    return { gk, out: list.length - gk, all: list.length };
+  }
+  const sideCounts = (roster, team) => counts(Object.values(roster).filter(r => r.team === team).map(r => r.entry.position));
+  const keeperOn = (roster, team) => Object.keys(roster).find(pid => roster[pid].team === team && roster[pid].entry.position === 'GK') || null;
+
+  // The minute stamped on anything done right now (same as Clock.stamp); null before kick-off.
+  function nowMinute(sess) { return Clock.status(sess) === 'idle' ? null : Clock.minute(sess); }
+  // First big-poles minute: while paused (half time at 45:00) play resumes in the next minute (46').
+  function switchMinute(sess) {
+    const st = Clock.status(sess);
+    if (st === 'idle') return null;
+    if (st === 'paused') return Math.floor((Clock.elapsedMs(sess) || 0) / 60000) + 1;
+    return Clock.minute(sess);
+  }
+  // Where someone joining a match plays (see RULES in the header).
+  function joinPos(sess, pid, team, roster, wanted) {
+    const pos = POSITIONS.includes(wanted) ? wanted : defPos(pid);
+    if (pos !== 'GK') return pos;
+    return Scoring.formatOf(sess).everBig && !keeperOn(roster, team) ? 'GK' : 'MID';
+  }
+
+  // 9 outfield per side: the 10th needs a second tap within 4 s.
+  let armed = null;
+  function okToAdd(team, outfield, isKeeper, key) {
+    if (isKeeper || outfield < MAX_OUT) return true;
+    const t = Date.now();
+    if (armed && armed.key === key && t < armed.until) { armed = null; return true; }
+    armed = { key, until: t + 4000 };
+    UI.toast(`${T(team)} has ${outfield} outfield · tap again to add`);
+    return false;
+  }
+
+  // ======================================================================== writes
+  // One atomic write; Undo writes back exactly what was there (same paths, old values).
+  function saveUpdates(updates, o) {
+    const reverse = {};
+    Object.keys(updates).forEach(p => { const v = Store.get(p); reverse[p] = v === undefined ? null : JSON.parse(JSON.stringify(v)); });
+    return Save.run(Object.assign({}, o, { write: () => Store.multi(updates), undo: () => Store.multi(reverse) }));
+  }
+  const tp = (sid, team, pid) => `sessions/${sid}/teams/${team}/players/${pid}`;
+
+  function addToMatch(sid, pid, team, o) {
+    o = o || {};
+    const sess = Store.session(sid);
+    if (!sess) { UI.toast('No game on', { err: true }); return null; }
+    const roster = rosterOf(sess);
+    if (roster[pid]) { UI.toast(`${nameOf(pid)} is on ${T(roster[pid].team)}`); return null; }
+    const pos = joinPos(sess, pid, team, roster, o.position);
+    if (!okToAdd(team, sideCounts(roster, team).out, pos === 'GK', 'add' + pid + team)) return null;
+    const min = nowMinute(sess);
+    const entry = { position: pos };
+    if (min != null) entry.arrived = { at: min };
+    const updates = { [tp(sid, team, pid)]: entry };
+    if (pos === 'GK' && !Scoring.formatOf(sess).legacy) updates[`sessions/${sid}/format/keepers/${team}`] = pid;
+    return saveUpdates(updates, {
+      label: `${nameOf(pid)} · ${T(team)}${min != null ? ` · ${min}'` : ''}`,
+      button: o.button, group: o.group, onSaved: o.onSaved,
+    });
+  }
+
+  // Name only (+ tonight's side). With a sid, also on that side tonight, in the same write.
+  function createPerson(rawName, team, o) {
+    o = o || {};
+    const name = cleanName(rawName);
+    if (!name) { UI.toast('Type a name first'); return null; }
+    const pid = Store.newKey();
+    const person = { name, defaultPosition: POSITIONS.includes(o.position) ? o.position : 'MID', defaultTeam: team,
+      needsDetails: true, createdBy: Auth.by(), createdAt: Store.now() };
+    const updates = { ['players/' + pid]: person };
+    let label = `${name} · new · ${T(team)}`;
+    const sess = o.sid && Store.session(o.sid);
+    if (sess) {
+      const roster = rosterOf(sess);
+      const pos = joinPos(sess, pid, team, roster, person.defaultPosition);
+      if (!okToAdd(team, sideCounts(roster, team).out, pos === 'GK', 'new' + norm(name) + team)) return null;
+      const min = nowMinute(sess);
+      const entry = { position: pos };
+      if (min != null) { entry.arrived = { at: min }; label += ` · ${min}'`; }
+      updates[tp(o.sid, team, pid)] = entry;
+      if (pos === 'GK' && !Scoring.formatOf(sess).legacy) updates[`sessions/${o.sid}/format/keepers/${team}`] = pid;
+    }
+    return saveUpdates(updates, {
+      label, button: o.button, group: o.group,
+      onSaved: h => { if (o.onDone) o.onDone(pid, team); if (o.onSaved) o.onSaved(h, pid); },
+    });
+  }
+
+  // ======================================================================== shared markup
+  const teamBtn = (pid, team, tap) =>
+    `<button type="button" class="su-tb t-${esc(team)}" data-tap="${tap || 'add'}" data-pid="${esc(pid)}" data-team="${esc(team)}">${esc(T(team))}</button>`;
+
+  function dupMeta(pids) {
+    const apps = pids.map(appsOf);
+    const same = apps.every(a => a === apps[0]);
+    return `${pids.length} entries with this name · ${same ? `${apps[0]} apps each` : plural(apps.reduce((s, a) => s + a, 0), 'app')}`;
+  }
+  function personMeta(pid, withApps) {
+    const p = Store.player(pid) || {};
+    const parts = [defPos(pid)];
+    if (p.defaultTeam) parts.push('usually ' + T(p.defaultTeam));
+    if (withApps) parts.push(plural(appsOf(pid), 'app'));
+    return parts.join(' · ');
+  }
+
+  // One person row. o: { teams, onTeam(pid) → team|null, pick, onTap, withApps, pids }
+  function personRow(pid, o) {
+    const pids = o.pids || [pid];
+    const meta = pids.length > 1 ? dupMeta(pids) : personMeta(pid, o.withApps);
+    const onPid = pids.find(x => o.onTeam(x));
+    const name = `<span class="grow"><span class="nm">${esc(nameOf(pid))}</span><span class="meta" style="display:block">${esc(meta)}</span></span>`;
+    if (onPid) {
+      const team = o.onTeam(onPid);
+      const mark = `<span class="end">${UI.teamMark(team)}</span>`;
+      return o.onTap ? `<button type="button" class="r tall" data-tap="${o.onTap}" data-pid="${esc(onPid)}">${name}${mark}</button>`
+        : `<div class="r tall su-on">${name}${mark}</div>`;
+    }
+    if (o.pick) return `<button type="button" class="r tall" data-tap="pick" data-pid="${esc(pid)}">${name}<span class="chev">›</span></button>`;
+    return `<div class="r tall su-pr">${name}<span class="end su-tbs">${o.teams.map(t => teamBtn(pid, t)).join('')}</span></div>`;
+  }
+
+  // "Already in the club" + "Someone new" for a typed name; `empty` when nothing is typed.
+  function finderHtml(q, o) {
+    if (!norm(q)) return o.empty || '';
+    const found = search(q);
+    let html = '';
+    if (found.length) html += `<div class="lbl">Already in the club</div>` + UI.rows(found.map(g => personRow(g.pid, Object.assign({}, o, { pids: g.pids, withApps: true }))));
+    html += `<div class="lbl${found.length ? ' mt-6' : ''}">Someone new</div>` +
+      `<div class="su-newg n${o.newTeams.length}">${o.newTeams.map(t =>
+        `<button type="button" class="su-new t-${esc(t)}" data-tap="new" data-team="${esc(t)}">+ ${esc(T(t))}</button>`).join('')}</div>`;
+    return html;
+  }
+
+  // Keeper picks: two suggestions + "+ Someone" per side (3 across, 64 px).
+  function keeperCands(team, rosterTeam, chosen, taken, extra) {
+    const out = [];
+    const push = pid => { if (pid && Store.player(pid) && !out.includes(pid) && !taken.includes(pid)) out.push(pid); };
+    const byApps = (a, b) => appsOf(b) - appsOf(a) || nameOf(a).localeCompare(nameOf(b));
+    const all = Object.keys(Store.players());
+    push(chosen); push(extra);
+    all.filter(pid => rosterTeam(pid) === team && defPos(pid) === 'GK').sort(byApps).forEach(push);
+    all.filter(pid => !rosterTeam(pid) && defPos(pid) === 'GK' && (Store.player(pid) || {}).defaultTeam === team).sort(byApps).forEach(push);
+    all.filter(pid => !rosterTeam(pid) && defPos(pid) === 'GK').sort(byApps).forEach(push);
+    return out.slice(0, 2);
+  }
+  function keeperBlock(team, cands, chosen) {
+    return `<div class="lbl su-kl">${UI.teamMark(team, { label: T(team) + ' keeper' })}</div><div class="grid3 su-k">` +
+      cands.map(pid => UI.tile({ name: nameOf(pid), tap: 'keeper', data: { pid, team }, sel: pid === chosen })).join('') +
+      `<button type="button" class="ptile c su-some" data-tap="someone" data-team="${esc(team)}"><span class="pt-name">+ Someone</span></button></div>`;
+  }
+
+  // ======================================================================== "Who's here?" draft
+  let draft = null;
+  const today = () => fmt.iso(Store.now());
+  function blankDraft() { const teams = nightTeams([]); return { date: today(), teams, side: teams[0], poles: 'small', picks: {}, keepers: {} }; }
+  function loadDraft() {
+    try {
+      const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+      if (d && d.date === today() && d.picks && !(d.sid && Store.session(d.sid))) return Object.assign(blankDraft(), d, { sid: null });
+    } catch (e) { /* ignore */ }
+    return blankDraft();
+  }
+  function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (e) { /* ignore */ } }
+  function getDraft() {
+    if (!draft || draft.date !== today() || (draft.sid && Store.session(draft.sid))) draft = loadDraft();
+    // drop anyone removed from the club (e.g. an undone new person) and stale keepers
+    Object.keys(draft.picks).forEach(pid => { if (!Store.player(pid)) delete draft.picks[pid]; });
+    Object.keys(draft.keepers).forEach(t => { const k = draft.keepers[t]; if (k && (!draft.picks[k] || draft.picks[k].team !== t)) delete draft.keepers[t]; });
+    if (!draft.teams.includes(draft.side)) draft.side = draft.teams[0];
+    return draft;
+  }
+  const dTeam = pid => (draft.picks[pid] ? draft.picks[pid].team : null);
+  const dSide = team => Object.keys(draft.picks).filter(pid => draft.picks[pid].team === team)
+    .sort((a, b) => draft.picks[a].at - draft.picks[b].at);
+  function dPos(pid) {
+    const pk = draft.picks[pid];
+    if (!pk) return null;
+    if (draft.poles === 'big' && draft.keepers[pk.team] === pid) return 'GK';
+    const p = pk.pos || defPos(pid);
+    return p === 'GK' ? 'MID' : p;
+  }
+  const dCounts = team => counts(dSide(team).map(dPos));
+
+  function dAdd(pid, team) {
+    if (draft.picks[pid] && draft.picks[pid].team === team) return true;
+    const willKeep = draft.poles === 'big' && defPos(pid) === 'GK' && !draft.keepers[team];
+    if (!okToAdd(team, dCounts(team).out, willKeep, 'd' + pid + team)) return false;
+    dDrop(pid);
+    draft.picks[pid] = { team, at: Date.now() };
+    if (willKeep) draft.keepers[team] = pid;
+    saveDraft();
+    return true;
+  }
+  function dDrop(pid) {
+    const pk = draft.picks[pid];
+    if (!pk) return;
+    if (draft.keepers[pk.team] === pid) delete draft.keepers[pk.team];
+    delete draft.picks[pid];
+    saveDraft();
+  }
+  function dKeeper(team, pid) {
+    if (draft.keepers[team] === pid) { delete draft.keepers[team]; saveDraft(); return; }
+    if (!draft.picks[pid] || draft.picks[pid].team !== team) { dDrop(pid); draft.picks[pid] = { team, at: Date.now() }; }
+    Object.keys(draft.keepers).forEach(t => { if (draft.keepers[t] === pid) delete draft.keepers[t]; });
+    draft.keepers[team] = pid;
+    saveDraft();
+  }
+  function dAutoKeepers() {                  // big poles: a usual keeper already on a side fills its empty slot
+    if (draft.poles !== 'big') return;
+    draft.teams.forEach(t => {
+      if (draft.keepers[t]) return;
+      const k = dSide(t).find(pid => defPos(pid) === 'GK');
+      if (k) draft.keepers[t] = k;
+    });
+  }
+
+  // ---------------------------------------------------------------- screen
+  const ui = { q: '', extra: {} };
 
   App.registerScreen('ref.setup', {
     tab: 'match', layout: 'phone', console: true,
-    header: () => ({ center: 'Tonight · ' + UI.esc(UI.fmt.date(UI.fmt.iso(Store.now()))), right: `<button type="button" class="hd-btn" data-shell="back">Cancel</button>` }),
-    render(el) { el.innerHTML = `<div class="head">Who’s here?</div><div class="mt-4">${ph('Who’s here', 'Phase 2 · setup.js')}</div>`; },
+    header: () => ({ center: 'Tonight · ' + esc(fmt.date(today())), right: `<button type="button" class="hd-btn" data-shell="back">Cancel</button>` }),
+    mount(el) {
+      UI.onSeg(el, 'side', v => { getDraft().side = v; saveDraft(); drawList(el); });
+      UI.onSeg(el, 'poles', v => { getDraft().poles = v; dAutoKeepers(); saveDraft(); drawAll(el); });
+      el.addEventListener('input', e => { if (e.target.matches('[data-search="who"]')) { ui.q = e.target.value; drawList(el); } });
+      el.addEventListener('keydown', e => {          // Enter on a typed name: add the single exact match to the open side
+        if (e.key !== 'Enter' || !e.target.matches('[data-search="who"]')) return;
+        e.preventDefault();
+        const exact = search(ui.q).filter(g => g.r === 0);
+        if (exact.length === 1 && !dTeam(exact[0].pid) && dAdd(exact[0].pid, draft.side)) clearSearch(el);
+      });
+      UI.on(el, 'usual', b => { getDraft(); if (dAdd(b.dataset.pid, draft.side)) drawAll(el); });
+      UI.on(el, 'add', b => { getDraft(); if (dAdd(b.dataset.pid, b.dataset.team)) { draft.side = b.dataset.team; saveDraft(); clearSearch(el); } });
+      UI.on(el, 'pl', b => openPlayerOptions(el, b.dataset.pid));
+      UI.on(el, 'new', b => {
+        const team = b.dataset.team;
+        createPerson(ui.q, team, { button: b, group: el, onDone: pid => { getDraft(); dAdd(pid, team); draft.side = team; saveDraft(); clearSearch(el); } });
+      });
+      UI.on(el, 'keeper', b => { getDraft(); dKeeper(b.dataset.team, b.dataset.pid); drawAll(el); });
+      UI.on(el, 'someone', b => {
+        const team = b.dataset.team;
+        App.action('setup.newPerson', { team, teams: [team], position: 'GK', title: T(team) + ' keeper',
+          onDone: pid => { getDraft(); ui.extra[team] = pid; dKeeper(team, pid); drawAll(el); } });
+      });
+      UI.on(el, 'kickoff', b => kickOff(el, b));
+      UI.on(el, 'to-match', () => App.go('ref.console', {}, { replace: true }));
+    },
+    render(el) {
+      if (Store.activeSessionId()) {
+        el.innerHTML = UI.empty('A game is on', '') + `<div class="mt-4">${UI.btn('Go to the match', { tap: 'to-match' })}</div>`;
+        return;
+      }
+      getDraft();
+      el.innerHTML = `<div class="su-switch" data-r="switch"></div>` +
+        `<div class="su-search mt-3">${UI.search({ name: 'who', placeholder: 'Add a name', value: ui.q })}</div>` +
+        `<div class="su-list mt-3" data-r="list"></div><div class="su-foot" data-r="foot"></div>`;
+      drawAll(el);
+    },
   });
 
-  const stubSheet = title => () => UI.sheet.open({ title, body: ph(title, 'Phase 2 · setup.js'), cancel: true });
-  App.registerAction('setup.newPerson', stubSheet('Add someone'));
-  App.registerAction('setup.addArrival', stubSheet('Who’s arrived?'));
-  App.registerAction('setup.teamsTonight', stubSheet('Teams tonight'));
-  App.registerAction('setup.bigPoles', stubSheet('Switch to big poles'));
+  function clearSearch(el) {
+    ui.q = '';
+    const inp = el.querySelector('[data-search="who"]');
+    if (inp) inp.value = '';
+    drawAll(el);
+  }
+  function drawAll(el) { drawSwitch(el); drawList(el); drawFoot(el); }
+  function drawSwitch(el) {
+    const box = el.querySelector('[data-r="switch"]');
+    if (box) box.innerHTML = UI.teamSwitch('side', draft.teams.map(team => ({ team, count: dSide(team).length })), draft.side, { ref: true });
+  }
+  function drawList(el) {
+    const box = el.querySelector('[data-r="list"]');
+    if (!box) return;
+    drawSwitch(el);
+    const side = dSide(draft.side);
+    const usualRow = usual(pid => !!draft.picks[pid], 24);
+    const empty = (usualRow.length ? `<div class="chips su-chips">${usualRow.map(pid =>
+        `<button type="button" class="chip ref" data-tap="usual" data-pid="${esc(pid)}">+ ${esc(nameOf(pid))}</button>`).join('')}</div>` : '') +
+      (side.length ? UI.rows(side.map(pid => UI.row({ tap: 'pl', data: { pid }, title: nameOf(pid), metaHtml: UI.pos(dPos(pid)), tall: true })), { cls: 'mt-3' })
+        : `<div class="su-none mt-3">No one on ${esc(T(draft.side))} yet</div>`);
+    box.innerHTML = finderHtml(ui.q, { teams: draft.teams, newTeams: draft.teams, onTeam: dTeam, onTap: 'pl', empty });
+  }
+  function drawFoot(el) {
+    const box = el.querySelector('[data-r="foot"]');
+    if (!box) return;
+    const n = Object.keys(draft.picks).length;
+    let html = `<div class="mt-6">${UI.seg('poles', [{ value: 'small', label: 'Small poles' }, { value: 'big', label: 'Big poles' }], draft.poles, { ref: true })}</div>`;
+    if (draft.poles === 'big') {
+      const taken = t => Object.keys(draft.keepers).filter(x => x !== t).map(x => draft.keepers[x]);
+      html += draft.teams.map(t => keeperBlock(t, keeperCands(t, dTeam, draft.keepers[t], taken(t), ui.extra[t]), draft.keepers[t])).join('');
+    }
+    html += `<div class="su-go">${UI.btn(n ? `Kick off · ${plural(n, 'player')}` : 'Kick off', { kind: 'w', big: true, tap: 'kickoff', attrs: n ? '' : ' disabled' })}</div>`;
+    box.innerHTML = html;
+  }
+
+  // Tap a name on the side: position for tonight, move, or take off the list.
+  function openPlayerOptions(el, pid) {
+    getDraft();
+    const pk = draft.picks[pid];
+    if (!pk) return;
+    const pos = dPos(pid);
+    const posItems = (draft.poles === 'big' ? POSITIONS : POSITIONS.slice(1)).map(p => ({ value: p, label: p }));
+    const others = draft.teams.filter(t => t !== pk.team);
+    const h = UI.sheet.open({
+      title: nameOf(pid), sub: personMeta(pid, true), cls: 'sh-setup sh-setup-player',
+      body: `<div class="lbl">Tonight</div>${UI.seg('pos', posItems, pos, { ref: true })}` +
+        `<div class="grid${Math.min(others.length, 3)} mt-4">${others.map(t => UI.btn('→ ' + T(t), { kind: 'o', sm: true, tap: 'move', data: { team: t } })).join('')}</div>`,
+      footer: UI.btn('Take off the list', { kind: 'warn', sm: true, tap: 'drop' }), cancel: 'Done',
+    });
+    UI.onSeg(h.el, 'pos', v => {
+      if (v === 'GK') dKeeper(pk.team, pid);
+      else { if (draft.keepers[pk.team] === pid) delete draft.keepers[pk.team]; draft.picks[pid].pos = v; saveDraft(); }
+      drawAll(el);
+    });
+    UI.on(h.el, 'move', b => { if (dAdd(pid, b.dataset.team)) { h.close(); drawAll(el); } });
+    UI.on(h.el, 'drop', () => { dDrop(pid); h.close(); drawAll(el); });
+  }
+
+  function kickOff(el, button) {
+    getDraft();
+    if (Store.activeSessionId()) { UI.toast('A game is on'); return; }
+    const pids = Object.keys(draft.picks);
+    if (!pids.length) return;
+    const sid = Store.newKey();
+    const now = Store.now();
+    const teams = {};
+    pids.forEach(pid => {
+      const t = draft.picks[pid].team;
+      (teams[t] || (teams[t] = { players: {} })).players[pid] = { position: dPos(pid) };
+    });
+    const format = { start: draft.poles === 'big' ? 'big' : 'small' };
+    if (format.start === 'big') {
+      const keepers = {};
+      draft.teams.forEach(t => { if (draft.keepers[t] && teams[t] && teams[t].players[draft.keepers[t]]) keepers[t] = draft.keepers[t]; });
+      if (Object.keys(keepers).length) format.keepers = keepers;
+    }
+    const sess = { date: today(), status: 'active', mode: 'live', teams, format };
+    if (KICK_OFF_STARTS_CLOCK) sess.timer = Clock.kickOff(now);
+    Save.run({
+      label: `Kick off · ${plural(pids.length, 'player')}`, button, group: el,
+      write: () => Store.set('sessions/' + sid, sess),
+      undo: () => Store.remove('sessions/' + sid),
+      onSaved: () => { draft.sid = sid; saveDraft(); App.go('ref.console', {}, { replace: true }); },
+      onUndone: () => { draft.sid = null; saveDraft(); App.go('ref.setup', {}, { replace: true }); },
+    });
+  }
+
+  // ======================================================================== sheets
+  const activeSid = sid => (sid && Store.session(sid) ? sid : Store.activeSessionId());
+
+  // A sheet with a search box (kept alive while typing) and a list that redraws on every data change.
+  function searchSheet(o) {
+    let q = o.name || '';
+    let off = null;
+    const h = UI.sheet.open({
+      title: o.title, titleEnd: o.titleEnd || '', cls: 'sh-setup ' + o.cls, cancel: o.cancel === false ? false : (o.cancel || 'Cancel'),
+      body: `${UI.search({ name: 'q', placeholder: o.placeholder, value: q })}<div class="su-res mt-4" data-r="res"></div>`,
+      onClose: () => { if (off) off(); if (o.onClose) o.onClose(); },
+    });
+    const res = h.el.querySelector('[data-r="res"]');
+    const inp = h.el.querySelector('[data-search="q"]');
+    const draw = () => { if (!h.closed) res.innerHTML = o.list(q, h); };
+    h.redraw = draw;
+    h.setQ = v => { q = v; inp.value = v; draw(); };
+    h.getQ = () => q;
+    inp.addEventListener('input', () => { q = inp.value; draw(); });
+    off = Store.on(() => { if (!h.el.querySelector('.is-saving')) draw(); });
+    draw();
+    return h;
+  }
+
+  // ---------------------------------------------------------------- setup.newPerson
+  App.registerAction('setup.newPerson', args => {
+    const a = args || {};
+    const sid = a.onDone ? null : (a.sid ? activeSid(a.sid) : Store.activeSessionId());
+    const sess = sid && Store.session(sid);
+    const teams = a.teams && a.teams.length ? a.teams : sess ? matchTeams(sess) : nightTeams([]);
+    const h = searchSheet({
+      title: a.title || 'Add someone', cls: 'sh-setup-new', placeholder: 'Type a name', name: a.name || '',
+      list: q => finderHtml(q, {
+        teams, newTeams: teams, pick: !sess,
+        onTeam: pid => (sess ? (rosterOf(Store.session(sid) || {})[pid] || {}).team || null : null),
+        empty: '',
+      }),
+    });
+    UI.on(h.el, 'pick', b => {
+      const pid = b.dataset.pid;
+      h.close();
+      if (a.onDone) a.onDone(pid, a.team || null);
+      else App.action('admin.editPlayer', { pid });
+    });
+    UI.on(h.el, 'add', b => addToMatch(sid, b.dataset.pid, b.dataset.team, { button: b, group: h.el, onSaved: () => h.close() }));
+    UI.on(h.el, 'new', b => createPerson(h.getQ(), b.dataset.team, {
+      sid, position: a.position, button: b, group: h.el,
+      onDone: (pid, team) => { h.close(); if (a.onDone) a.onDone(pid, team); },
+    }));
+    return h;
+  });
+
+  // ---------------------------------------------------------------- setup.addArrival ("+ Player")
+  App.registerAction('setup.addArrival', args => {
+    const sid = activeSid(args && args.sid);
+    if (!sid) { UI.toast('No game on'); return null; }
+    const min = nowMinute(Store.session(sid));
+    const h = searchSheet({
+      title: 'Who’s arrived?', titleEnd: min != null ? `<span class="n">${min}'</span>` : '', cls: 'sh-setup-arrival',
+      placeholder: 'Type a name, or add someone new', cancel: 'Done',
+      list: q => {
+        const sess = Store.session(sid);
+        if (!sess) return UI.empty('No game on', '');
+        const roster = rosterOf(sess);
+        const teams = matchTeams(sess);
+        const onTeam = pid => (roster[pid] ? roster[pid].team : null);
+        const list = usual(pid => !!roster[pid], 12);
+        const empty = list.length ? `<div class="lbl">Usually here, not on yet</div>` +
+          UI.rows(list.map(pid => personRow(pid, { teams, onTeam }))) : '';
+        return finderHtml(q, { teams, newTeams: teams, onTeam, empty });
+      },
+    });
+    UI.on(h.el, 'add', b => addToMatch(sid, b.dataset.pid, b.dataset.team, {
+      button: b, group: h.el, onSaved: () => { h.setQ(''); },
+    }));
+    UI.on(h.el, 'new', b => createPerson(h.getQ(), b.dataset.team, {
+      sid, button: b, group: h.el, onSaved: () => { h.setQ(''); },
+    }));
+    return h;
+  });
+
+  // ---------------------------------------------------------------- setup.teamsTonight
+  App.registerAction('setup.teamsTonight', args => {
+    const sid = activeSid(args && args.sid);
+    if (!sid || !Store.session(sid)) { UI.toast('No game on'); return null; }
+    let side = null, off = null;
+    const h = UI.sheet.open({
+      title: 'Teams tonight', cls: 'sh-setup sh-setup-teams',
+      titleEnd: `<button type="button" class="su-done" data-tap="done">Done</button>`,
+      body: '', onClose: () => { if (off) off(); },
+    });
+    function draw() {
+      const sess = Store.session(sid);
+      if (!sess) { h.setBody(UI.empty('No game on', '')); return; }
+      const roster = rosterOf(sess);
+      const teams = matchTeams(sess);
+      if (!teams.includes(side)) side = teams[0];
+      const posRank = p => ({ GK: 3, DEF: 2, MID: 1, FWD: 0 }[p] ?? 1);
+      const list = Object.keys(roster).filter(pid => roster[pid].team === side)
+        .sort((a, b) => posRank(roster[a].entry.position) - posRank(roster[b].entry.position) || nameOf(a).localeCompare(nameOf(b)));
+      const row = pid => {
+        const e = roster[pid].entry;
+        const tag = e.moved && e.moved.at != null ? `<span class="tagm">Moved ${esc(e.moved.at)}'</span>` : '';
+        return `<div class="r tall su-mrow${tag ? ' su-moved' : ''}"><span class="grow"><span class="nm">${esc(nameOf(pid))}${tag}</span>` +
+          `<span class="meta" style="display:block">${UI.pos(e.position || 'MID')}</span></span>` +
+          `<span class="end">${teams.filter(t => t !== side).map(t =>
+            `<button type="button" class="mv2" data-tap="move" data-pid="${esc(pid)}" data-to="${esc(t)}">→ ${esc(T(t))}</button>`).join('')}</span></div>`;
+      };
+      h.setBody(UI.teamSwitch('tt', teams.map(team => ({ team, count: Object.values(roster).filter(r => r.team === team).length })), side, { ref: true }) +
+        (list.length ? UI.rows(list.map(row), { cls: 'mt-3' }) : `<div class="su-none mt-3">No one on ${esc(T(side))}</div>`));
+    }
+    UI.onSeg(h.el, 'tt', v => { side = v; draw(); });
+    UI.on(h.el, 'done', () => h.close());
+    UI.on(h.el, 'move', b => movePlayer(sid, b.dataset.pid, b.dataset.to, { button: b, group: h.el, onSaved: () => draw() }));
+    off = Store.on(() => { if (!h.el.querySelector('.is-saving')) draw(); });
+    draw();
+    return h;
+  });
+
+  function movePlayer(sid, pid, to, o) {
+    const sess = Store.session(sid);
+    if (!sess) return null;
+    const roster = rosterOf(sess);
+    const cur = roster[pid];
+    if (!cur || cur.team === to) return null;
+    const from = cur.team;
+    const f = Scoring.formatOf(sess);
+    const wasKeeper = cur.entry.position === 'GK';
+    const toHasKeeper = !!keeperOn(roster, to);
+    const pos = wasKeeper && (toHasKeeper || !f.everBig) ? 'MID' : (cur.entry.position || 'MID');
+    if (!okToAdd(to, sideCounts(roster, to).out, pos === 'GK', 'mv' + pid + to)) return null;
+    const min = nowMinute(sess);
+    const entry = Object.assign({}, cur.entry, { position: pos });
+    delete entry.moved;
+    if (min != null) entry.moved = { from, at: min };
+    const updates = { [tp(sid, from, pid)]: null, [tp(sid, to, pid)]: entry };
+    if (!f.legacy) {
+      if ((f.keepers || {})[from] === pid) updates[`sessions/${sid}/format/keepers/${from}`] = null;
+      if (pos === 'GK') updates[`sessions/${sid}/format/keepers/${to}`] = pid;
+    }
+    return saveUpdates(updates, {
+      label: `${nameOf(pid)} → ${T(to)}${min != null ? ` · ${min}'` : ''}`, button: o.button, group: o.group, onSaved: o.onSaved,
+    });
+  }
+
+  // ---------------------------------------------------------------- setup.bigPoles
+  App.registerAction('setup.bigPoles', args => {
+    const sid = activeSid(args && args.sid);
+    const sess0 = sid && Store.session(sid);
+    if (!sess0) { UI.toast('No game on'); return null; }
+    const f0 = Scoring.formatOf(sess0);
+    const alreadyBig = f0.everBig;
+    const at = alreadyBig ? null : switchMinute(sess0);
+    const roster0 = rosterOf(sess0);
+    const teams = matchTeams(sess0);
+    const chosen = {}, extra = {};
+    teams.forEach(t => {
+      const k = keeperOn(roster0, t) || (f0.keepers || {})[t];
+      if (k && roster0[k] && roster0[k].team === t) chosen[t] = k;
+      else {
+        const onSide = Object.keys(roster0).find(pid => roster0[pid].team === t && defPos(pid) === 'GK');
+        if (onSide) chosen[t] = onSide;
+      }
+    });
+    const score = teams.map(t => Scoring.teamGoals(sess0, t)).join('–');
+    const title = alreadyBig ? 'Keepers' : at != null ? `Big poles from ${at}'` : 'Big poles';
+    const sub = alreadyBig ? 'One keeper per side' : at != null ? `Score carries over: ${score} · keepers count from ${at}'` : 'Keepers count from kick-off';
+    const h = UI.sheet.open({
+      title, sub, cls: 'sh-setup sh-setup-poles', body: '', cancel: 'Cancel',
+      footer: `<div data-r="go"></div>`,
+    });
+    function draw() {
+      const roster = rosterOf(Store.session(sid) || sess0);
+      const rTeam = pid => (roster[pid] ? roster[pid].team : null);
+      h.setBody(teams.map(t => {
+        const taken = teams.filter(x => x !== t).map(x => chosen[x]).filter(Boolean);
+        return keeperBlock(t, keeperCands(t, rTeam, chosen[t], taken, extra[t]), chosen[t]);
+      }).join(''));
+      const n = teams.filter(t => chosen[t]).length;
+      h.el.querySelector('[data-r="go"]').innerHTML = UI.btn(alreadyBig ? 'Save keepers' : 'Switch to big poles',
+        { kind: 'w', big: true, tap: 'switch', attrs: n ? '' : ' disabled' });
+    }
+    UI.on(h.el, 'keeper', b => {
+      const t = b.dataset.team, pid = b.dataset.pid;
+      chosen[t] = chosen[t] === pid ? null : pid;
+      teams.forEach(x => { if (x !== t && chosen[x] === pid) chosen[x] = null; });
+      draw();
+    });
+    UI.on(h.el, 'someone', b => {
+      const t = b.dataset.team;
+      App.action('setup.newPerson', { team: t, teams: [t], position: 'GK', title: T(t) + ' keeper',
+        onDone: pid => { extra[t] = pid; chosen[t] = pid; teams.forEach(x => { if (x !== t && chosen[x] === pid) chosen[x] = null; }); if (!h.closed) draw(); } });
+    });
+    UI.on(h.el, 'switch', b => {
+      const sess = Store.session(sid);
+      if (!sess) return;
+      const f = Scoring.formatOf(sess);
+      const roster = rosterOf(sess);
+      const min = nowMinute(sess);
+      const updates = {};
+      if (!f.everBig) {
+        if (at == null) updates[`sessions/${sid}/format/start`] = 'big';
+        else updates[`sessions/${sid}/format/switchedAt`] = at;
+      }
+      const names = [];
+      teams.forEach(t => {
+        const k = chosen[t];
+        if (!k) return;
+        names.push(nameOf(k));
+        const cur = roster[k];
+        if (cur && cur.team !== t) updates[tp(sid, cur.team, k)] = null;
+        const entry = Object.assign({}, cur ? cur.entry : {}, { position: 'GK' });
+        if (cur && cur.team !== t) { delete entry.moved; if (min != null) entry.moved = { from: cur.team, at: min }; }
+        if (!cur && min != null) entry.arrived = { at: min };
+        if (!cur || cur.team !== t || cur.entry.position !== 'GK') updates[tp(sid, t, k)] = entry;
+        Object.keys(roster).forEach(o => {   // one keeper per side: anyone else in goal goes outfield
+          if (o !== k && !teams.some(x => chosen[x] === o) && roster[o].team === t && roster[o].entry.position === 'GK') updates[tp(sid, t, o) + '/position'] = 'MID';
+        });
+        if (!f.legacy) updates[`sessions/${sid}/format/keepers/${t}`] = k;
+      });
+      if (!Object.keys(updates).length) { h.close(); return; }
+      const label = alreadyBig ? `Keepers · ${names.join(', ')}` : at != null ? `Big poles from ${at}'` : 'Big poles';
+      saveUpdates(updates, { label, sub: alreadyBig ? null : names.join(', '), button: b, group: h.el, onSaved: () => h.close() });
+    });
+    draw();
+    return h;
+  });
 })();

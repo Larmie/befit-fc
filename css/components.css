@@ -200,7 +200,7 @@ body.no-nav { --float-bottom: calc(12px + var(--safe-b)); }
 }
 body.sheet-open .undo, body.sheet-open .toast { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
 .undo { height: 64px; padding: 0 8px 0 14px; }
-.undo .tx { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.undo .tx { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.25; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .undo .tx b { font-weight: 650; }
 .undo .ub, .savebar .ub {
   height: var(--h-target); padding: 0 16px; border-radius: 10px; background: var(--bg); color: var(--ink);

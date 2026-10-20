@@ -41,6 +41,7 @@ body.no-nav .screen-host { padding-bottom: calc(var(--safe-b) + 96px); }
 .hd-c { justify-self: center; font-size: 13px; color: var(--ink2); white-space: nowrap; }
 .hd-r { justify-self: end; display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .hd-btn { min-height: var(--h-target-player); display: inline-flex; align-items: center; gap: var(--sp-2); font-size: 13px; color: var(--ink2); padding: 0 2px; }
+.hd-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
 .wm { font-weight: 650; font-size: 13px; letter-spacing: .18em; white-space: nowrap; }
 .wm em { font-style: normal; color: var(--ink3); }
 

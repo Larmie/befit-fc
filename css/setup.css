@@ -1,3 +1,66 @@
 /* BE Fit Club · css/setup.css · OWNER: Phase 2 · Setup builder · ref.setup + setup sheets (.scr-ref-setup, .sh-setup-*)
    Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
    no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+
+/* ---------------------------------------------------------------- Who's here? */
+.scr-ref-setup .su-chips { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
+@media (min-width: 960px) { .scr-ref-setup .su-chips { margin: 0; padding: 0; } }
+.scr-ref-setup .su-none,
+.sh-setup .su-none { color: var(--ink3); font-size: var(--fs-body); padding: var(--sp-4) 2px; }
+.scr-ref-setup .rows .r.tall .meta .pos { line-height: 1.6; }
+.scr-ref-setup .su-foot .su-kl { margin-top: var(--sp-4); }
+
+/* Kick off: full width, 16 px above it (in the flow, so the Undo bar never sits on it for long) */
+.scr-ref-setup .su-go { margin-top: var(--sp-4); }
+
+/* ---------------------------------------------------------------- person rows with a side button each */
+.scr-ref-setup .su-pr, .sh-setup .su-pr { padding-right: 8px; }
+.scr-ref-setup .su-tbs, .sh-setup .su-tbs { gap: 6px; }
+.scr-ref-setup .su-tb, .sh-setup .su-tb {
+  height: var(--h-target); min-width: 64px; padding: 0 12px; border-radius: var(--r-chip);
+  background: var(--s2); color: var(--ink); font-weight: 600; font-size: 13.5px; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.sh-setup .su-tb { background: var(--sheet); box-shadow: var(--ring); }
+.scr-ref-setup .su-tb:active, .sh-setup .su-tb:active { background: var(--s3); transform: scale(.98); }
+.scr-ref-setup .su-tb.is-saving, .sh-setup .su-tb.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); box-shadow: none; min-width: 88px; }
+.scr-ref-setup .su-on .end, .sh-setup .su-on .end { padding-right: 6px; }
+
+/* "Someone new": + Green | + Red (any number of teams) */
+.scr-ref-setup .su-newg, .sh-setup .su-newg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
+.scr-ref-setup .su-newg.n3, .sh-setup .su-newg.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.scr-ref-setup .su-newg.n1, .sh-setup .su-newg.n1 { grid-template-columns: minmax(0, 1fr); }
+.scr-ref-setup .su-new, .sh-setup .su-new {
+  height: 56px; border-radius: var(--r-btn); background: var(--s1); color: var(--ink);
+  font-weight: 600; font-size: 15px; text-align: center; box-shadow: var(--ring); position: relative; overflow: hidden;
+}
+.sh-setup .su-new { background: var(--s2); box-shadow: none; }
+/* team stripe on the left (colour always comes with the team word) */
+.scr-ref-setup .su-tb::before, .sh-setup .su-tb::before, .scr-ref-setup .su-new::before, .sh-setup .su-new::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tc);
+}
+.scr-ref-setup .is-saving::before, .sh-setup .is-saving::before { display: none; }
+.scr-ref-setup .su-new:active, .sh-setup .su-new:active { background: var(--s3); transform: scale(.98); }
+.scr-ref-setup .su-new.is-saving, .sh-setup .su-new.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); box-shadow: none; }
+
+/* ---------------------------------------------------------------- keeper picks (3 across, 64 px) */
+.scr-ref-setup .su-kl, .sh-setup .su-kl { margin-top: var(--sp-4); }
+.sh-setup .su-kl:first-child { margin-top: 0; }
+.scr-ref-setup .su-k .ptile, .sh-setup .su-k .ptile { padding: 8px 12px; }
+.scr-ref-setup .su-k .ptile:not(.sel) { background: var(--s1); box-shadow: var(--ring); }
+.scr-ref-setup .su-some .pt-name, .sh-setup .su-some .pt-name { font-size: 13.5px; font-weight: 600; }
+
+/* ---------------------------------------------------------------- sheets */
+.sh-setup .su-res { padding-bottom: 2px; }
+.sh-setup .su-done {
+  min-height: var(--h-target); min-width: var(--h-target); padding: 0 4px;
+  font: 500 14px var(--font); color: var(--ink2);
+}
+.sh-setup-teams h4 { margin-bottom: var(--sp-2); }
+.sh-setup .su-mrow { padding-right: 8px; }
+.sh-setup .su-mrow .end { gap: 6px; }
+.sh-setup .su-mrow .mv2 { background: var(--sheet); }
+.sh-setup .su-mrow .mv2.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.sh-setup .su-mrow .tagm { background: var(--s3); }
+.sh-setup-player .grid2, .sh-setup-player .grid3 { gap: var(--sp-2); }
