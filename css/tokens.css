@@ -1,0 +1,124 @@
+/* ============================================================================
+   BE Fit Club · css/tokens.css · A · Floodlight design tokens (Build spec, exact)
+   ----------------------------------------------------------------------------
+   Theme = data-theme on <html>: "dark" or "light" (the shell resolves Auto).
+   Any element can re-scope with its own data-theme (e.g. the referee console).
+   Rules: colour = team only · ink = action · orange = needs attention.
+   No glows, no gradients, no emoji, no old brand green.
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0B0D10;          /* canvas */
+  --s1: #15181D;          /* cards, lists, tiles */
+  --s2: #1E2229;          /* secondary buttons, sheet tiles */
+  --s3: #2A2F38;          /* selected segment */
+  --line: #242830;        /* hairlines */
+  --ink: #F2F3F5;         /* text, primary buttons, live dot (17.5:1) */
+  --ink2: #AAB1BC;        /* secondary text (9.0:1) */
+  --ink3: #8A929D;        /* labels, positions (6.2:1; 5.1:1 on --s2) */
+  --ink-pressed: #D9DCE1; /* LogButton pressed */
+  --on-ink: #0B0D10;      /* text on an --ink fill */
+
+  --red: #F2555A;
+  --green: #3DD68C;
+  --blue: #5B8DEF;
+  --gold: #E8B931;
+
+  --warn: #FF9F43;        /* attention text */
+  --warnfill: #FF9F43;    /* attention fills (bars) */
+  --on-warn: #1A0E00;     /* text on a --warnfill (9.3:1) */
+  --yel: #F5D90A;         /* yellow card glyph only */
+
+  --hl: #1A1E25;          /* highlighted row ("you") */
+  --sheet: #15181D;
+  --navref: #0F1115;      /* referee nav */
+  --dimc: rgba(0,0,0,.62);/* behind sheets */
+  --halo: rgba(242,243,245,.18);
+  --ring: none;           /* light theme draws a 1 px ring on cards */
+  --shadow-float: 0 10px 30px rgba(0,0,0,.5);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F3F4F6;
+  --s1: #FFFFFF;
+  --s2: #ECEEF1;
+  --s3: #DCDFE4;
+  --line: #E4E7EB;
+  --ink: #0B0D10;         /* 17.7:1 */
+  --ink2: #474E59;        /* 7.6:1 */
+  --ink3: #626A76;        /* 5.0:1; 4.7:1 on --s2 */
+  --ink-pressed: #2A2F38;
+  --on-ink: #F3F4F6;
+
+  --red: #D93B41;
+  --green: #16935A;       /* marks only */
+  --blue: #2F6FDB;
+  --gold: #A97C0A;
+
+  --warn: #B54E09;        /* attention text (5.2:1) */
+  --warnfill: #FFA654;    /* attention fills (dark text 9.8:1) */
+  --on-warn: #1A0E00;
+  --yel: #EAB308;
+
+  --hl: #E9EEF5;
+  --sheet: #FFFFFF;
+  --navref: #FFFFFF;
+  --dimc: rgba(11,13,16,.38);
+  --halo: rgba(11,13,16,.14);
+  --ring: 0 0 0 1px var(--line);
+  --shadow-float: 0 10px 30px rgba(11,13,16,.18);
+}
+
+:root {
+  /* type: Geist for words, Geist Mono for every number (tabular) */
+  --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --fs-xs: 12px;          /* positions, tiny labels (12 px floor, audit rule 10) */
+  --fs-meta: 12px;
+  --fs-body: 14px;
+  --fs-title: 18px;       /* sheet titles, tile labels */
+  --fs-head: 26px;        /* page heads */
+  --fs-score: 52px;
+  --fs-profile: 44px;
+  --fs-share: 86px;
+
+  /* spacing: 4 px grid · gutter 16 · card padding 14 · card gap 10 */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px; --sp-8: 32px;
+  --gutter: 16px;
+  --card-pad: 14px;
+  --card-gap: 10px;
+
+  /* radii */
+  --r-chip: 10px;         /* chips, segments */
+  --r-btn: 12px;          /* buttons, tiles */
+  --r-card: 14px;
+  --r-sheet: 22px;
+
+  /* heights */
+  --h-header: 52px;
+  --h-nav: 64px;
+  --h-row: 48px;
+  --h-trow: 46px;
+  --h-btn: 52px;
+  --h-btn-sm: 48px;
+  --h-goal: 92px;         /* referee Goal tile */
+  --h-action: 72px;       /* referee action tile */
+  --h-tile: 64px;         /* player tile (equal tiles, names up to 2 lines) */
+  --h-target: 48px;       /* referee targets: nothing under 48 */
+  --h-target-player: 44px;
+  --h-pill: 28px;         /* status pills (not tappable) */
+  --sheet-safe: 34px;     /* space under the last action on a sheet */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+
+  --rail: 232px;          /* laptop left rail */
+  --content-max: 1040px;
+  --phone-max: 480px;
+}
+
+/* Team colour hooks: set --tc on anything team-coloured (always with the team word). */
+.t-green { --tc: var(--green); }
+.t-red   { --tc: var(--red); }
+.t-blue  { --tc: var(--blue); }
+.t-gold  { --tc: var(--gold); }

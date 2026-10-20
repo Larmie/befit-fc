@@ -1,0 +1,3 @@
+/* BE Fit Club · css/fix.css · OWNER: Phase 2 · Fix builder · ref.ftcheck, ref.edit + event/player/add-missed sheets (.scr-ref-ftcheck, .scr-ref-edit, .sh-fix-*)
+   Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
+   no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */

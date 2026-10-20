@@ -1,0 +1,10 @@
+/* BE Fit Club · css/welcome.css · Welcome ("Who are you?") — Phase 1, lead */
+.scr-welcome { max-width: 560px; margin: 0 auto; }
+.scr-welcome .wl-title { font-size: 28px; font-weight: 650; letter-spacing: -.025em; line-height: 1.15; margin: 6px 0 2px; }
+.scr-welcome .wl-sub { color: var(--ink3); font-size: 13px; margin-bottom: var(--sp-3); }
+.scr-welcome .wl-exits .btn { white-space: normal; text-align: center; line-height: 1.2; }
+.scr-welcome .wl-search { margin-top: 14px; }
+.scr-welcome .wl-lists { margin-top: 14px; }
+.scr-welcome .wl-lists .rows + .lbl { margin-top: var(--sp-6); }
+.scr-welcome .r .end { gap: 12px; }
+.scr-welcome .r .end .tm { min-width: 52px; }

@@ -1,0 +1,3 @@
+/* BE Fit Club · css/admin.css · OWNER: Phase 2 · Admin builder · ref.home, ref.pastGame, ref.squad, ref.player, ref.money, ref.moneyDay, offline bar (.scr-ref-*, .offline-*)
+   Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
+   no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
