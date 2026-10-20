@@ -833,10 +833,12 @@
     const sid = ctx.params.sid, s = Store.session(sid);
     if (!s) { el.innerHTML = UI.empty('Match not found', '') + UI.btn('Back to matches', { kind: 'g', tap: 'home' }); return; }
     const v = vs(sid), mode = modeOf(s);
+    // The admin can post the full-time card (both pages) straight from here; Needs you › Published opens this screen.
+    const share = s.status === 'completed' ? `<div class="fx-share">${UI.btn('Share full-time card', { kind: 'g', tap: 'ftshare' })}</div>` : '';
     let html = '';
     if (mode === 'live') {
       const n = events(s).length;
-      html = scoreHero(s);
+      html = scoreHero(s) + share;
       if (ctx.wide) {
         html += `<div class="fx-cols mt-6"><div class="fx-col"><div class="lbl">Players</div>${playersPane(sid, s, v)}${matchPane(sid, s)}</div>` +
           `<div class="fx-col"><div class="lbl">Timeline <b class="n">${n}</b></div>${timelinePane(sid, s, v)}</div></div>`;
@@ -846,9 +848,9 @@
           (v.tab === 'timeline' ? timelinePane(sid, s, v) : playersPane(sid, s, v) + matchPane(sid, s));
       }
     } else if (mode === 'post') {
-      html = scoreHero(s, { tap: 'score' }) + `<div class="mt-4">${playersPane(sid, s, v)}</div>` + matchPane(sid, s);
+      html = scoreHero(s, { tap: 'score' }) + share + `<div class="mt-4">${playersPane(sid, s, v)}</div>` + matchPane(sid, s);
     } else {
-      html = scoreHero(s, { tap: 'score' }) + `<div class="mt-4">${UI.empty('No player details', '')}</div>` +
+      html = scoreHero(s, { tap: 'score' }) + share + `<div class="mt-4">${UI.empty('No player details', '')}</div>` +
         UI.btn('Add who played', { tap: 'upgrade' }) + matchPane(sid, s);
     }
     el.innerHTML = `<div class="fx-edit">${html}</div>`;
@@ -990,6 +992,7 @@
       UI.on(el, 'addp', () => openAddPlayer(sid));
       UI.on(el, 'score', () => openScoreSheet(sid));
       UI.on(el, 'upgrade', () => openUpgrade(sid));
+      UI.on(el, 'ftshare', () => App.action('share.fullTime', { sid }));
       UI.on(el, 'home', () => App.go('ref.home', {}, { replace: true }));   // the shell routes it to the role's Match / Home
       el.addEventListener('change', e => {
         const inp = e.target.closest('[data-date]');
