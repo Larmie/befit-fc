@@ -1,2 +1,92 @@
 /* BE Fit Club · css/tables.css · Tables, podium, leaders, share cards. OWNER: Round 5 · Tables builder.
-   Scope everything under .scr-tables-teams / .scr-tables-players / .scr-tables-stats / .sh-tables-*. */
+   Scope everything under .scr-tables-teams / .scr-tables-players / .scr-tables-stats / .sh-tables-*.
+   Light only where allowed: team row washes (.wash), the "you" row (.you-row), the podium and leader rows (.lit),
+   the #1 podium card (.hero, the one per screen). Tokens only; team colour always through --tc (t-<team>). */
+
+/* ---------------------------------------------------------------- shared */
+:is(.scr-tables-teams, .scr-tables-players, .scr-tables-stats) .tb-tabs { margin-bottom: var(--sp-4); }
+:is(.scr-tables-teams, .scr-tables-players, .scr-tables-stats) .tb-tabs .seg > button { min-height: 48px; font-size: 14.5px; }
+:is(.scr-tables-teams, .scr-tables-players, .scr-tables-stats) .tb-lbl { align-items: center; min-height: 28px; }
+:is(.scr-tables-teams, .scr-tables-players, .scr-tables-stats) .tb-lbl b { font-size: 14px; color: var(--ink2); }
+:is(.scr-tables-teams, .scr-tables-stats) .tb-lbl button { font-size: 14px; color: var(--ink2); font-weight: 500; letter-spacing: 0; text-transform: none; padding-left: 12px; }
+:is(.scr-tables-teams, .scr-tables-stats) .tb-gap { margin-top: var(--sp-6); }
+:is(.scr-tables-teams, .scr-tables-players) .tb-box { background: var(--s1); border-radius: 16px; box-shadow: var(--edge); padding: 0 6px; }
+@media (min-width: 960px) {
+  :is(.scr-tables-teams, .scr-tables-stats) .tb-2col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+  :is(.scr-tables-teams, .scr-tables-stats) .tb-2col > div > .tb-gap:first-child { margin-top: 0; }
+  :is(.scr-tables-teams, .scr-tables-players, .scr-tables-stats) .tb-tabs { max-width: 560px; }
+}
+
+/* ---------------------------------------------------------------- Tables · Teams */
+.scr-tables-teams .tb-tcard { background: var(--s1); border-radius: 16px; overflow: hidden; box-shadow: var(--edge); }
+.scr-tables-teams .tb-trow { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto minmax(44px, auto); align-items: center; gap: 12px;
+  min-height: 72px; padding: 10px 16px 10px 14px; border-top: 1px solid var(--line); }
+.scr-tables-teams .tb-trow:first-child { border-top: 0; }
+.scr-tables-teams .tb-bar { width: 10px; height: 22px; border-radius: 3px; background: var(--tc); }
+.scr-tables-teams .tb-tn { font-size: 17px; font-weight: 700; letter-spacing: -.01em; overflow-wrap: anywhere; line-height: 1.2; }
+.scr-tables-teams .tb-form { display: flex; gap: 4px; justify-content: flex-end; }
+.scr-tables-teams .tb-tp { font-size: 30px; text-align: right; color: var(--ink); }
+.scr-tables-teams .tb-cap { font-size: 12.5px; color: var(--ink3); margin: 10px 2px 0; line-height: 1.4; }
+.scr-tables-teams .tb-ftbl th { padding: 14px 6px 10px; }
+.scr-tables-teams .tb-ftbl th:first-child, .scr-tables-teams .tb-ftbl td:first-child { padding-left: 10px; }
+.scr-tables-teams .tb-ftbl th:last-child, .scr-tables-teams .tb-ftbl td:last-child { padding-right: 10px; }
+.scr-tables-teams .tb-ftbl td { height: 52px; font-size: 14px; color: var(--ink2); }
+.scr-tables-teams .tb-ftbl td.bk { color: var(--ink); font-weight: 700; }
+@media (max-width: 359px) { .scr-tables-teams .tb-form .wdl { width: 21px; height: 21px; } .scr-tables-teams .tb-trow { gap: 8px; } }
+
+/* ---------------------------------------------------------------- Tables · Players */
+.scr-tables-players .chips { margin-bottom: var(--sp-3); }
+.scr-tables-players .tb-pbar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-2); }
+.scr-tables-players .tb-pbar .lbl { margin: 0; }
+.scr-tables-players .tb-pbar .seg { width: 196px; flex: none; }
+.scr-tables-players .tb-pbar .seg > button { min-height: var(--h-target); font-size: 13.5px; }
+.scr-tables-players .tb-ptbl { table-layout: fixed; }
+.scr-tables-players .tb-ptbl th { white-space: nowrap; padding: 12px 6px 8px; }
+.scr-tables-players .tb-ptbl th.tb-rk, .scr-tables-players .tb-ptbl td.tb-rk { width: 38px; padding-left: 10px; }
+.scr-tables-players .tb-ptbl th.tb-c2, .scr-tables-players .tb-ptbl td.tb-c2 { width: 60px; }
+.scr-tables-players .tb-ptbl th.tb-pts, .scr-tables-players .tb-ptbl td.tb-pts { width: 58px; padding-right: 12px; }
+.scr-tables-players .tb-ptbl th.tb-w, .scr-tables-players .tb-ptbl td.tb-w { width: 56px; }
+.scr-tables-players .tb-ptbl td { height: auto; padding-top: 10px; padding-bottom: 10px; vertical-align: middle; }
+.scr-tables-players .tb-ptbl tbody tr { cursor: pointer; }
+.scr-tables-players .tb-ptbl tbody tr:active td { background: var(--s2); }
+.scr-tables-players .tb-ptbl tbody tr:focus-visible { outline: none; }
+.scr-tables-players .tb-ptbl tbody tr:focus-visible td { box-shadow: inset 0 1.5px 0 var(--ink2), inset 0 -1.5px 0 var(--ink2); }
+.scr-tables-players .tb-rn { font: 600 15px var(--font); font-variant-numeric: tabular-nums; color: var(--ink3); }
+.scr-tables-players .tb-rn.top { color: var(--ink); }
+.scr-tables-players .tb-nm { font: 650 15px/1.25 var(--font); overflow-wrap: anywhere; }
+.scr-tables-players .tb-you { color: var(--ink3); font-size: 12px; font-weight: 400; }
+.scr-tables-players .tb-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 5px; }
+.scr-tables-players .tb-meta .mv { display: inline-block; margin: 0; font-size: 12px; }
+.scr-tables-players .tb-ptbl td.tb-c2 { color: var(--ink2); }
+.scr-tables-players .tb-ptbl td.tb-w { color: var(--ink2); }
+.scr-tables-players .tb-ptbl td.tb-pts { font: 700 17px var(--font); font-variant-numeric: tabular-nums; letter-spacing: -.01em; color: var(--ink); }
+/* "you": washed in your team colour with a 3 px edge (14% → 4%), pinned so it's always in view
+   (above the nav at the bottom, under the header at the top). Opaque cells so rows never show through. */
+.scr-tables-players .tb-ptbl tr.you { background: none; }
+.scr-tables-players .tb-ptbl tr.you td { position: sticky; z-index: 2; bottom: calc(var(--h-nav) + var(--safe-b)); top: var(--h-header);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 8%, var(--s1)), color-mix(in srgb, var(--tc) 6%, var(--s1))); box-shadow: 0 -1px 0 var(--line), 0 1px 0 var(--line); }
+.scr-tables-players .tb-ptbl tr.you td:nth-child(1) { background: color-mix(in srgb, var(--tc) 14%, var(--s1)); box-shadow: inset 3px 0 0 var(--tc), 0 -1px 0 var(--line), 0 1px 0 var(--line); }
+.scr-tables-players .tb-ptbl tr.you td:nth-child(2) { background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 13%, var(--s1)), color-mix(in srgb, var(--tc) 8%, var(--s1))); }
+.scr-tables-players .tb-ptbl tr.you td:last-child { background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 6%, var(--s1)), color-mix(in srgb, var(--tc) 4%, var(--s1))); }
+@media (min-width: 960px) { .scr-tables-players .tb-ptbl tr.you td { bottom: 0; } }
+
+/* ---------------------------------------------------------------- Tables · Stats */
+.scr-tables-stats .tb-lbl { min-height: 44px; }
+.scr-tables-stats .tb-pod { padding-top: 18px; }
+.scr-tables-stats .pcol .st { font-size: 12.5px; }
+.scr-tables-stats .tb-leaders .ldr { min-height: 84px; }
+.scr-tables-stats .tb-leaders .ldr .nx { font-size: 13px; }
+@media (min-width: 960px) { .scr-tables-stats .tb-pod { max-width: 520px; margin: 0 auto; } }
+
+/* ---------------------------------------------------------------- sheets */
+.sh-tables-share h4 { margin-bottom: 10px; }
+.sh-tables-share .tb-close { font-family: var(--font); font-size: 14px; color: var(--ink2); font-weight: 500; min-height: var(--h-target); padding: 0 4px; }
+.sh-tables-share .tb-cardwrap { display: flex; justify-content: center; margin-top: 14px; }
+.sh-tables-share .tb-card { width: 100%; max-width: 320px; height: auto; aspect-ratio: 4 / 5; display: block; border-radius: 14px; }
+.sh-tables-share .tb-cardctl { margin: 12px auto 0; max-width: 320px; }
+.sh-tables-share .tb-cardctl .seg > button { min-height: var(--h-target); font-size: 13.5px; }   /* 48 px: also opened from referee screens */
+.sh-tables-share .seg > button:disabled { opacity: .35; pointer-events: none; }
+@media (max-height: 760px) { .sh-tables-share .tb-card { max-width: 260px; } }
+.sh-tables-top .tb-toprow .tb-rn { width: 26px; flex: none; font: 600 15px var(--font); font-variant-numeric: tabular-nums; color: var(--ink3); }
+.sh-tables-top .tb-toprow .tb-rn.top { color: var(--ink); }
+.sh-tables-top .tb-toprow .meta { display: flex !important; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; }

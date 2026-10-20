@@ -1,6 +1,7 @@
-/* BE Fit Club · css/fix.css · OWNER: Phase 2 · Fix builder · ref.ftcheck, ref.edit + event/player/add-missed sheets (.scr-ref-ftcheck, .scr-ref-edit, .sh-fix-*)
-   Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
-   no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+/* BE Fit Club · css/fix.css · OWNER: Round 5 · Fulltime builder · ref.ftcheck, ref.edit + event/player/add-missed/
+   sheets (.scr-ref-ftcheck, .scr-ref-edit, .sh-fix-*). Scope every rule under your screen classes.
+   Tokens only. Light (gradients, glows) only on .hero / .lit pieces: the score block hero card, the full-time
+   card, the sum pattern (components.css). Shared pieces live in components.css (ask the lead for changes). */
 
 /* ---------------------------------------------------------------- shared: field rows, steppers, links */
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-f { min-height: 52px; gap: 12px; }
@@ -17,24 +18,34 @@
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-link .n { color: var(--ink3); margin-left: 4px; }
 .sh-fix .link { min-height: var(--h-target); }
 
-/* event rows (Timeline, player sheet, flags) */
+/* event rows (Timeline, player sheet, flags): minute · name · type · team chip */
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-ev { align-items: center; }
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-ev .kind { margin-left: 2px; }
 :is(.scr-ref-edit, .scr-ref-ftcheck, .sh-fix) .fx-evm { display: block; font-size: var(--fs-meta); color: var(--ink3); margin-top: 2px; overflow-wrap: anywhere; }
 
-/* points change panel */
-.sh-fix .fx-delta { margin-top: var(--sp-3); }
-.sh-fix .fx-dh { font-size: var(--fs-meta); color: var(--ink3); margin-bottom: 2px; }
-.sh-fix .fx-dn { min-width: 0; overflow-wrap: anywhere; }
-.sh-fix .fx-dv { color: var(--ink2); white-space: nowrap; flex: none; }
-.sh-fix .fx-dv b { color: var(--ink); display: inline-block; min-width: 30px; text-align: right; }
-.sh-fix .fx-score .fx-dv b { min-width: 0; }
+/* ---------------------------------------------------------------- the score block hero (Edit match, FT check) */
+:is(.scr-ref-edit, .scr-ref-ftcheck) .fx-hero { padding: 14px 14px 16px; }
+:is(.scr-ref-edit, .scr-ref-ftcheck) .fx-hero > * { position: relative; z-index: 1; }   /* above the hero's edge */
+:is(.scr-ref-edit, .scr-ref-ftcheck) .fx-under { font-size: 13px; color: var(--ink3); text-align: center; margin-top: 10px; }
+.scr-ref-edit .fx-editscore { display: flex; width: 100%; justify-content: center; margin-top: 4px; font-size: 13.5px; }
+@media (min-width: 960px) { :is(.scr-ref-edit, .scr-ref-ftcheck) .fx-hero { max-width: 588px; margin-left: auto; margin-right: auto; } }
+
+/* ---------------------------------------------------------------- points change: the sum pattern */
+.sh-fix .fx-delta { margin-top: var(--sp-4); }
+.sh-fix .fx-dh { margin-bottom: var(--sp-2); }
+.sh-fix .fx-one .sr-l { color: var(--ink2); }
+.sh-fix .fx-list { background: var(--s2); border-radius: 16px; padding: 2px 16px; box-shadow: var(--edge); }
+.sh-fix .fx-dr { display: flex; align-items: baseline; gap: var(--sp-3); min-height: 44px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.sh-fix .fx-dr:first-child { border-top: 0; }
+.sh-fix .fx-dn { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sh-fix .fx-dv { color: var(--ink3); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+.sh-fix .fx-dr .v { font: 650 16px var(--font); font-variant-numeric: tabular-nums; width: 72px; text-align: right; flex: none; color: var(--ink); }
+.sh-fix .fx-score .v { width: auto; min-width: 72px; }
+.sh-fix .fx-nochg .fx-dn { color: var(--ink2); }
 
 /* ---------------------------------------------------------------- sheets */
 .sh-fix h4 .end { flex: none; }
 .sh-fix .fx-logged { font: 400 var(--fs-meta) var(--font); color: var(--ink3); }
-.sh-fix .fx-ptsbig { font: 600 var(--fs-title) var(--mono); color: var(--ink); }
-.sh-fix .fx-ptsl { font: 400 var(--fs-meta) var(--font); color: var(--ink3); }
 .sh-fix .fx-foot { display: flex; flex-direction: column; gap: var(--sp-2); }
 .sh-fix .fx-foot:empty { display: none; }
 .sh-fix .fx-acts { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); }
@@ -48,20 +59,24 @@
 .sh-fix .fx-sq [hidden] { display: none; }
 .sh-fix .fx-type { height: var(--h-target); font-size: 13.5px; padding: 0 4px; white-space: normal; line-height: 1.15; text-align: center; }
 .sh-fix .fx-types { gap: var(--sp-2); }
-.sh-fix .fx-math { background: var(--s2); border-radius: var(--r-btn); padding: 8px 12px; }
-.sh-fix .fx-mr { display: flex; justify-content: space-between; gap: var(--sp-3); font-size: 13px; color: var(--ink2); padding: 3px 0; }
-.sh-fix .fx-mr .n { color: var(--ink); font-weight: 600; flex: none; }
 .sh-fix .fx-none-ev { font-size: 13px; color: var(--ink3); padding: 12px 0 0; }
 .sh-fix .fx-off { margin-top: var(--sp-3); font-weight: 600; }
 .sh-fix .fx-tick { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--s3); }
 .sh-fix .fx-tick.on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
 .sh-fix [data-tap="up-tick"][hidden], .sh-fix [data-tap="ap-pick"][hidden] { display: none; }
 .sh-fix .seg.ref > button { min-height: var(--h-target); }
+/* player sheet: the night's points as a sum, the position line under the name */
+.sh-fix-player .fx-sub { margin-top: 2px; }
+.sh-fix-player .sum { margin-top: 2px; }
+/* "A Red player" rows in the picker carry their team wash */
+.sh-fix .r.wash { background-color: var(--s1); }
 
 /* ---------------------------------------------------------------- Edit match */
 .scr-ref-edit .fx-tabn { font-size: var(--fs-meta); color: var(--ink3); margin-left: 4px; }
 .scr-ref-edit .tabs2 > button.on .fx-tabn { color: var(--ink2); }
+.scr-ref-edit .tabs2 > button { min-height: var(--h-target); }   /* referee screen: 48 px targets */
 .scr-ref-edit .fx-players .r { min-height: 56px; }
+.scr-ref-edit .fx-players .av { margin-right: 2px; }
 .scr-ref-edit .fx-players .tally { display: block; margin-top: 3px; }
 .scr-ref-edit .chips { margin-bottom: var(--sp-3); }
 .scr-ref-edit .fx-gl { margin-top: var(--sp-4); }
@@ -70,9 +85,6 @@
 .scr-ref-edit .fx-dock .btn { box-shadow: var(--shadow-float); }
 .scr-ref-edit .fx-link { display: inline-flex; align-items: center; margin-top: var(--sp-2); }
 .scr-ref-edit .fx-date { font: 500 15px var(--mono); color: var(--ink); width: 100%; min-height: var(--h-target); color-scheme: inherit; }
-.scr-ref-edit .fx-scorecard { display: block; width: 100%; text-align: left; }
-.scr-ref-edit .fx-scorecard:active { background: var(--s2); }
-.scr-ref-edit .fx-ft-mid, .scr-ref-ftcheck .fx-ft-mid { font-size: var(--fs-meta); color: var(--ink3); }
 .scr-ref-edit .empty + .btn { margin-top: var(--sp-2); }
 .scr-ref-edit .fx-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
 @media (min-width: 960px) {
@@ -81,24 +93,68 @@
 }
 
 /* ---------------------------------------------------------------- Full-time check */
-.scr-ref-ftcheck .fx-ftline { font-size: var(--fs-meta); color: var(--ink3); text-align: center; margin-top: var(--sp-3); }
-.scr-ref-ftcheck .fx-ft-t { font-weight: 600; }
-.scr-ref-ftcheck .fx-ft-s { font-size: 13px; color: var(--ink2); margin: 4px 0 12px; overflow-wrap: anywhere; }
-.scr-ref-ftcheck .fx-two { height: auto; min-height: 56px; flex-direction: column; gap: 2px; white-space: normal; text-align: center; line-height: 1.2; padding: 6px 8px; }
+.scr-ref-ftcheck .fx-ft-t { font-weight: 650; }
+.scr-ref-ftcheck .fx-ft-s { font-size: 13px; color: var(--ink2); margin: 3px 0 12px; overflow-wrap: anywhere; }
+.scr-ref-ftcheck .fx-two { height: auto; min-height: 52px; flex-direction: column; gap: 2px; white-space: normal; text-align: center; line-height: 1.2; padding: 6px 8px; }
 .scr-ref-ftcheck .fx-eff { font-size: var(--fs-meta); font-weight: 500; opacity: .75; }
 .scr-ref-ftcheck .flag .rows { background: var(--s2); box-shadow: none; }
-.scr-ref-ftcheck .fx-links { display: flex; justify-content: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-6); }
+/* the long-stoppage flag: the calm amber nudge (--attn) */
+.scr-ref-ftcheck .fx-stop { background: var(--attn); box-shadow: inset 3px 0 0 var(--warn), inset 0 0 0 1px color-mix(in srgb, var(--warn) 30%, transparent); }
+.scr-ref-ftcheck .fx-stop .fx-ft-s { color: var(--ink2); }
+.scr-ref-ftcheck .fx-stop .fx-ok { width: 100%; min-height: var(--h-target); }
+.scr-ref-ftcheck .fx-links { display: flex; justify-content: center; gap: var(--sp-6); flex-wrap: wrap; margin-top: var(--sp-2); }
 /* Publish is pinned: the page fills the screen and the button sits 12 px above the nav (sticky when the list is long) */
 .scr-ref-ftcheck { display: flex; flex-direction: column; min-height: calc(100vh - var(--h-header) - var(--h-nav) - var(--safe-b) - 28px); min-height: calc(100dvh - var(--h-header) - var(--h-nav) - var(--safe-b) - 28px); }
-.scr-ref-ftcheck .fx-pub { position: sticky; bottom: calc(var(--h-nav) + var(--safe-b) + 12px); margin-top: auto; padding-top: var(--sp-6); z-index: 5; }
+.scr-ref-ftcheck .fx-pub { position: sticky; bottom: calc(var(--h-nav) + var(--safe-b) + 12px); margin-top: auto; padding-top: var(--sp-4); z-index: 5; }
 .scr-ref-ftcheck .fx-pub .btn { box-shadow: var(--shadow-float); }
-.scr-ref-ftcheck .fx-pubhead { display: flex; gap: var(--sp-3); align-items: center; margin: 8px 0 4px; }
+.scr-ref-ftcheck .fx-pub .btn.fx-waitbtn { background: var(--attn); color: var(--warn); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--warn) 55%, transparent), var(--shadow-float); }
+body.nav-hidden .scr-ref-ftcheck .fx-pub, body.no-nav .scr-ref-ftcheck .fx-pub { bottom: calc(var(--safe-b) + 12px); }
+
+/* the full-time card: tables.js draws it into our canvas (the preview is the real card) */
+.scr-ref-ftcheck .fx-ftcv { border-radius: 16px; overflow: hidden; box-shadow: var(--edge); margin: 0 auto; width: 100%; max-width: 420px; }
+.scr-ref-ftcheck .fx-ftcv.pv { max-width: 192px; }
+.scr-ref-ftcheck .fx-ftcanvas { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; }
+
+/* the same card in HTML (only when tables.js's share.fullTime is missing): always dark, a broadcast graphic */
+.scr-ref-ftcheck .fx-ftc { position: relative; overflow: hidden; border-radius: 16px; padding: 18px 20px 64px; margin: 0 auto; max-width: 420px;
+  color: var(--ink); background: linear-gradient(180deg, var(--s1), var(--bg)); box-shadow: inset 0 0 0 1px var(--line); }
+.scr-ref-ftcheck .fx-ftc.pv { max-width: 320px; }
+.scr-ref-ftcheck .fx-ftc > :not(.fx-ftc-gl) { position: relative; }
+.scr-ref-ftcheck .fx-ftc-gl { position: absolute; top: 0; bottom: 0; width: 70%; pointer-events: none; }
+.scr-ref-ftcheck .fx-ftc-gl.l { left: 0; background: radial-gradient(60% 55% at 0% 40%, color-mix(in srgb, var(--tc) 26%, transparent), transparent 70%); }
+.scr-ref-ftcheck .fx-ftc-gl.r { right: 0; background: radial-gradient(60% 55% at 100% 40%, color-mix(in srgb, var(--tc) 22%, transparent), transparent 70%); }
+.scr-ref-ftcheck .fx-ftc-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ink2); }
+.scr-ref-ftcheck .fx-ftc-k { text-align: center; margin-top: 16px; font-size: 12px; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; color: var(--ink2); }
+.scr-ref-ftcheck .fx-ftc-sc { display: grid; grid-template-columns: 1fr 28px 1fr; align-items: center; text-align: center; margin-top: 6px; }
+.scr-ref-ftcheck .fx-ftc-sc.multi { grid-template-columns: repeat(var(--n), 1fr); }
+.scr-ref-ftcheck .fx-ftc-t { min-width: 0; }
+.scr-ref-ftcheck .fx-ftc-n { display: block; font: 800 88px/1 var(--font); font-variant-numeric: tabular-nums; letter-spacing: -.05em; color: var(--tc); text-shadow: 0 0 30px color-mix(in srgb, var(--tc) 40%, transparent); }
+.scr-ref-ftcheck .fx-ftc.pv .fx-ftc-n { font-size: 72px; }
+.scr-ref-ftcheck .fx-ftc-w { display: block; font-size: 12px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--tc); margin-top: 4px; overflow-wrap: anywhere; }
+.scr-ref-ftcheck .fx-ftc-d { font: 700 30px var(--font); font-style: normal; color: var(--ink3); margin-top: -20px; }
+.scr-ref-ftcheck .fx-ftc-s { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; font-size: 12.5px; line-height: 1.55; color: var(--ink); }
+.scr-ref-ftcheck .fx-ftc-s.multi { grid-template-columns: repeat(var(--n), 1fr); }
+.scr-ref-ftcheck .fx-ftc-s .rt { text-align: right; }
+.scr-ref-ftcheck .fx-ftc-who { overflow-wrap: anywhere; }
+.scr-ref-ftcheck .fx-ftc-m { color: var(--ink3); font-family: var(--mono); font-size: 12px; }
+.scr-ref-ftcheck .fx-ftc-f { position: absolute; left: 20px; right: 20px; bottom: 14px; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  border-top: 1px solid var(--line); padding-top: 10px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); }
+.scr-ref-ftcheck .fx-ftc-f b { font: 700 14px var(--font); letter-spacing: 0; text-transform: none; color: var(--ink); text-align: right; }
+
+/* Published */
+.scr-ref-ftcheck .fx-pubhead { display: flex; gap: var(--sp-3); align-items: center; margin: 4px 0 16px; }
 .scr-ref-ftcheck .fx-bigtick { width: 40px; height: 40px; border-radius: 50%; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; font-size: 18px; font-weight: 700; flex: none; }
-.scr-ref-ftcheck .fx-pubt { font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+.scr-ref-ftcheck .fx-bigtick.ring { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink3); }
+.scr-ref-ftcheck .fx-bigtick.wait { background: var(--attn); box-shadow: inset 0 0 0 2px var(--warn); }
+.scr-ref-ftcheck .fx-bigtick.wait::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--warn); }
+.scr-ref-ftcheck .fx-pubt { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.scr-ref-ftcheck .fx-pubhead .sub { font-size: 13px; color: var(--ink3); }
+.scr-ref-ftcheck [data-pubstate="waiting"] .fx-pubt { color: var(--warn); }
+.scr-ref-ftcheck .fx-np { font-size: 13px; color: var(--ink3); margin-left: 6px; }
+.scr-ref-ftcheck .sum .sr-l { display: flex; align-items: center; flex-wrap: wrap; }
 .scr-ref-ftcheck .fx-mv { color: var(--ink2); font-size: 13px; white-space: nowrap; }
 .scr-ref-ftcheck .bk { font-weight: 600; }
 @media (min-width: 960px) {
   .scr-ref-ftcheck { min-height: calc(100vh - var(--h-header) - 40px); }
   .scr-ref-ftcheck .fx-pub { bottom: 24px; }
 }
-.scr-ref-edit .tabs2 > button { min-height: var(--h-target); }   /* referee screen: 48 px targets */

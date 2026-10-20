@@ -1,6 +1,6 @@
-/* BE Fit Club · css/setup.css · OWNER: Phase 2 · Setup builder · ref.setup + setup sheets (.scr-ref-setup, .sh-setup-*)
-   Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
-   no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+/* BE Fit Club · css/setup.css · OWNER: Round 5 · Console builder · ref.setup + setup sheets (.scr-ref-setup, .sh-setup-*)
+   Tokens only. Team colour always comes from Teams (.t-<id> sets --tc) and sits next to the team word.
+   Light: only the Tonight card (.hero, the screen's one glow) and the VS block inside it (.lit). Everything else flat. */
 
 /* ---------------------------------------------------------------- Who's here? */
 .scr-ref-setup .su-chips { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
@@ -22,7 +22,6 @@
   display: inline-flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden;
 }
-.sh-setup .su-tb { background: var(--sheet); box-shadow: var(--ring); }
 .scr-ref-setup .su-tb:active, .sh-setup .su-tb:active { background: var(--s3); transform: scale(.98); }
 .scr-ref-setup .su-tb.is-saving, .sh-setup .su-tb.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); box-shadow: none; min-width: 88px; }
 .scr-ref-setup .su-on .end, .sh-setup .su-on .end { padding-right: 6px; }
@@ -35,12 +34,11 @@
   height: 56px; border-radius: var(--r-btn); background: var(--s1); color: var(--ink);
   font-weight: 600; font-size: 15px; text-align: center; box-shadow: var(--ring); position: relative; overflow: hidden;
 }
-.sh-setup .su-new { background: var(--s2); box-shadow: none; }
-/* team stripe on the left (colour always comes with the team word) */
-.scr-ref-setup .su-tb::before, .sh-setup .su-tb::before, .scr-ref-setup .su-new::before, .sh-setup .su-new::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tc);
+/* team buttons: a flat team tint + team ring, always with the team word (Blue-ready: --tc comes from Teams) */
+.scr-ref-setup .su-tb, .sh-setup .su-tb, .scr-ref-setup .su-new, .sh-setup .su-new, .sh-setup .su-mrow .mv2 {
+  background: color-mix(in srgb, var(--tc, var(--s3)) var(--tint-soft), var(--s2));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc, var(--s3)) var(--tint-ring), transparent);
 }
-.scr-ref-setup .is-saving::before, .sh-setup .is-saving::before { display: none; }
 .scr-ref-setup .su-new:active, .sh-setup .su-new:active { background: var(--s3); transform: scale(.98); }
 .scr-ref-setup .su-new.is-saving, .sh-setup .su-new.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); box-shadow: none; }
 
@@ -60,7 +58,23 @@
 .sh-setup-teams h4 { margin-bottom: var(--sp-2); }
 .sh-setup .su-mrow { padding-right: 8px; }
 .sh-setup .su-mrow .end { gap: 6px; }
-.sh-setup .su-mrow .mv2 { background: var(--sheet); }
 .sh-setup .su-mrow .mv2.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); box-shadow: none; }
 .sh-setup .su-mrow .tagm { background: var(--s3); }
 .sh-setup-player .grid2, .sh-setup-player .grid3 { gap: var(--sp-2); }
+
+/* ---------------------------------------------------------------- round 5: Tonight (the hero), who plays, team tabs */
+.scr-ref-setup .su-hero { padding: var(--card-pad) var(--card-pad) 16px; }
+.scr-ref-setup .su-hero > .lbl { margin-bottom: 2px; }
+.scr-ref-setup .su-here { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+.scr-ref-setup .su-here .hn { font-size: 48px; }
+.scr-ref-setup .su-here span { font-size: 15px; color: var(--ink2); }
+.scr-ref-setup .su-tplbl { margin-top: var(--sp-4); }
+.scr-ref-setup .su-tpick { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.scr-ref-setup .su-tp { height: var(--h-target); min-width: 76px; padding: 0 14px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink2);
+  display: inline-flex; align-items: center; gap: 7px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--s3); }
+.scr-ref-setup .su-tp::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--tc); flex: none; }
+.scr-ref-setup .su-tp.on { color: var(--ink); background: color-mix(in srgb, var(--tc) var(--tint-soft), var(--s1)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
+.scr-ref-setup .su-wholbl { margin-top: var(--sp-6); }
+/* the active team tab is tinted in its team colour (flat) */
+.scr-ref-setup .seg > button.team.on, .sh-setup .seg > button.team.on { background: color-mix(in srgb, var(--tc) 22%, var(--s2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
+.scr-ref-setup .rows, .sh-setup .rows { box-shadow: var(--edge); }

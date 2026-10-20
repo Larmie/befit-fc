@@ -1,62 +1,131 @@
-/* BE Fit Club · css/console.css · OWNER: Phase 2 · Console builder · ref.console, ref.events (.scr-ref-console, .scr-ref-events, .sh-console-*)
-   Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
-   no gradients, no glows. Shared pieces live in components.css (ask the lead for changes). */
+/* BE Fit Club · css/console.css · OWNER: Round 5 · Console builder · ref.console (the deck), ref.events, console sheets
+   (.scr-ref-console, .scr-ref-events, .sh-console-*). Tokens only. Light (gradients, glows) ONLY on the listed
+   components, marked .lit: Goal tiles (corner light), the stoppage escalation, the Goal sheet title bar. The score
+   block is the screen's one .hero. Everything else flat: dark by default, 16 px gutters, 8 px gaps, 16 px between sections. */
 
-/* ---------------------------------------------------------------- header ⋯ (console only) */
-.hd .cn-more { width: var(--h-target); height: var(--h-target); justify-content: center; padding: 0; border-radius: var(--r-chip); background: var(--s1); color: var(--ink); box-shadow: var(--ring); }
-.hd .cn-more svg { width: 22px; height: 22px; stroke-width: 2.4; }
-.hd .cn-more:active { background: var(--s2); }
+/* ---------------------------------------------------------------- deck rhythm */
+.scr-ref-console .cn-sec { margin-top: var(--sp-4); }
+.scr-ref-console .cn-sec > .lbl { margin: 0 0 var(--sp-2); min-height: 18px; align-items: center; }
+.scr-ref-console .cn-sec > .lbl b { font-size: 12.5px; color: var(--ink2); font-weight: 500; }
 
-/* ---------------------------------------------------------------- score + clock */
-.scr-ref-console .cn-score { padding: 2px 0 14px; }
-.scr-ref-console .cn-score .clock { font-size: 22px; }
-.scr-ref-console .cn-pill { text-align: center; margin-top: 10px; }
+/* ---------------------------------------------------------------- score + one line */
+.scr-ref-console .cn-score { padding-top: 2px; }
+.scr-ref-console .cn-line { text-align: center; margin-top: 8px; font-size: 12.5px; color: var(--ink3); overflow-wrap: anywhere; }
+.scr-ref-console .cn-line.is-stop { color: var(--warn); }
 
-/* ---------------------------------------------------------------- Pause · + Stoppage · + Player */
-.scr-ref-console .cn-ctl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
-.scr-ref-console .cn-ctl > .btn { padding: 0 6px; }
-.scr-ref-console .cn-ctl .btn.cn-on { background: var(--ink); color: var(--on-ink); }
-.scr-ref-console .cn-ctl-idle { grid-template-columns: 2fr 1fr; }
-.scr-ref-console .cn-ctl-idle > .btn { height: 56px; }
-.scr-ref-console .cn-ctl-ft { grid-template-columns: 1fr; }
-.scr-ref-console .cn-kick { height: 56px; font-weight: 650; }
+/* ---------------------------------------------------------------- Goals & assists: 96 px, team tint + corner light */
+.scr-ref-console .cn-goals { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); }
+.scr-ref-console .cn-goal {
+  position: relative; height: 96px; min-height: 96px; width: 100%; border-radius: 16px; padding: 0 16px;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; overflow: hidden;
+  background: radial-gradient(90% 110% at 0% 100%, color-mix(in srgb, var(--tc) var(--glow), transparent), transparent 70%),
+              color-mix(in srgb, var(--tc) var(--tint-tile), var(--s1));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent), var(--edge);
+}
+.scr-ref-console .cn-goal b { font-size: 24px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; color: var(--ink); }
+.scr-ref-console .cn-goal small { font-size: 12.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--tc); margin-top: 4px; overflow-wrap: anywhere; }
+[data-theme="light"] .scr-ref-console .cn-goal small { color: var(--ink2); }      /* never team-coloured text under 18 px in light */
+.scr-ref-console .cn-goal .cn-gc { font-family: var(--font); font-variant-numeric: tabular-nums; font-weight: 600; position: absolute; top: 10px; right: 12px; font-size: 13px; color: var(--ink2); }
+.scr-ref-console .cn-goal:active { transform: scale(.98); filter: brightness(1.08); }
 
-/* ---------------------------------------------------------------- Goal tiles (92) + action row (72) */
-.scr-ref-console .cn-goals { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); margin-top: var(--sp-2); }
-.scr-ref-console .cn-goal { height: var(--h-goal); min-height: var(--h-goal); width: 100%; padding: 0 16px; }
-.scr-ref-console .cn-goal b { font-size: var(--fs-title); }
-.scr-ref-console .cn-goal small { font-size: 13px; color: var(--ink2); margin-top: 2px; }
-.scr-ref-console .cn-acts { grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); margin-top: var(--sp-2); }
-.scr-ref-console .cn-act { height: var(--h-action); min-height: var(--h-action); width: 100%; }
-.scr-ref-console .cn-act svg { margin-bottom: 6px; }
+/* ---------------------------------------------------------------- Defence / Keepers & defence: 72 px, word + count */
+.scr-ref-console .cn-def { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); }
+.scr-ref-console .cn-act, .scr-ref-console .cn-card { height: var(--h-action); min-height: var(--h-action); width: 100%; align-items: center; text-align: center; padding: 0 6px; }
+.scr-ref-console .cn-act b { font-size: 17px; font-weight: 650; }
+.scr-ref-console .cn-act .cn-ct { font-family: var(--font); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+
+/* ---------------------------------------------------------------- Cards: real card shapes, 76 px */
+.scr-ref-console .cn-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+.scr-ref-console .cn-card { height: 76px; min-height: 76px; gap: 6px; }
+.scr-ref-console .cn-card b { font-size: 15px; font-weight: 650; }
+.scr-ref-console .cn-card b .n { color: var(--ink2); font-weight: 600; }
+.cn-cs { display: inline-block; width: 22px; height: 30px; border-radius: 4px; flex: none; background: var(--yel); box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
+.cn-cs.cn-cs-red { background: var(--cred); }
+[data-theme="light"] .cn-cs { box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+
 .scr-ref-console .cn-off { opacity: .45; }
-.scr-ref-console .cn-off:active { transform: none; }
+.scr-ref-console .cn-off:active { transform: none; filter: none; }
+
+/* ---------------------------------------------------------------- Match controls */
+.scr-ref-console .cn-ctl { display: flex; flex-direction: column; gap: var(--sp-2); }
+.scr-ref-console .cn-row1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--sp-2); }
+.scr-ref-console .cn-row1.one { grid-template-columns: 1fr; }
+.scr-ref-console .cn-row1 > .btn { height: 56px; padding: 0 8px; }
+.scr-ref-console .cn-prim { font-weight: 650; font-size: 16px; }
+.scr-ref-console .cn-pause { font-weight: 550; color: var(--ink2); }
+.scr-ref-console .cn-pause:disabled { opacity: .45; }
+.scr-ref-console .cn-total { font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--ink2); letter-spacing: 0; text-transform: none; }
+
+/* stoppage running: ONE amber control (the score centre is amber too); after 4 min it pulses and asks */
+.scr-ref-console .btn.cn-stop { background: var(--warnfill); color: var(--on-warn); display: flex; flex-direction: column; justify-content: center; line-height: 1.15; }
+.scr-ref-console .btn.cn-stop:active { filter: brightness(.95); }
+.scr-ref-console .cn-stop .cn-sq { font-size: 13px; font-weight: 600; }
+.scr-ref-console .cn-stop .cn-sv { font-size: 16px; font-weight: 700; }
+.scr-ref-console .cn-stop .n { font-family: var(--font); font-variant-numeric: tabular-nums; }
+.scr-ref-console .btn.cn-stop.is-esc { box-shadow: 0 0 0 3px color-mix(in srgb, var(--warnfill) 35%, transparent), 0 0 22px color-mix(in srgb, var(--warnfill) 55%, transparent);
+  animation: cn-esc 1.6s ease-in-out infinite; }
+@keyframes cn-esc {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--warnfill) 35%, transparent), 0 0 18px color-mix(in srgb, var(--warnfill) 45%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--warnfill) 20%, transparent), 0 0 30px color-mix(in srgb, var(--warnfill) 65%, transparent); }
+}
+
+/* row 2: 3 × 2 tiles, 52 px */
+.scr-ref-console .cn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+.scr-ref-console .cn-ctile {
+  height: 52px; min-height: 52px; width: 100%; border-radius: var(--r-btn); background: var(--s1); color: var(--ink);
+  font-weight: 600; font-size: 14px; line-height: 1.15; padding: 0 6px; text-align: center; box-shadow: var(--edge);
+  display: flex; align-items: center; justify-content: center; gap: 4px; position: relative; overflow: hidden;
+}
+.scr-ref-console .cn-ctile:active { background: var(--s2); transform: scale(.98); }
+.scr-ref-console .cn-ctile.is-quiet { color: var(--ink2); font-weight: 550; }
+.scr-ref-console .cn-ctile.is-done { color: var(--ink3); font-weight: 550; }
+.scr-ref-console .cn-ctile.is-done:active { transform: none; background: var(--s1); }
+.scr-ref-console .cn-ctile.is-off { opacity: .45; }
+/* Adjust clock is a hold tile (components' hold logic): its own size, fill rises across the tile */
+.scr-ref-console .hold.cn-ctile { height: 52px; font-size: 14px; box-shadow: var(--edge); }
+.scr-ref-console .hold.cn-ctile .fill { background: var(--s3); }
+
+/* row 3: Hold to end the game, 56 px, amber ring, amber fill over 1.5 s */
+.scr-ref-console .cn-endw .hold { height: 56px; color: var(--warn); font-weight: 650; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--warn) 70%, transparent); background: transparent; }
+.scr-ref-console .cn-endw .hold .fill { background: color-mix(in srgb, var(--warnfill) 32%, transparent); }
+.scr-ref-console .cn-endw .hold.done { color: var(--on-warn); }
+.scr-ref-console .cn-endw .hold.done .fill { width: 100%; background: var(--warnfill); }
 
 /* ---------------------------------------------------------------- Latest feed */
-.scr-ref-console .cn-latest { margin: var(--sp-4) 0 var(--sp-1); align-items: center; }
-.scr-ref-console .cn-all { min-height: var(--h-target); min-width: var(--h-target); padding: 0 2px 0 12px; margin: -10px 0; font-size: 13px; color: var(--ink2); font-weight: 500; }
+.scr-ref-console .cn-all { min-height: var(--h-target); min-width: var(--h-target); padding: 0 2px 0 12px; margin: -15px 0; font-size: 13px; color: var(--ink2); font-weight: 500; justify-content: flex-end; }
 .scr-ref-console .cn-none { color: var(--ink3); }
-.cn-evr .grow { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 2px; }
-.cn-evr .nm { font-weight: 550; overflow-wrap: anywhere; }
+.cn-evr { min-height: 52px; }
+.cn-evr .grow { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 2px; min-width: 0; }
+.cn-evr .nm { font-weight: 600; overflow-wrap: anywhere; }
 .cn-evr .kind { display: inline-flex; align-items: baseline; gap: 5px; font-size: 13px; color: var(--ink3); }
 .cn-evr .card-glyph { align-self: center; }
-.cn-evr .min { align-self: center; width: auto; min-width: 40px; white-space: nowrap; }
+.cn-evr .min { align-self: center; width: auto; min-width: 46px; white-space: nowrap; font-family: var(--mono); font-size: 12.5px; color: var(--ink2); }
+.cn-evr .end { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+/* still on the phone (waiting to send): an amber dot */
+.cn-wait { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; display: inline-block; }
 
 /* ---------------------------------------------------------------- All events */
 .scr-ref-events .cn-evtop { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .scr-ref-events .cn-filters .chips { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
 .scr-ref-events .chip.ref { background: var(--s1); box-shadow: var(--ring); }
 .scr-ref-events .chip.ref.on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
-.scr-ref-events .cn-evlist .r { min-height: 52px; }
+.hd .cn-back { min-height: var(--h-target); padding-right: 12px; }
 
 /* ---------------------------------------------------------------- sheets: shared */
-.sh-console h4 .bar-team { flex: none; }
 .sh-console .lbl { margin-bottom: var(--sp-2); }
+.sh-console .sheet-h .end .n { font-family: var(--mono); font-size: 13px; color: var(--ink2); font-weight: 500; }
 .sh-console .r.is-saving, .sh-console .chip.is-saving { opacity: 1; background: var(--ink); color: var(--on-ink); }
-.sh-console .r.is-saving .tally { color: inherit; opacity: .7; }
+.sh-console .r.is-saving .tally, .sh-console .r.is-saving .cn-booked { color: inherit; opacity: .7; }
 .sh-console .ptile.is-saving .pt-name { -webkit-line-clamp: 2; }
+/* active team tab: tinted in the team colour (flat) */
+.sh-console .seg > button.team.on { background: color-mix(in srgb, var(--tc) 22%, var(--s2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
 
-/* Goal sheet */
+/* Goal sheet: the team-tinted title bar (the one sheet with light), title in team colour */
+.sh-console-goal .sheet-h.cn-gbar { margin: 0 calc(-1 * var(--gutter)); padding-left: var(--gutter); padding-right: var(--gutter); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 24%, var(--sheet)), var(--sheet)); }
+.sh-console-goal .sheet-h.cn-gbar .sheet-title { color: var(--tc); font-weight: 700; }
+[data-theme="light"] .sh-console-goal .sheet-h.cn-gbar .sheet-title { color: color-mix(in srgb, var(--tc) 85%, #000); }
+.sh-console-goal .sheet-h .sh-s { color: var(--ink2); }
 .sh-console-goal .cn-steplbl { margin-top: 2px; }
 .sh-console-goal .cn-links { display: flex; flex-direction: column; align-items: center; margin-top: var(--sp-2); }
 .sh-console-goal .cn-link { min-height: var(--h-target); padding: 0 12px; font-size: 13.5px; }
@@ -72,25 +141,53 @@
 .sh-console-act { height: 90vh; height: 90dvh; }
 .sh-console-act .sheet-b { display: flex; flex-direction: column; overflow: hidden; }
 .sh-console-act .sheet-b > * { flex: none; }
-.sh-console-act .cn-cardseg { margin-bottom: var(--sp-3); }
-.sh-console-act .cn-cardseg > button .card-glyph { flex: none; }
 .sh-console-act .cn-reclbl { margin: var(--sp-4) 0 var(--sp-2); }
 .sh-console-act .cn-recent { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
 .sh-console-act .cn-teams { margin-top: var(--sp-3); }
 .sh-console-act .cn-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: var(--sp-3) calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter); }
 .sh-console-act .cn-prow { min-height: 60px; padding: 8px 16px; }
-.sh-console-act .cn-prow .grow { display: flex; flex-direction: column; gap: 3px; }
+.sh-console-act .cn-prow .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sh-console-act .cn-prow .nm { overflow-wrap: anywhere; }
 .sh-console-act .cn-prow .tally { color: var(--ink3); }
+.sh-console-act .cn-prow .end { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .sh-console-act .sheet-f .btn { flex: none; }
 
-/* Save: keepers by team */
-.sh-console-save .cn-keepers { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-3); }
-.sh-console-save .cn-kcol { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
-.sh-console-save .cn-kcol .lbl { margin-bottom: 0; }
-.sh-console-save .cn-kcol .ptile .pt-name { font-size: 17px; }
+/* Card sheet: two big card choices (ring in the card's colour), "Booked 71'" next to anyone carded tonight */
+.sh-console-card .cn-cardseg { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); padding: 0; background: transparent; box-shadow: none; margin-bottom: var(--sp-3); }
+.sh-console-card .cn-cardseg > button { height: 80px; min-height: 80px; flex-direction: column; gap: 8px; border-radius: 14px; background: var(--s2); font-size: 15px; font-weight: 650; color: var(--ink); }
+.sh-console-card .cn-cardseg > button.on.cn-ct-y { background: var(--s3); box-shadow: inset 0 0 0 2px var(--yel); }
+.sh-console-card .cn-cardseg > button.on.cn-ct-r { background: var(--s3); box-shadow: inset 0 0 0 2px var(--cred); }
+.sh-console-card .cn-booked { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink2); white-space: nowrap; }
+.sh-console-card .cn-booked .cn-cs { width: 11px; height: 15px; border-radius: 2px; box-shadow: none; }
 
-/* ⋯ menu */
-.sh-console-menu .cn-first { min-height: 56px; background: var(--hl); box-shadow: inset 3px 0 0 var(--ink); }
-.sh-console-menu .r .meta { white-space: nowrap; }
-.sh-console-menu .sheet-f { padding-top: var(--sp-3); }
-.hd .cn-back { min-height: var(--h-target); padding-right: 12px; }
+/* Save: Save | Penalty save first, then one tinted tile per keeper */
+.sh-console-save .seg { margin-bottom: var(--sp-3); }
+.sh-console-save .cn-keepers { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--sp-2); }
+.sh-console-save .cn-ktile { height: 96px; min-height: 96px; justify-content: center; gap: 4px; border-radius: 16px;
+  background: color-mix(in srgb, var(--tc) var(--tint-tile), var(--s2)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) var(--tint-ring), transparent); }
+.sh-console-save .cn-ktile .pt-name { font-size: 18px; font-weight: 700; }
+.sh-console-save .cn-ktile .cn-kmeta { font-size: 12.5px; color: var(--ink2); font-weight: 550; }
+.sh-console-save .cn-ktile.is-saving { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.sh-console-save .cn-ktile.is-saving .cn-kmeta { color: inherit; opacity: .7; }
+
+/* Adjust clock: minute stepper (48 px − / +), options with a tick, one primary */
+.sh-console-adjust .cn-adj .r { min-height: 56px; }
+.sh-console-adjust .cn-adjset { gap: 8px; }
+.sh-console-adjust .cn-adjset .nm { font-weight: 600; }
+.sh-console-adjust .cn-adjset.is-dim .cn-amin { color: var(--ink3); }
+.sh-console-adjust .cn-step { width: 48px; height: 48px; border-radius: 12px; background: var(--s3); color: var(--ink); font-size: 22px; font-weight: 600; display: grid; place-items: center; flex: none; }
+.sh-console-adjust .cn-step:active { transform: scale(.96); }
+.sh-console-adjust .cn-amin { font-family: var(--font); font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 58px; text-align: center; }
+.sh-console-adjust .cn-adjopt { color: var(--ink2); font-size: 14.5px; }
+.sh-console-adjust .cn-tick { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 13px; font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--s3); }
+.sh-console-adjust .cn-tick.on { background: var(--ink); color: var(--on-ink); box-shadow: none; }
+.sh-console-adjust .cn-adjnote { font-size: 12.5px; color: var(--ink3); margin-top: var(--sp-3); }
+.sh-console-adjust .cn-adjgo { width: 100%; }
+.sh-console-adjust .cn-adjgo .btn { width: 100%; }
+
+/* Sync sheet: what is still on the phone */
+.sh-console-sync .cn-syncnote { font-size: 13.5px; color: var(--ink2); margin-bottom: var(--sp-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .scr-ref-console .btn.cn-stop.is-esc { animation: none; }
+}

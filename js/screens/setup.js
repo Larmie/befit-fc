@@ -43,6 +43,9 @@
 (function () {
   'use strict';
   const esc = UI.esc, fmt = UI.fmt, T = UI.fmt.team;
+  const tcls = t => (window.Teams ? Teams.cls(t) : 't-' + String(t || '').replace(/[^A-Za-z0-9_-]/g, ''));
+  // who can play tonight: Settings › Teams (active, by order); falls back to Green, Red
+  const clubTeams = () => (window.Teams ? Teams.ids() : ['green', 'red']);
   const CFG = window.BF_CONFIG;
   const MAX_OUT = CFG.maxOutfield || 9;
   const POSITIONS = ['GK', 'DEF', 'MID', 'FWD'];
@@ -99,10 +102,10 @@
   }
 
   // ======================================================================== teams in a match
-  // Teams of a night: what the session has, topped up to two from the club's order (never hard-coded).
+  // Teams of a night: what the session has, topped up to two from Settings › Teams order (never hard-coded).
   function nightTeams(keys) {
     const list = Array.from(new Set((keys || []).filter(Boolean)));
-    for (const t of CFG.teams) { if (list.length >= 2) break; if (!list.includes(t)) list.push(t); }
+    for (const t of clubTeams()) { if (list.length >= 2) break; if (!list.includes(t)) list.push(t); }
     return Scoring.orderTeams(list);
   }
   const matchTeams = sess => nightTeams(Object.keys((sess && sess.teams) || {}));
@@ -204,7 +207,7 @@
 
   // ======================================================================== shared markup
   const teamBtn = (pid, team, tap) =>
-    `<button type="button" class="su-tb t-${esc(team)}" data-tap="${tap || 'add'}" data-pid="${esc(pid)}" data-team="${esc(team)}">${esc(T(team))}</button>`;
+    `<button type="button" class="su-tb ${tcls(team)}" data-tap="${tap || 'add'}" data-pid="${esc(pid)}" data-team="${esc(team)}">${esc(T(team))}</button>`;
 
   function dupMeta(pids) {
     const apps = pids.map(appsOf);
@@ -243,7 +246,7 @@
     if (found.length) html += `<div class="lbl">Already in the club</div>` + UI.rows(found.map(g => personRow(g.pid, Object.assign({}, o, { pids: g.pids, withApps: true }))));
     html += `<div class="lbl${found.length ? ' mt-6' : ''}">Someone new</div>` +
       `<div class="su-newg n${o.newTeams.length}">${o.newTeams.map(t =>
-        `<button type="button" class="su-new t-${esc(t)}" data-tap="new" data-team="${esc(t)}">+ ${esc(T(t))}</button>`).join('')}</div>`;
+        `<button type="button" class="su-new ${tcls(t)}" data-tap="new" data-team="${esc(t)}">+ ${esc(T(t))}</button>`).join('')}</div>`;
     return html;
   }
 
@@ -321,6 +324,18 @@
     draft.keepers[team] = pid;
     saveDraft();
   }
+  // Who plays tonight (Settings has more than two teams): at least two; a side with players can't be dropped.
+  function dToggleTeam(team) {
+    if (draft.teams.includes(team)) {
+      if (draft.teams.length <= 2) { UI.toast('Two teams at least'); return false; }
+      if (dSide(team).length) { UI.toast(`Move ${T(team)}’s players first`); return false; }
+      draft.teams = draft.teams.filter(t => t !== team);
+      delete draft.keepers[team];
+    } else draft.teams = Scoring.orderTeams(draft.teams.concat(team));
+    if (!draft.teams.includes(draft.side)) draft.side = draft.teams[0];
+    saveDraft();
+    return true;
+  }
   function dAutoKeepers() {                  // big poles: a usual keeper already on a side fills its empty slot
     if (draft.poles !== 'big') return;
     draft.teams.forEach(t => {
@@ -334,8 +349,8 @@
   const ui = { q: '', extra: {} };
 
   App.registerScreen('ref.setup', {
-    tab: 'match', layout: 'phone', console: true,
-    header: () => ({ center: 'Tonight · ' + esc(fmt.date(today())), right: `<button type="button" class="hd-btn" data-shell="back">Cancel</button>` }),
+    tab: 'match', layout: 'phone', console: true, title: 'Tonight',
+    header: () => ({ center: `<span class="hd-title">${esc(fmt.date(today()))}</span>`, right: UI.syncChip(Store.status()) }),
     mount(el) {
       UI.onSeg(el, 'side', v => { getDraft().side = v; saveDraft(); drawList(el); });
       UI.onSeg(el, 'poles', v => { getDraft().poles = v; dAutoKeepers(); saveDraft(); drawAll(el); });
@@ -360,6 +375,7 @@
           onDone: pid => { getDraft(); ui.extra[team] = pid; dKeeper(team, pid); drawAll(el); } });
       });
       UI.on(el, 'kickoff', b => kickOff(el, b));
+      UI.on(el, 'tpick', b => { getDraft(); if (dToggleTeam(b.dataset.team)) drawAll(el); });
       UI.on(el, 'to-match', () => App.go('ref.console', {}, { replace: true }));
     },
     render(el) {
@@ -368,7 +384,8 @@
         return;
       }
       getDraft();
-      el.innerHTML = `<div class="su-switch" data-r="switch"></div>` +
+      el.innerHTML = `<div data-r="hero"></div><div data-r="tpick"></div>` +
+        `<div class="lbl su-wholbl">Who’s here</div><div class="su-switch" data-r="switch"></div>` +
         `<div class="su-search mt-3">${UI.search({ name: 'who', placeholder: 'Add a name', value: ui.q })}</div>` +
         `<div class="su-list mt-3" data-r="list"></div><div class="su-foot" data-r="foot"></div>`;
       drawAll(el);
@@ -382,7 +399,26 @@
     drawAll(el);
   }
   function drawAll(el) { drawSwitch(el); drawList(el); drawFoot(el); }
+  // Tonight: "18 here" and the sides as a tinted VS block (the screen's one hero)
+  function drawHero(el) {
+    const box = el.querySelector('[data-r="hero"]');
+    if (box) {
+      const n = Object.keys(draft.picks).length;
+      box.innerHTML = `<div class="card hero su-hero"><div class="lbl">Tonight</div>` +
+        `<div class="su-here"><b class="hn">${n}</b><span>here</span></div>` +
+        UI.score({ teams: draft.teams.map(team => ({ team, goals: dSide(team).length })), centre: { top: 'VS', state: 'vs' }, size: 'compact', cls: 'su-vs' }) + `</div>`;
+    }
+    const tp = el.querySelector('[data-r="tpick"]');
+    if (!tp) return;
+    const club = clubTeams();
+    // more than two active teams in Settings: pick who plays tonight (Blue v Green…)
+    tp.innerHTML = club.length > 2 || draft.teams.some(t => !club.includes(t))
+      ? `<div class="lbl su-tplbl">Playing tonight</div><div class="su-tpick">` + Array.from(new Set(club.concat(draft.teams))).map(t =>
+        `<button type="button" class="su-tp ${tcls(t)}${draft.teams.includes(t) ? ' on' : ''}" data-tap="tpick" data-team="${esc(t)}" aria-pressed="${draft.teams.includes(t)}">${esc(T(t))}</button>`).join('') + `</div>`
+      : '';
+  }
   function drawSwitch(el) {
+    drawHero(el);
     const box = el.querySelector('[data-r="switch"]');
     if (box) box.innerHTML = UI.teamSwitch('side', draft.teams.map(team => ({ team, count: dSide(team).length })), draft.side, { ref: true });
   }
@@ -402,7 +438,9 @@
     const box = el.querySelector('[data-r="foot"]');
     if (!box) return;
     const n = Object.keys(draft.picks).length;
-    let html = `<div class="mt-6">${UI.seg('poles', [{ value: 'small', label: 'Small poles' }, { value: 'big', label: 'Big poles' }], draft.poles, { ref: true })}</div>`;
+    const kNames = draft.teams.map(t => draft.keepers[t]).filter(Boolean).map(nameOf);
+    let html = `<div class="lbl mt-6">Poles</div>` + UI.seg('poles', [{ value: 'small', label: 'Small · no keepers' },
+      { value: 'big', label: kNames.length ? 'Big · ' + kNames.join(', ') : 'Big poles' }], draft.poles, { ref: true });
     if (draft.poles === 'big') {
       const taken = t => Object.keys(draft.keepers).filter(x => x !== t).map(x => draft.keepers[x]);
       html += draft.teams.map(t => keeperBlock(t, keeperCands(t, dTeam, draft.keepers[t], taken(t), ui.extra[t]), draft.keepers[t])).join('');
@@ -569,7 +607,7 @@
         return `<div class="r tall su-mrow${tag ? ' su-moved' : ''}"><span class="grow"><span class="nm">${esc(nameOf(pid))}${tag}</span>` +
           `<span class="meta" style="display:block">${UI.pos(e.position || 'MID')}</span></span>` +
           `<span class="end">${teams.filter(t => t !== side).map(t =>
-            `<button type="button" class="mv2" data-tap="move" data-pid="${esc(pid)}" data-to="${esc(t)}">→ ${esc(T(t))}</button>`).join('')}</span></div>`;
+            `<button type="button" class="mv2 ${tcls(t)}" data-tap="move" data-pid="${esc(pid)}" data-to="${esc(t)}">→ ${esc(T(t))}</button>`).join('')}</span></div>`;
       };
       h.setBody(UI.teamSwitch('tt', teams.map(team => ({ team, count: Object.values(roster).filter(r => r.team === team).length })), side, { ref: true }) +
         (list.length ? UI.rows(list.map(row), { cls: 'mt-3' }) : `<div class="su-none mt-3">No one on ${esc(T(side))}</div>`));

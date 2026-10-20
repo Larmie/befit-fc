@@ -1,15 +1,28 @@
 /* ============================================================================
-   BE Fit Club · js/screens/fix.js · FIXING                    OWNER: Phase 2 · Fix builder
+   BE Fit Club · js/screens/fix.js · FIXING                    OWNER: Round 5 · Fulltime builder
    ----------------------------------------------------------------------------
    Correcting mistakes during and after a match, and the full-time check.
    Styles in css/fix.css, scoped under .scr-ref-ftcheck / .scr-ref-edit / .sh-fix-*.
 
    SCREENS
-     'ref.ftcheck' {sid}  Full-time check: score card + one muted line, double-tap flags ("Remove one" with
-                          its effect / "Keep both"), no-minute flags, "+ Add a missed event", Publish results.
+     'ref.ftcheck' {sid}  Full-time check (round 5): the joined score block as the hero, then "Check before
+                          publishing": the LONG-STOPPAGE heads-up ("Stoppage ran about 13 min after half time ·
+                          6 events in stoppage (46+1' to 46+12')" · OK), double-tap flags ("Remove one" with its effect / "Keep both"),
+                          no-minute flags; then the FULL-TIME CARD preview and a pinned "Publish & share".
+                          With no signal (or saves still waiting on the phone) it reads "Publish · sends when
+                          signal returns": the publish goes into the phone's outbox behind them, the page shows
+                          "Waiting for signal", and it turns into "Published" by itself once everything is sent.
                           Publish → status 'completed', goals + cleanSheets from Scoring.storedFields,
-                          ftCheck { status:'published', publishedAt, by, fixes }, publishedBy. Then "Published".
-     'ref.edit' {sid}     Edit match. Live matches: Players (default; "Green · 57 | Red · 42") and Timeline
+                          ftCheck { status:'published', publishedAt, by, fixes, flags? }, publishedBy.
+                          Then "Published": the full-time card (hero) + Share / Save image (App.action
+                          'share.fullTime', owned by tables.js), player points as a sum, fixes, table moves.
+     LONG STOPPAGE        A stoppage of 8+ min (one base minute, one half) gets a heads-up flag, nothing more
+                          (decided 20 Oct, option B: "people should see the stoppages"): minutes are never
+                          re-stamped. "OK" sets ftCheck.keep.stoppage_<half>_<base> = true and hides it; a flag
+                          still open at Publish is counted in ftCheck.flags.longStoppage (the admin's Needs you).
+                          The flag quotes per-half stoppage minutes (old timers counted both halves: 46+7' is
+                          quoted as 46+3' when the 1st half had 4 min).
+     'ref.edit' {sid}     Edit match: the joined score block (hero) on top. Live matches: Players (default; "Green · 57 | Red · 42") and Timeline
                           (filters on one row, grouped by half, "Added after full time"). Laptop shows both.
                           Post matches: per-player stat steppers + score. History matches: score + "Add who
                           played" (upgrades to mode 'post', as classic). Add / take off a player, date,
@@ -20,7 +33,9 @@
      'fix.playerSheet' ({ sid, pid })           One player's night: points maths, events, add missed, move all.
 
    EVERY CHANGE is built as the next session, previewed with Scoring.previewChange (points change shown
-   before Save), then written as one atomic Store.multi through Save.run (lock → Undo 5 s → Retry).
+   before Save, round 5: as a SUM for one player, "Andrew tonight 11 · This change −2 · New total 9",
+   or one right-aligned value column for several), then written as one atomic Store.multi through
+   Save.run (lock → Undo 5 s → Retry).
    On a finished match the same write also refreshes goals + cleanSheets (Scoring.storedFields), so the
    classic app and the table stay right and no clean sheet is ever left stale (review #5).
    Edited events keep their minute, timestamp and `by`, and gain editedBy / editedAt.
@@ -61,6 +76,7 @@
   const clone = v => (v == null ? v : JSON.parse(JSON.stringify(v)));
   const same = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
   const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+  const tcls = t => (window.Teams ? Teams.cls(t) : 't-' + t);
 
   function teamOf(sess, pid) {
     for (const [t, td] of Object.entries((sess && sess.teams) || {})) if (td && td.players && td.players[pid]) return t;
@@ -155,7 +171,7 @@
     const { fwd, back } = writesFor(sid, sess, next);
     if (!Object.keys(fwd).length) { if (o.onSaved) o.onSaved(); return null; }
     return Save.run({
-      label: o.label, button: o.button, group: o.group,
+      label: o.label, sub: o.sub, button: o.button, group: o.group,
       write: () => Store.multi(fwd), undo: () => Store.multi(back),
       onSaved: o.onSaved, onError: o.onError,
     });
@@ -176,20 +192,34 @@
     return { players: list, score: pv.score };
   }
   function scoreText(map, teams) { return teams.map(t => map[t] || 0).join('–'); }
+  // Round 5 · the SUM PATTERN for points previews. One player: "Andrew tonight 11 · This change −2", the new
+  // total under the value column as the hero (team colour). Several: one right-aligned value column (the change),
+  // "11 → 9" beside it. Every row keeps data-pid / data-from / data-to (tests compare them with the result).
   function deltaHtml(sid, sess, next, mustPids, o) {
     const pv = preview(sid, sess, next, mustPids);
     const max = (o && o.max) || 8;
-    const rows = pv.players.slice(0, max).map(p =>
-      `<div class="dr" data-pid="${esc(p.pid)}" data-from="${p.from}" data-to="${p.to}"><span class="fx-dn">${esc(p.name)}</span>` +
-      `<span class="n fx-dv">${p.from} → ${p.to} <b>${esc(fmt.signed(p.delta))}</b></span></div>`);
-    if (pv.players.length > max) rows.push(`<div class="dr"><span class="fx-dn">${esc(fmt.plural(pv.players.length - max, 'more player'))}</span><span></span></div>`);
+    let body = '';
+    if (pv.players.length === 1) {
+      const p = pv.players[0];
+      const team = teamOf(next, p.pid) || teamOf(sess, p.pid);
+      body = `<div class="dr fx-one" data-pid="${esc(p.pid)}" data-from="${p.from}" data-to="${p.to}">` +
+        UI.sum({ rows: [{ label: `${p.name} tonight`, value: String(p.from) }, { label: 'This change', value: fmt.signed(p.delta) }],
+          total: p.to, label: 'New total', team }) + `</div>`;
+    } else if (pv.players.length) {
+      const rows = pv.players.slice(0, max).map(p =>
+        `<div class="dr fx-dr" data-pid="${esc(p.pid)}" data-from="${p.from}" data-to="${p.to}"><span class="fx-dn">${esc(p.name)}</span>` +
+        `<span class="fx-dv">${p.from} → ${p.to}</span><span class="v">${esc(fmt.signed(p.delta))}</span></div>`);
+      if (pv.players.length > max) rows.push(`<div class="dr fx-dr"><span class="fx-dn">${esc(fmt.plural(pv.players.length - max, 'more player'))}</span></div>`);
+      body = `<div class="fx-list">${rows.join('')}</div>`;
+    }
+    let score = '';
     if (pv.score) {
       const teams = Scoring.orderTeams(Object.keys(pv.score.to));
-      rows.push(`<div class="dr fx-score" data-score-from="${esc(scoreText(pv.score.from, teams))}" data-score-to="${esc(scoreText(pv.score.to, teams))}">` +
-        `<span class="fx-dn">Score</span><span class="n fx-dv">${esc(scoreText(pv.score.from, teams))} → <b>${esc(scoreText(pv.score.to, teams))}</b></span></div>`);
+      score = `<div class="fx-list mt-2"><div class="dr fx-dr fx-score" data-score-from="${esc(scoreText(pv.score.from, teams))}" data-score-to="${esc(scoreText(pv.score.to, teams))}">` +
+        `<span class="fx-dn">Score</span><span class="fx-dv">${esc(scoreText(pv.score.from, teams))} →</span><span class="v">${esc(scoreText(pv.score.to, teams))}</span></div></div>`;
     }
-    if (!rows.length) rows.push(`<div class="dr"><span class="fx-dn">No points change</span><span></span></div>`);
-    return `<div class="delta fx-delta" data-delta><div class="fx-dh">Points change</div>${rows.join('')}</div>`;
+    if (!body && !score) body = `<div class="fx-list"><div class="dr fx-dr fx-nochg"><span class="fx-dn">No points change</span></div></div>`;
+    return `<div class="fx-delta" data-delta><div class="lbl fx-dh">Points change</div>${body}${score}</div>`;
   }
 
   // ---------------------------------------------------------------- shared markup
@@ -224,7 +254,7 @@
       `<span class="min">${esc(minText(ev) || '–')}</span>` +
       `<span class="grow"><span class="nm">${esc(name)}</span>${kind ? ` <span class="kind">${esc(kind)}</span>` : ''}` +
       `${meta ? `<span class="meta fx-evm">${esc(meta)}</span>` : ''}</span>` +
-      `${team && !o.noTeam ? UI.teamMark(team) : ''}<span class="chev">›</span></button>`;
+      `${team && !o.noTeam ? UI.teamChip(team) : ''}<span class="chev">›</span></button>`;
   }
 
   // ---------------------------------------------------------------- player picker (inside any sheet)
@@ -239,7 +269,7 @@
         const inMatch = new Set(Scoring.sessPlayers(opts.sess).map(p => p.pid));
         const list = Object.entries(Store.players()).filter(([pid, p]) => p && !inMatch.has(pid))
           .sort(([, a], [, b]) => String(a.name).localeCompare(String(b.name)));
-        h.setBody(`<div class="lbl fx-sq-h">Joins ${UI.teamMark(st.team)}</div>` +
+        h.setBody(`<div class="lbl fx-sq-h">Joins ${UI.teamChip(st.team)}</div>` +
           UI.search({ name: 'fx-sq', placeholder: 'Find a player' }) +
           `<div class="mt-2">${UI.rows(list.map(([pid, p]) => UI.row({ tap: 'pk-new', data: { pid, name: String(p.name).toLowerCase() }, title: p.name, meta: p.defaultPosition || '' })), { cls: 'fx-sq' })}</div>`);
         const inp = h.body.querySelector('input');
@@ -255,7 +285,7 @@
         const others = allowed.filter(t => t !== st.team);
         h.setBody((tiles.length ? `<div class="fx-nonewrap">${tiles.join('')}</div>` : '') +
           (grid.length ? UI.tiles(grid) : UI.empty('Nobody on ' + fmt.team(st.team), '')) +
-          `<div class="rows mt-3">${others.map(t => UI.row({ tap: 'pk-team', data: { team: t }, titleHtml: `A ${esc(fmt.team(t))} player`, chevron: true })).join('')}` +
+          `<div class="rows mt-3">${others.map(t => UI.row({ tap: 'pk-team', data: { team: t }, cls: 'wash ' + tcls(t), titleHtml: `A ${esc(fmt.team(t))} player`, chevron: true })).join('')}` +
           (opts.squad ? UI.row({ tap: 'pk-squad', titleHtml: `Someone else on ${esc(fmt.team(st.team))}`, chevron: true }) : '') + `</div>`);
       }
       setFoot(h, UI.btn('Back', { kind: 'g', sm: true, tap: 'pk-back' }));
@@ -328,7 +358,7 @@
         rows += field('Assist', changed(a0, a1), { tap: 'f-assist', chg: a0 !== a1 });
       }
       const team = isOG ? d.benefitTeam : evTeam(s, d);
-      if (team) rows += field(isOG ? 'Goal for' : 'Team', UI.teamMark(team));
+      if (team) rows += field(isOG ? 'Goal for' : 'Team', UI.teamChip(team));
       rows += minuteRows(d, orig.min == null);
       let html = `<div class="rows fx-fields">${rows}</div>`;
       if (isGoal || isOG) html += `<div class="rows mt-2">${UI.row({ tap: 'f-og', title: isGoal ? 'It was an own goal' : 'It wasn’t an own goal', chevron: true })}</div>`;
@@ -479,8 +509,8 @@
           const others = otherTeams(s);
           rows += others.length > 1
             ? field('Goal for', '', { end: UI.seg('a-for', others.map(t => ({ value: t, label: fmt.team(t), team: t })), st.forTeam || others[0]) })
-            : field('Goal for', UI.teamMark(others[0]));
-        } else rows += field('Team', UI.teamMark(st.team));
+            : field('Goal for', UI.teamChip(others[0]));
+        } else rows += field('Team', UI.teamChip(st.team));
       }
       if (st.type === 'goal' && st.pid) rows += field('Assist', st.assistId ? esc(pname(st.assistId)) : 'None', { tap: 'a-assist' });
       rows += minuteRows(st.d, true);
@@ -544,16 +574,19 @@
     function header(s) {
       const mp = Scoring.matchPoints(s, pid);
       h.setTitle(pname(pid));
-      setEnd(h, mp ? `<span class="n fx-ptsbig">${mp.total}</span> <span class="fx-ptsl">pts</span>` : '');
+      setEnd(h, UI.teamChip(teamOf(s, pid)));
       const sub = h.el.querySelector('.fx-sub');
-      const text = `${fmt.team(teamOf(s, pid))} · ${posOf(s, pid) || ''}`;
+      // small poles: a GK-position player plays as a MID (the engine says which position he scored as)
+      const listed = posOf(s, pid) || '';
+      const text = mp && mp.pos && listed && mp.pos !== listed ? `${listed} · plays as ${mp.pos}` : listed;
       if (sub) sub.textContent = text;
       else { const hh = h.el.querySelector('.sheet-h'); hh.insertAdjacentHTML('beforeend', `<div class="sh-s fx-sub">${esc(text)}</div>`); }
       return mp;
     }
     function maths(mp) {
       if (!mp) return '';
-      return `<div class="fx-math">${mp.breakdown.map(b => `<div class="fx-mr"><span>${esc(b.label)}</span><span class="n">${esc(fmt.signed(b.pts))}</span></div>`).join('')}</div>`;
+      // the sum pattern: values in one column, the night's total as the hero under it (team colour)
+      return UI.sum({ rows: mp.breakdown.map(b => ({ label: b.label, value: b.pts })), total: mp.total, label: 'Pts tonight', team: mp.team || teamOf(sess(), pid) });
     }
 
     function main() {
@@ -729,7 +762,7 @@
     if (!cols.length) return UI.empty('No players yet', '');
     if (!v.team || !cols.some(c => c.team === v.team)) v.team = cols[0].team;
     const col = cols.find(c => c.team === v.team);
-    const rows = col.players.map(p => UI.row({ tap: 'pl', data: { pid: p.pid }, title: p.name,
+    const rows = col.players.map(p => UI.row({ tap: 'pl', data: { pid: p.pid }, title: p.name, left: UI.avatar(p.name, p.team),
       metaHtml: `<span class="tally">${esc(tallyText(p))}</span>`, pts: p.total, chevron: true }));
     return UI.teamSwitch('fx-team', cols.map(c => ({ team: c.team, count: c.points })), v.team, { ref: true }) +
       `<div class="mt-3">${UI.rows(rows, { cls: 'fx-players' })}</div>` +
@@ -771,10 +804,16 @@
       `<div class="fx-dock">${UI.btn('+ Add a missed event', { tap: 'addm' })}</div>`;
   }
 
-  function scoreCard(s, tap) {
-    const teams = Scoring.orderTeams(Scoring.teamsOf(s)).map(team => ({ team, goals: Scoring.teamGoals(s, team) }));
-    if (!teams.length) return '';
-    return `<button type="button" class="card fx-scorecard" ${tap ? `data-tap="${tap}"` : ''}>${UI.score({ teams, mid: tap ? '<span class="fx-ft-mid">Edit</span>' : '<span class="fx-ft-mid">FT</span>' })}</button>`;
+  // Round 5: the joined score block (FT · 12 Oct) in the screen's one hero card, lit in the winner's colour.
+  // Post / history matches store the score, so there the block is a button that opens the score sheet.
+  function scoreHero(s, o) {
+    o = o || {};
+    if (!Scoring.teamsOf(s).length) return '';
+    const win = Scoring.result(s).winner;
+    return `<div class="card hero fx-hero ${win ? tcls(win) : ''}">` +
+      UI.scoreFor(s, { size: 'compact', tap: o.tap || null, cls: 'fx-sb' }) +
+      (o.under ? `<div class="fx-under">${o.under}</div>` : '') +
+      (o.tap ? `<button type="button" class="link fx-link fx-editscore" data-tap="${o.tap}">Edit score ›</button>` : '') + `</div>`;
   }
 
   function matchPane(sid, s) {
@@ -790,18 +829,19 @@
     let html = '';
     if (mode === 'live') {
       const n = events(s).length;
+      html = scoreHero(s);
       if (ctx.wide) {
-        html = `<div class="fx-cols"><div class="fx-col"><div class="lbl">Players</div>${playersPane(sid, s, v)}${matchPane(sid, s)}</div>` +
+        html += `<div class="fx-cols mt-6"><div class="fx-col"><div class="lbl">Players</div>${playersPane(sid, s, v)}${matchPane(sid, s)}</div>` +
           `<div class="fx-col"><div class="lbl">Timeline <b class="n">${n}</b></div>${timelinePane(sid, s, v)}</div></div>`;
       } else {
-        html = `<div class="tabs2" role="tablist"><button type="button" role="tab" data-tap="tab" data-value="players" class="${v.tab === 'players' ? 'on' : ''}">Players</button>` +
+        html += `<div class="tabs2 mt-4" role="tablist"><button type="button" role="tab" data-tap="tab" data-value="players" class="${v.tab === 'players' ? 'on' : ''}">Players</button>` +
           `<button type="button" role="tab" data-tap="tab" data-value="timeline" class="${v.tab === 'timeline' ? 'on' : ''}">Timeline <span class="n fx-tabn">${n}</span></button></div>` +
           (v.tab === 'timeline' ? timelinePane(sid, s, v) : playersPane(sid, s, v) + matchPane(sid, s));
       }
     } else if (mode === 'post') {
-      html = scoreCard(s, 'score') + `<div class="mt-4">${playersPane(sid, s, v)}</div>` + matchPane(sid, s);
+      html = scoreHero(s, { tap: 'score' }) + `<div class="mt-4">${playersPane(sid, s, v)}</div>` + matchPane(sid, s);
     } else {
-      html = scoreCard(s, 'score') + `<div class="mt-4">${UI.empty('No player details', '')}</div>` +
+      html = scoreHero(s, { tap: 'score' }) + `<div class="mt-4">${UI.empty('No player details', '')}</div>` +
         UI.btn('Add who played', { tap: 'upgrade' }) + matchPane(sid, s);
     }
     el.innerHTML = `<div class="fx-edit">${html}</div>`;
@@ -943,7 +983,7 @@
       UI.on(el, 'addp', () => openAddPlayer(sid));
       UI.on(el, 'score', () => openScoreSheet(sid));
       UI.on(el, 'upgrade', () => openUpgrade(sid));
-      UI.on(el, 'home', () => App.go('ref.home', {}, { replace: true }));
+      UI.on(el, 'home', () => App.go('ref.home', {}, { replace: true }));   // the shell routes it to the role's Match / Home
       el.addEventListener('change', e => {
         const inp = e.target.closest('[data-date]');
         if (!inp || !inp.value) return;
@@ -969,14 +1009,82 @@
   // =================================================================== FULL-TIME CHECK
   function teamPoints(s) { const mb = Scoring.matchBreakdown(s); const o = {}; mb.columns.forEach(c => { o[c.team] = c.points; }); return o; }
 
+  // ---------------------------------------------------------------- long stoppage (a heads-up only)
+  // 19 Oct: the stoppage after half time ran about 13-14 min (6 events in it, 46+1' … 46+12'). The minutes stay as they
+  // are (people should see the stoppages); the referee just confirms it with OK.
+  const LONG_STOPPAGE_MIN = 8;
+  const maxOf = list => (list.length ? Math.max(...list) : 0);
+  function halfInfo(sess) {
+    const ht = Scoring.sessEvents(sess).find(e => e.type === 'halfTime');
+    return ht ? { id: ht.id, ts: ht.timestamp || 0, min: ht.min != null ? Number(ht.min) : 45 } : null;
+  }
+  // 1st or 2nd half: by the clock for events logged live, by the minute for ones added after full time.
+  function halfOf(sess, ev, ht) {
+    if (!ht || ev.type === 'halfTime') return 1;
+    if (ev.timestamp && !addedAfter(sess, ev)) return ev.timestamp > ht.ts ? 2 : 1;
+    const m = ev.stoppageBaseMin != null ? Number(ev.stoppageBaseMin) : ev.min != null ? Number(ev.min) : null;
+    return m != null && m > ht.min ? 2 : 1;
+  }
+
+  // Every stoppage that has events in it (one half, one base minute), with its length in whole minutes:
+  //   labels  the events' stoppage minutes counted from this stoppage's start (labels restart each half; on
+  //           timers from before round 5 the 2nd half's labels still include the 1st half's stoppage)
+  //   mins    the stoppage's length: its last label, or the clock's own total for that half when the clock can
+  //           tell it apart (round 5 timers keep stoppageAtHalf) and it agrees with the labels (within 3 min)
+  function stoppages(sess) {
+    if (!sess || modeOf(sess) !== 'live') return [];
+    const ht = halfInfo(sess);
+    const t = sess.timer || {};
+    const perHalf = Number.isFinite(t.stoppageAtHalf);
+    const groups = {};
+    events(sess).forEach(e => {
+      if (e.stoppageMin == null || e.stoppageBaseMin == null) return;
+      const half = halfOf(sess, e, ht), base = Number(e.stoppageBaseMin);
+      const key = `stoppage_${half}_${base}`;
+      (groups[key] = groups[key] || { key, half, base, evs: [] }).evs.push(e);
+    });
+    const list = Object.values(groups).sort((a, b) => a.half - b.half || a.base - b.base);
+    const labelsOf = g => g.evs.map(e => Number(e.stoppageMin));
+    list.forEach(g => {
+      g.evs.sort((a, b) => Number(a.stoppageMin) - Number(b.stoppageMin) || (a.timestamp || 0) - (b.timestamp || 0));
+      const raw = labelsOf(g);
+      const before = list.filter(o => o !== g && (o.half === g.half ? o.base < g.base : (!perHalf && o.half < g.half)));
+      const off = Math.max(0, Math.min(maxOf(before.flatMap(labelsOf)), Math.min(...raw) - 1));
+      g.labels = raw.map(l => Math.max(1, l - off));
+      const last = maxOf(g.labels);
+      let mins = last;
+      if (perHalf && ht && list.filter(o => o.half === g.half).length === 1) {
+        const clock = (g.half === 1 ? t.stoppageAtHalf : (t.stoppageTotal || 0) - t.stoppageAtHalf) / 60000;
+        if (clock >= last && clock - last <= 3) mins = clock;
+      }
+      g.mins = Math.round(mins);
+      g.long = g.mins >= LONG_STOPPAGE_MIN;
+      g.where = g.half === 2 && ht && g.base <= ht.min + 2 ? 'after half time' : g.half === 1 && g.base <= 2 ? 'from kick-off' : `from ${g.base}'`;
+    });
+    return list;
+  }
+  const longStoppages = sess => stoppages(sess).filter(g => g.long);
+
+  // ---------------------------------------------------------------- flags
   function ftFlags(sid, s) {
     const chk = Scoring.checks(s);
     const keep = (s.ftCheck && s.ftCheck.keep) || {};
+    const flags = [];
+    const open = { longStoppage: 0, doubleTaps: 0, noMinute: 0 };
+    // 1 · a long stoppage: a heads-up only (minutes are never changed). Minutes quoted per half (g.labels).
+    longStoppages(s).filter(g => !keep[g.key]).forEach(g => {
+      open.longStoppage++;
+      const n = g.evs.length, first = `${g.base}+${g.labels[0]}'`, last = `${g.base}+${g.labels[n - 1]}'`;
+      flags.push(`<div class="flag fx-flag fx-stop" data-stoppage="${esc(g.key)}"><div class="fx-ft-t">Stoppage ran about ${esc(g.mins)} min ${esc(g.where)}</div>` +
+        `<div class="fx-ft-s">${n === 1 ? `1 event in stoppage (${esc(first)})` : `${n} events in stoppage (${esc(first)} to ${esc(last)})`}</div>` +
+        `${UI.btn('OK', { kind: 'g', tap: 'stopkeep', data: { key: g.key }, cls: 'fx-ok' })}</div>`);
+    });
+    // 2 · double taps
     const taps = chk.doubleTaps.filter(x => !keep[x.b.id] && s.events && s.events[x.b.id] && s.events[x.a.id]);
     const seen = new Set();
-    const flags = [];
     taps.forEach(x => {
       if (seen.has(x.b.id)) return; seen.add(x.b.id);
+      open.doubleTaps++;
       const who = actor(x.b);
       const next = nextOf(s, { events: { [x.b.id]: null } });
       const pv = preview(sid, s, next, [who]).players.find(p => p.pid === who);
@@ -986,34 +1094,93 @@
         `<div class="grid2"><button type="button" class="btn w fx-two" data-tap="rm1" data-eid="${esc(x.b.id)}"><span data-label>Remove one</span><span class="n fx-eff">${esc(effect)}</span></button>` +
         `${UI.btn('Keep both', { kind: 'g', tap: 'keep', data: { eid: x.b.id }, cls: 'fx-two' })}</div></div>`);
     });
-    const all = events(s).filter(e => e.type !== 'halfTime');
+    // 3 · events with no minute
+    const all = events(s);
     const noMin = chk.noMinute.filter(e => e.type !== 'halfTime');
     let line = '';
     if (all.length && noMin.length === all.length) line = 'No minutes logged';
     else if (noMin.length) {
+      open.noMinute = noMin.length;
       flags.push(`<div class="flag info fx-flag"><div class="fx-ft-t">${esc(fmt.plural(noMin.length, 'event'))} with no minute</div>` +
         `${UI.rows(noMin.slice(0, 4).map(e => evRow(s, e)), { cls: 'fx-feed mt-3' })}</div>`);
     }
     if (!line) {
       const f = Scoring.formatOf(s);
-      line = f.start === 'small' ? (f.switchedAt != null ? `Big poles from ${f.switchedAt}'` : 'Small poles') : fmt.plural(all.length, 'event');
+      if (f.start === 'small') line = f.switchedAt != null ? `Big poles from ${f.switchedAt}'` : 'Small poles';
     }
-    return { flags, line, count: flags.length };
+    Object.keys(open).forEach(k => { if (!open[k]) delete open[k]; });
+    return { flags, line, count: flags.length, open: Object.keys(open).length ? open : null };
+  }
+
+  // ---------------------------------------------------------------- the full-time card
+  // The card people post: club · date, FULL TIME, the score in team colour, scorers with minutes under their own
+  // side, top points. A broadcast graphic: always dark (data-theme="dark" scopes the dark tokens), lit (.lit).
+  // tables.js owns the posted image (App.action 'share.fullTime'), and draws the preview into our <canvas> too
+  // ({ sid, canvas, theme }), so the preview is the real card. If that action is missing, an HTML copy shows instead.
+  const canDrawCard = () => !!(App.actions && App.actions['share.fullTime']);
+  function drawCards(el, sid) {
+    el.querySelectorAll('canvas[data-ftcanvas]').forEach(c => {
+      try { App.action('share.fullTime', { sid, canvas: c, theme: App.theme.effective() }); } catch (e) { console.error(e); }
+    });
+  }
+  function topPoints(s) {
+    const all = Scoring.matchBreakdown(s).columns.flatMap(c => c.players);
+    if (!all.length) return null;
+    const max = Math.max(...all.map(p => p.total));
+    const names = all.filter(p => p.total === max).map(p => p.name);
+    return `${names.length > 2 ? `${names[0]} +${names.length - 1}` : names.join(', ')} · ${max} pts`;
+  }
+  function ftCard(s, o) {
+    o = o || {};
+    const teams = Scoring.orderTeams(Scoring.teamsOf(s)).map(team => ({ team, goals: Scoring.teamGoals(s, team) }));
+    const two = teams.length === 2;
+    const by = modeOf(s) === 'live' ? Scoring.scorers(s) : {};
+    const club = (window.Teams && Teams.club().name) || 'BE Fit Club';
+    const top = topPoints(s);
+    const side = t => `<div class="fx-ftc-t ${tcls(t.team)}"><b class="fx-ftc-n">${esc(t.goals)}</b><span class="fx-ftc-w">${esc(fmt.team(t.team))}</span></div>`;
+    const score = two ? side(teams[0]) + '<i class="fx-ftc-d" aria-hidden="true">–</i>' + side(teams[1]) : teams.map(side).join('');
+    const col = (t, rt) => `<div class="${rt ? 'rt' : ''}">` + (by[t.team] || []).map(r =>
+      `<div class="fx-ftc-r"><span class="fx-ftc-who">${esc(r.name)}${r.og ? ' (og)' : ''}</span> <span class="fx-ftc-m">${(r.mins || []).map(e => esc(fmt.minute(e))).filter(Boolean).join(' ')}</span></div>`).join('') + '</div>';
+    const scorers = teams.some(t => (by[t.team] || []).length)
+      ? `<div class="fx-ftc-s${two ? '' : ' multi'}" style="--n:${teams.length}">${teams.map((t, i) => col(t, two && i === 1)).join('')}</div>` : '';
+    const glows = teams.slice(0, 2).map((t, i) => `<span class="fx-ftc-gl ${i ? 'r' : 'l'} ${tcls(t.team)}" aria-hidden="true"></span>`).join('');
+    const label = `Full time, ${fmt.date(s.date)}: ` + teams.map(t => `${fmt.team(t.team)} ${t.goals}`).join(', ') + (top ? `. Top points ${top}` : '');
+    if (canDrawCard() && !o.html) return `<div class="fx-ftcv lit${o.hero ? ' hero' : ''}${o.preview ? ' pv' : ''}" data-ftcard>` +
+      `<canvas class="fx-ftcanvas" data-ftcanvas width="1080" height="1350" role="img" aria-label="${esc(label)}"></canvas></div>`;
+    return `<div class="fx-ftc lit${o.hero ? ' hero' : ''}${o.preview ? ' pv' : ''}" data-theme="dark" data-ftcard role="img" aria-label="${esc(label)}">${glows}` +
+      `<div class="fx-ftc-top"><span>${esc(club)}</span><span>${esc(fmt.date(s.date))}</span></div>` +
+      `<div class="fx-ftc-k">Full time</div>` +
+      `<div class="fx-ftc-sc${two ? '' : ' multi'}" style="--n:${teams.length}">${score}</div>` + scorers +
+      (top ? `<div class="fx-ftc-f"><span>Top points</span><b>${esc(top)}</b></div>` : '') + `</div>`;
+  }
+
+  // ---------------------------------------------------------------- signal (the outbox)
+  // "Publish · sends when signal returns": no signal, or saves still waiting on the phone with no connection,
+  // or the database refusing the oldest save. The publish then waits in the outbox behind them.
+  function waitingForSignal(info) {
+    info = info || Store.status();
+    return !!info.failed || info.status === 'offline' || (info.status !== 'online' && (info.pending || 0) > 0);
+  }
+  function pubState(info) {
+    info = info || Store.status();
+    if (!(info.pending || 0) && !info.failed) return 'done';
+    return info.status === 'online' && !info.failed ? 'sending' : 'waiting';
   }
 
   function renderCheck(el, sid, s) {
-    const teams = Scoring.orderTeams(Scoring.teamsOf(s)).map(team => ({ team, goals: Scoring.teamGoals(s, team) }));
     const f = ftFlags(sid, s);
-    el.innerHTML = `<div class="card fx-ftcard">${UI.score({ teams, mid: '<span class="fx-ft-mid">FT</span>' })}<div class="fx-ftline">${esc(f.line)}</div></div>` +
+    const waiting = waitingForSignal();
+    el.innerHTML = scoreHero(s, { under: f.line ? esc(f.line) : '' }) +
       (f.count ? `<div class="lbl mt-6">Check before publishing <b class="n">${f.count}</b></div><div class="stack">${f.flags.join('')}</div>` : '') +
       `<div class="fx-links"><button type="button" class="link fx-link" data-tap="addm">+ Add a missed event</button>` +
       `<button type="button" class="link fx-link" data-tap="allev">All events <span class="n">${events(s).length}</span></button></div>` +
-      `<div class="fx-pub">${UI.btn('Publish results', { big: true, tap: 'publish' })}</div>`;
+      `<div class="lbl mt-4">Full-time card</div>${ftCard(s, { preview: true })}` +
+      `<div class="fx-pub">${UI.btn(waiting ? 'Publish · sends when signal returns' : 'Publish & share', { big: true, tap: 'publish', cls: waiting ? 'fx-waitbtn' : '', data: { waiting: waiting ? 1 : null } })}</div>`;
   }
 
   function renderPublished(el, sid, s) {
     const mb = Scoring.matchBreakdown(s);
-    const players = mb.columns.reduce((n, c) => n + c.players.length, 0);
+    const info = Store.status(), state = pubState(info);
     const fixes = Object.values((s.ftCheck && s.ftCheck.fixes) || {}).sort((a, b) => (a.at || 0) - (b.at || 0));
     // table moves: the season with this match vs without it
     const without = Object.assign({}, Store.state, { sessions: Object.assign({}, Store.state.sessions, { [sid]: Object.assign({}, s, { status: 'active' }) }) });
@@ -1021,34 +1188,50 @@
     const inMatch = new Set(mb.columns.flatMap(c => c.players.map(p => p.pid)));
     const moves = Scoring.seasonTable(Store.state).filter(r => inMatch.has(r.pid) && before[r.pid] !== r.rank)
       .sort((a, b) => Math.abs(before[b.pid] - b.rank) - Math.abs(before[a.pid] - a.rank) || a.rank - b.rank).slice(0, 3);
-    const top = mb.columns.flatMap(c => c.players).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)).slice(0, 3);
-    el.innerHTML = `<div class="fx-pubhead"><span class="fx-bigtick" aria-hidden="true">✓</span><div><div class="fx-pubt">Published</div>` +
-      `<div class="sub"><span class="n">${mb.total}</span> points · <span class="n">${players}</span> players</div></div></div>` +
+    const head = state === 'done'
+      ? { mark: '✓', cls: '', t: 'Published', sub: Auth.isAdmin() ? 'Results are live' : 'Reuben has been told' }
+      : state === 'sending' ? { mark: '✓', cls: ' ring', t: 'Publishing…', sub: 'Sending to the club' }
+        : { mark: '', cls: ' wait', t: 'Waiting for signal', sub: `Publishes by itself · ${info.pending || 0} waiting` };
+    const cols = mb.columns.filter(c => c.players.length);
+    el.innerHTML = `<div class="fx-pubhead" data-pubstate="${state}"><span class="fx-bigtick${head.cls}" aria-hidden="true">${head.mark}</span>` +
+      `<div><div class="fx-pubt">${esc(head.t)}</div><div class="sub">${esc(head.sub)}</div></div></div>` +
+      ftCard(s, { hero: true }) +
+      `<div class="grid2 mt-4">${UI.btn('Share', { tap: 'share' })}${UI.btn('Save image', { kind: 'g', tap: 'saveimg' })}</div>` +
+      (cols.length ? `<div class="lbl mt-6">Player points</div>` + UI.sum({ rows: cols.map(c => ({ html: `${UI.teamChip(c.team)} <span class="fx-np">${esc(fmt.plural(c.players.length, 'player'))}</span>`, value: String(c.points) })),
+        total: mb.total, label: 'Player pts', signed: false }) : '') +
       (fixes.length ? `<div class="lbl mt-6">Fixed at full time</div>` + UI.rows(fixes.map(x => UI.row({ title: x.text, right: `<span class="n bk">${esc(fmt.signed(x.delta || 0))}</span>` }))) : '') +
-      (moves.length ? `<div class="lbl mt-6">Table moves</div>` + UI.rows(moves.map(r => UI.row({ title: r.name, right: `<span class="n fx-mv">${fmt.ordinal(before[r.pid])} → ${fmt.ordinal(r.rank)}</span>` }))) : '') +
-      (top.length ? `<div class="lbl mt-6">Top points</div>` + UI.rows(top.map(p => UI.row({ title: p.name, right: UI.teamMark(p.team), pts: p.total }))) : '') +
+      (moves.length ? `<div class="lbl mt-6">Table moves</div>` + UI.rows(moves.map(r => UI.row({ title: r.name, left: UI.avatar(r.name, r.team), right: `<span class="n fx-mv">${fmt.ordinal(before[r.pid])} → ${fmt.ordinal(r.rank)}</span>` }))) : '') +
       `<div class="grid2 mt-6">${UI.btn('Match summary', { kind: 'g', sm: true, tap: 'summary' })}${UI.btn('Edit match', { kind: 'g', sm: true, tap: 'edit' })}</div>`;
   }
 
   App.registerScreen('ref.ftcheck', {
     tab: 'match', layout: 'phone', console: true,
-    header: ctx => {
-      const s = Store.session(ctx.params.sid);
-      return { center: 'Full time' + (s ? ' · ' + esc(fmt.date(s.date)) : ''),
-        right: s && isFinished(s) ? `<a class="hd-btn" href="#/ref.home">Done</a>` : '' };
-    },
+    // the title gives way while the sync chip is long ("On phone · 2 waiting"), so the two never overlap at 390 px
+    header: () => { const i = Store.status(); return { center: i.pending || i.status !== 'online' ? '' : '<span class="hd-title">Full time</span>', right: UI.syncChip(i) }; },
     mount(el, ctx) {
       const sid = ctx.params.sid;
+      // the page follows the outbox: "Publish · sends when signal returns" ↔ "Publish & share", Waiting → Published
+      let last = '';
+      const key = info => `${waitingForSignal(info)}|${pubState(info)}|${info.pending || 0}`;
+      last = key(Store.status());
+      ctx.onCleanup(Store.onStatus(info => { const k = key(info); if (k !== last) { last = k; ctx.rerender(); } }));
       UI.on(el, 'ev', b => App.action('fix.eventSheet', { sid, eid: b.dataset.eid }));
       UI.on(el, 'addm', () => App.action('fix.addMissed', { sid }));
       UI.on(el, 'allev', () => App.go('ref.events', { sid }));
       UI.on(el, 'summary', () => App.go('player.match', { sid }));
       UI.on(el, 'edit', () => App.go('ref.edit', { sid }));
+      UI.on(el, 'share', () => App.action('share.fullTime', { sid }));
+      UI.on(el, 'saveimg', () => App.action('share.fullTime', { sid, save: true }));
+      UI.on(el, 'stopkeep', btn => {
+        const s = Store.session(sid), k = btn.dataset.key;
+        const ft = clone(s.ftCheck || {}); ft.keep = Object.assign({}, ft.keep || {}, { [k]: true });
+        commit(sid, s, nextOf(s, { ftCheck: ft }), { label: 'OK · long stoppage noted', button: btn, group: btn.closest('.flag') });
+      });
       UI.on(el, 'rm1', btn => {
         const s = Store.session(sid), eid = btn.dataset.eid, ev = s && s.events && s.events[eid];
         if (!ev) return;
         const who = actor(ev);
-        let ch = { events: { [eid]: null } };
+        const ch = { events: { [eid]: null } };
         const pv = preview(sid, s, nextOf(s, ch), [who]).players.find(p => p.pid === who);
         const ft = clone(s.ftCheck || {});
         ft.fixes = Object.assign({}, ft.fixes || {}, { [eid]: { text: `${pname(who)} · duplicate ${typeLower(ev.type)} removed`, pid: who, delta: pv ? pv.delta : 0, at: Store.now(), by: Auth.by() } });
@@ -1060,20 +1243,27 @@
         const ft = clone(s.ftCheck || {}); ft.keep = Object.assign({}, ft.keep || {}, { [eid]: true });
         commit(sid, s, nextOf(s, { ftCheck: ft }), { label: `Kept both · ${pname(actor((s.events || {})[eid]))}`, button: btn, group: btn.closest('.flag') });
       });
+      // Publish: one atomic write. With no signal it waits in the phone's outbox behind the other saves and
+      // goes by itself when signal returns (the page shows "Waiting for signal" until then).
       UI.on(el, 'publish', btn => {
         const s = Store.session(sid);
         if (!s) return;
         const now = Store.now(), by = Auth.by();
+        const open = ftFlags(sid, s).open;
         const ft = Object.assign(clone(s.ftCheck || {}), { status: 'published', publishedAt: now, by });
+        if (open) ft.flags = open; else delete ft.flags;
         const ch = { status: 'completed', ftCheck: ft, publishedBy: by };
         if (Clock.isActive(s)) ch.timer = Clock.end(s, now);
-        commit(sid, s, nextOf(s, ch), { label: `Published · ${fmt.date(s.date)}`, button: btn, group: el });
+        const waiting = waitingForSignal();
+        commit(sid, s, nextOf(s, ch), { label: `Published · ${fmt.date(s.date)}`, sub: waiting ? 'Sends when signal returns' : undefined,
+          button: btn, group: el, onSaved: () => window.scrollTo({ top: 0 }) });
       });
     },
     render(el, ctx) {
       const sid = ctx.params.sid, s = Store.session(sid);
       if (!s) { el.innerHTML = UI.empty('Match not found', ''); return; }
       if (isFinished(s)) renderPublished(el, sid, s); else renderCheck(el, sid, s);
+      drawCards(el, sid);
     },
   });
 
@@ -1082,5 +1272,5 @@
   App.registerAction('fix.playerSheet', openPlayerSheet);
 
   // For tests and other screens: the pure helpers (no writes).
-  window.Fix = { nextOf, writesFor, preview, tallyText, teamPoints, addedAfter };
+  window.Fix = { nextOf, writesFor, preview, tallyText, teamPoints, addedAfter, stoppages, longStoppages, waitingForSignal, ftCard };
 })();

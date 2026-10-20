@@ -1,185 +1,168 @@
-/* BE Fit Club · css/player.css · OWNER: Phase 2 · Player builder · player.live / table / season / me / match / profile (.scr-player-*)
-   Scope every rule under your screen classes. Use tokens (var(--s1), var(--ink2)...) only; no new colours,
-   no gradients, no glows. Shared pieces live in components.css (ask the lead for changes).
-   Sheets: .sh-player-*. The goal moment (.pl-gm) sits on <body>, above everything. */
+/* BE Fit Club · css/player.css · OWNER: Round 5 · Home builder
+   guest.home · player.home · player.live (Match tab) · player.match · player.me · player.profile
+   Scoped under the screen classes; sheets .sh-player-*; the goal moment .pl-gm sits on <body>.
+   Light: only .hero (one per screen) and .lit components glow; team colour via var(--tc) from .t-<team>.
+   Hero numerals are .hn (Geist 700 tabular), never Geist Mono above 24 px. */
 
-/* ---------------------------------------------------------------- shared inside player screens */
-:is(.scr-player-live, .scr-player-table, .scr-player-season, .scr-player-me, .scr-player-match, .scr-player-profile) {
-  --pl-gap: var(--sp-6);
-}
-:is(.scr-player-live, .scr-player-table, .scr-player-season, .scr-player-me, .scr-player-match, .scr-player-profile) .pl-gap { margin-top: var(--pl-gap); }
-:is(.scr-player-live, .scr-player-season, .scr-player-me, .scr-player-profile, .scr-player-table) .pl-h1 { margin-bottom: 14px; }
-:is(.scr-player-live, .scr-player-table, .scr-player-season, .scr-player-me, .scr-player-match, .scr-player-profile) [role="link"],
-:is(.scr-player-live, .scr-player-table, .scr-player-season, .scr-player-me, .scr-player-match, .scr-player-profile) [role="button"] { cursor: pointer; }
-.pl-more { min-height: var(--h-target-player); display: inline-flex; align-items: center; font: 500 var(--fs-meta) var(--font); color: var(--ink2); margin: -14px 0; }
-.pl-more-l { color: var(--ink3); font-weight: 400; }
-.pl-dash { color: var(--ink3); font: 500 18px var(--mono); }
+/* ---------------------------------------------------------------- shared inside the home screens */
+:is(.scr-guest-home, .scr-player-home, .scr-player-live, .scr-player-match, .scr-player-me, .scr-player-profile) .grow { flex: 1; min-width: 0; }
+:is(.scr-guest-home, .scr-player-home, .scr-player-live, .scr-player-match, .scr-player-me, .scr-player-profile) .pl-gap { margin-top: var(--sp-6); }
+:is(.scr-guest-home, .scr-player-home, .scr-player-live, .scr-player-match, .scr-player-me, .scr-player-profile) .pl-h1 { margin-bottom: 14px; }
+:is(.scr-guest-home, .scr-player-home, .scr-player-live, .scr-player-match, .scr-player-me, .scr-player-profile) [role="link"] { cursor: pointer; }
+/* sections: phone = one column (24 px between), laptop = two */
+.pl-2col > div + div { margin-top: var(--sp-6); }
+.pl-2col > div > .lbl:first-child, .pl-col2 > .lbl:first-child { margin-top: 0; }
+:is(.pl-pod, .pl-note, .pl-bars, .pl-subs, .pl-you, .pl-yseason) + .lbl { margin-top: var(--sp-6); }
+.pl-sl > span:first-child { min-width: 0; }
+.pl-more { min-height: var(--h-target-player); display: inline-flex; align-items: center; margin: -14px 0; white-space: nowrap; }
+.lbl .pl-hint { color: var(--ink3); font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 12.5px; white-space: nowrap; }
+.pl-note { margin-top: 8px; }
 .pl-og { font-size: var(--fs-meta); color: var(--ink3); }
-.pl-big { font-size: 26px; font-family: var(--font); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }   /* hero numeral: Geist 700, not Mono (round 5 item 2) */
-:is(.scr-player-live, .scr-player-table, .scr-player-season, .scr-player-me, .scr-player-match, .scr-player-profile, .pl-gm) .grow { flex: 1; min-width: 0; }
-.pl-tm { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 2px; }
+.pl-unit { font-size: 15px; color: var(--ink3); font-weight: 500; }
 
-/* score card: scorers one per line, names wrap, minutes in mono */
-.pl-scard { display: block; }
-.pl-scard .lbl { margin-bottom: 10px; }
-.pl-scard[role="link"]:active { background: var(--s2); }
-.pl-scorers .pl-sc, .pl-scorers-multi .pl-sc { display: block; overflow-wrap: anywhere; }
-.pl-scorers-multi { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--sp-3); margin-top: var(--sp-3); font-size: var(--fs-meta); color: var(--ink2); }
-.pl-scorers-multi .n { color: var(--ink3); }
-.pl-poles { margin-top: 10px; font-size: var(--fs-meta); color: var(--ink3); }
+/* ranked rows (live points, table near you): numbers in Geist 700, not Mono */
+.pl-rr .pl-rn { width: 24px; flex: none; color: var(--ink3); font-size: 13px; }
+.pl-pts, .r .pts.pl-pts { font: 700 16px var(--font); font-variant-numeric: tabular-nums; letter-spacing: -.01em; min-width: 32px; text-align: right; }
+.pl-rr .end { gap: 10px; }
 
-/* ranked rows (live points, top 3) */
-.pl-rr .pl-rn { width: 22px; flex: none; color: var(--ink3); font-size: 13px; }
-.pl-rr .end, .pl-rr .tm { flex: none; }
-.pl-rr .pts { min-width: 30px; text-align: right; }
-.pl-me, .r.pl-me { background: var(--hl); }
+/* ---------------------------------------------------------------- score card (the joined block inside a card) */
+.pl-scard { display: block; padding: 14px 14px 16px; }
+.pl-cardlbl { margin-bottom: 10px; min-height: 20px; align-items: center; }
+.pl-cardlbl .live { letter-spacing: .12em; color: var(--ink2); }
+.pl-scard .pl-poles { margin-top: 10px; font-size: var(--fs-meta); color: var(--ink3); }
+.pl-scard .sb-scorers { margin-top: 12px; }
 
-/* the maths: one short line per item */
-.pl-bd { padding: 4px 0 2px; }
-.pl-bd-r { display: flex; justify-content: space-between; gap: var(--sp-3); font-size: 13px; color: var(--ink2); padding: 3px 0; }
-.pl-bd-r .n { color: var(--ink); font-weight: 500; white-space: nowrap; }
-
-/* ---------------------------------------------------------------- Live */
-.scr-player-live .pl-you { margin-top: var(--card-gap); display: block; }
-.scr-player-live .pl-you:active { background: var(--s2); }
-.pl-you-top { display: flex; align-items: center; gap: 12px; }
-.pl-av-md { width: 36px; height: 36px; font-size: 14px; }
-.pl-you-w { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+/* tinted (never glowing) team card: "You tonight", or You when the score card is the hero */
+.card.pl-tint { background: color-mix(in srgb, var(--tc) 9%, var(--s1)); background-image: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tc) 30%, transparent); }
+.pl-you { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin-top: var(--card-gap); padding: 14px 16px; }
+.pl-you .grow { display: flex; flex-direction: column; gap: 2px; }
+.pl-you-t { font-weight: 650; font-size: 15px; }
+.pl-you .meta { overflow-wrap: anywhere; }
 .pl-you-p { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
-.pl-you-p .meta { margin-top: 2px; }
-.scr-player-live .pl-you .pl-bd { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
-.scr-player-live .feed .r { min-height: 44px; }
-.scr-player-live .feed .kind { white-space: nowrap; }
-.scr-player-live .pl-ylast { display: flex; align-items: center; gap: 12px; margin-top: var(--card-gap); }
-.scr-player-live .pl-ylast:active { background: var(--s2); }
-.scr-player-live .pl-ylast .lbl { margin: 0 0 4px; }
-.pl-rank { text-align: right; flex: none; }
-.pl-rank .n { font-size: 20px; font-weight: 600; }
+.pl-you-n { font-size: 40px; }
+.pl-you:active, .pl-yseason:active, .pl-subs:active { filter: brightness(1.08); }
 
-/* ---------------------------------------------------------------- Table */
-.pl-thead { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: 12px; }
-.pl-thead .seg { width: 184px; flex: none; }
-.scr-player-table .chips, .scr-player-profile .chips { margin: 0 calc(-1 * var(--gutter)) 8px; padding: 0 var(--gutter); }
-.pl-tbl { table-layout: fixed; }
-.pl-tbl th { white-space: nowrap; }
-.pl-tbl th.pl-rk, .pl-tbl td.pl-rk { width: 34px; }
-.pl-tbl th.pl-c2, .pl-tbl td.pl-c2 { width: 64px; }
-.pl-tbl th:last-child, .pl-tbl td:last-child { width: 48px; }
-.pl-tbl td { height: auto; min-height: var(--h-trow); padding-top: 7px; padding-bottom: 7px; }
-.pl-tbl td.pl-rk { color: var(--ink2); line-height: 1; vertical-align: middle; }
-.pl-tbl td.pl-rk .mv { margin-top: 4px; }
-.pl-tbl td.pl-c2 { color: var(--ink2); }
-.pl-tbl td.bk { font-weight: 650; }
-.pl-tn { font: 550 14px/1.25 var(--font); overflow-wrap: anywhere; }
-.pl-youtag { color: var(--ink3); font-size: var(--fs-meta); font-weight: 400; }
-.pl-tbl tbody tr { cursor: pointer; }
-.pl-tbl tbody tr:active td { background: var(--s2); }
-/* "you": highlighted, and pinned so it's always in view (above the nav at the bottom, under the header at the top) */
-.pl-tbl tr.you td {
-  background: var(--hl); position: sticky; z-index: 2;
-  bottom: calc(var(--h-nav) + var(--safe-b)); top: var(--h-header);
-  box-shadow: 0 -1px 0 var(--line), 0 1px 0 var(--line);
-}
-.pl-tbl tr.sel td { background: var(--s1); }
-.pl-tbl tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--ink); }
-.pl-tbl tr.you.sel td { background: var(--hl); }
+/* "You · season" (hero on Home when no game is on) */
+.pl-yseason { display: block; width: 100%; text-align: left; padding: 16px 16px 18px; margin-top: var(--card-gap); }
+.pl-ytop { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-3); position: relative; }
+.pl-ytop .lbl { margin: 4px 0 0; }
+.pl-yr { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex: none; }
+.pl-yr .hn { font-size: 26px; }
+.pl-yr .meta { margin-top: 2px; white-space: nowrap; }
+.pl-ybig { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; position: relative; }
+.pl-ynum { font-size: 72px; }
+.pl-ylast { font-size: 14px; color: var(--ink2); margin-top: 12px; position: relative; overflow-wrap: anywhere; }
+.pl-ylast b { color: var(--ink); font-weight: 650; }
 
-/* ---------------------------------------------------------------- Profile (Me + anyone) */
-.pl-ph { display: flex; align-items: center; gap: 12px; }
-.pl-av-lg { width: 52px; height: 52px; font-size: 20px; box-shadow: inset 0 0 0 3px var(--tc, var(--s3)); }
-.pl-name { font-size: var(--fs-head); font-weight: 650; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
-.pl-pcard { margin-top: var(--sp-4); }
-.pl-ptop { display: flex; align-items: baseline; gap: 8px; }
-.pl-hero { font-size: var(--fs-profile); font-family: var(--font); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; }   /* round 5 item 2 */
-.pl-info { margin-left: auto; min-height: var(--h-target-player); min-width: var(--h-target-player); display: grid; place-items: center end; font-size: 13px; color: var(--ink3); margin-top: -12px; margin-bottom: -12px; }
-.pl-hr { margin: 16px 0; }
-.pl-stats { gap: 0; }
-.pl-stat { font-size: 20px; font-weight: 600; line-height: 1.2; }
-.pl-subs { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; min-height: var(--h-row); margin-top: var(--card-gap); font-weight: 550; text-align: left; }
-.pl-subs:active { background: var(--s2); }
-.pl-subs .grow { flex: 1; }
-.pl-bars { display: flex; gap: 8px; align-items: flex-end; }
-.pl-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 5px; min-height: 96px; padding: 0; }
-.pl-bar i { display: block; width: 100%; border-radius: 4px; background: var(--s3); }
-.pl-bar.won i { background: var(--ink); }
-.pl-bar-v { font-size: var(--fs-meta); color: var(--ink2); }
-.pl-bar-d { font-size: var(--fs-meta); color: var(--ink3); white-space: nowrap; }
-.pl-bar:active i { opacity: .8; }
-.pl-hist .r .meta { overflow-wrap: anywhere; }
-.pl-paid { font-weight: 600; }
+/* Next game strip */
+.pl-next { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.pl-next-d { font-size: 16px; font-weight: 650; margin-top: 2px; white-space: nowrap; }
+.pl-next-r { font-size: 13px; font-weight: 600; color: var(--ink2); text-align: right; }
 
-/* ---------------------------------------------------------------- Season */
-.pl-race .score { margin-bottom: 12px; }
-.pl-race .score .g { font-size: var(--fs-profile); }
-.pl-wbar { display: flex; gap: 3px; height: 8px; }
-.pl-wbar i { display: block; background: var(--tc, var(--s3)); min-width: 0; }
-.pl-wbar i:first-child { border-radius: 4px 0 0 4px; }
-.pl-wbar i:last-child { border-radius: 0 4px 4px 0; }
-.pl-wbar i.pl-drawn { background: var(--s3); }
-.pl-wdl { display: flex; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-meta); color: var(--ink3); margin-top: 8px; }
-.pl-form { display: flex; gap: 6px; flex: none; }
-.pl-leads { gap: var(--sp-2); }
-.pl-lead { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px; margin: 0; text-align: left; min-width: 0; }
-.pl-lead + .pl-lead { margin-top: 0; }
-.pl-lead:active { background: var(--s2); }
-.pl-lead-n { font-size: var(--fs-meta); color: var(--ink2); overflow-wrap: anywhere; }
-.pl-res { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 600; white-space: nowrap; }
-.pl-res-d { color: var(--ink3); font-weight: 400; }
-.pl-sq { width: 8px; height: 8px; border-radius: 2px; background: var(--tc); flex: none; display: inline-block; }
+/* Season leaders podium, Season race */
+.pl-pod { margin-top: 10px; }
+.pl-race { min-height: 58px; }
+.pl-tbar { width: 4px; height: 22px; border-radius: 2px; background: var(--tc); flex: none; }
+.pl-race .nm { font-size: 16px; font-weight: 650; }
+.pl-form { display: flex; gap: 4px; flex: none; }
+.pl-race-p { font-size: 28px; min-width: 46px; text-align: right; flex: none; }
+
+/* Match tab: feed, past games */
+.pl-feed .min { width: 46px; flex: none; font: 500 12px var(--mono); color: var(--ink3); }
+.pl-feed .kind, .sh-player-feed .kind { color: var(--ink2); white-space: nowrap; }
+.pl-past .end { gap: 8px; }
 
 /* ---------------------------------------------------------------- Match summary */
-.pl-ft { font-size: var(--fs-meta); color: var(--ink3); }
-.scr-player-match .score .mid { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .pl-top { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
 .pl-top-n { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
-.pl-top-p { font-size: var(--fs-title); font-weight: 650; flex: none; }
+.pl-top-p { font-size: 26px; flex: none; }
 .pl-tsw { margin: 16px 0 12px; }
-.pl-tsw > button span .n { opacity: .6; font-weight: 500; }
+.pl-tsw > button span .n { font-family: var(--font); font-weight: 700; }
 .pl-x { border-top: 1px solid var(--line); }
 .pl-x:first-child { border-top: 0; }
 .pl-x > .r { border-top: 0; }
+.pl-x .r .grow .pos { margin-left: 4px; }
+.pl-x .r .av { --av: 32px; }
 .pl-x.open { background: var(--hl); }
-.pl-x .pl-bd { padding: 0 14px 10px; }
 .pl-x .end .chev { width: 14px; text-align: center; }
+.pl-xsum { padding: 0 10px 12px; }
+.pl-xsum .sum { background: var(--s2); }
+
+/* ---------------------------------------------------------------- Profile (Me + anyone) */
+.pl-ph { display: flex; align-items: center; gap: 14px; }
+.pl-ph .av { font-size: 22px; box-shadow: inset 0 0 0 2.5px var(--tc, var(--s3)); }
+.pl-name { font-size: var(--fs-head); font-weight: 700; letter-spacing: -.025em; line-height: 1.12; overflow-wrap: anywhere; }
+.pl-tm { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 6px; }
+.pl-share { min-height: var(--h-target-player); display: inline-flex; align-items: center; flex: none; align-self: flex-start; margin-top: 4px; }
+.pl-share > span { height: 36px; padding: 0 16px; border-radius: 999px; display: inline-flex; align-items: center; font-size: 14px; font-weight: 650; box-shadow: inset 0 0 0 1.5px var(--s3); }
+.pl-share:active > span { background: var(--s2); }
+.pl-pcard { margin-top: var(--sp-4); padding: 18px 18px 16px; }
+.pl-ptop { display: flex; align-items: baseline; gap: 8px; position: relative; }
+.pl-hero { font-size: 72px; }
+.pl-rank { margin-left: auto; align-self: flex-start; height: 28px; font-size: 13px; font-weight: 650; }
+.pl-info { min-height: var(--h-target-player); min-width: var(--h-target-player); display: grid; place-items: center; margin: -12px -6px; align-self: center; }
+.pl-info i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--font); font-style: normal; color: var(--ink2); box-shadow: inset 0 0 0 1.5px var(--s3); }
+.pl-stats { margin-top: 16px; gap: 0; position: relative; }
+.pl-stat { font-size: 24px; }
+.pl-stats .meta { margin-top: 4px; font-size: 13px; }
+.pl-subs { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; min-height: 56px; margin-top: var(--card-gap); font-weight: 600; text-align: left; }
+.pl-subs .grow { flex: 1; }
+.pl-owe { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--attn); color: var(--warn); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.pl-ok { font-size: 12.5px; color: var(--ink3); font-weight: 500; white-space: nowrap; }
+.pl-paid { font: 650 15px var(--font); font-variant-numeric: tabular-nums; }
+
+/* Last 5 bars in team colour: W full · D half · L faint (the won bar is the team's colour, not white) */
+.pl-bars { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+.pl-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; padding: 0; }
+.pl-bar i { display: block; width: 100%; border-radius: 6px; background: color-mix(in srgb, var(--tc) 26%, var(--s1)); }
+.pl-bar.is-D i { background: color-mix(in srgb, var(--tc) 55%, var(--s1)); }
+.pl-bar.is-W i { background: var(--tc); }
+.pl-bar-v { font: 700 15px var(--font); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pl-bar-d { font-size: var(--fs-meta); color: var(--ink3); white-space: nowrap; }
+.pl-bar-r { min-height: 24px; display: flex; }
+.pl-bar:active i { filter: brightness(1.15); }
+.pl-hist .r .meta { overflow-wrap: anywhere; }
+.pl-hist .r .wdl { flex: none; }
+.pl-hist .r .pts { font: 700 15px var(--font); font-variant-numeric: tabular-nums; }
 
 /* ---------------------------------------------------------------- laptop (>= 960 px) */
 @media (min-width: 960px) {
-  :is(.scr-player-live, .scr-player-season, .scr-player-match) .pl-2col {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start;
-  }
-  :is(.scr-player-live, .scr-player-season, .scr-player-match) .pl-2col > div > .lbl.pl-gap:first-child,
+  .pl-2col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6) 32px; align-items: start; }
+  .pl-2col > div + div { margin-top: 0; }
   .scr-player-match .pl-2col .pl-tsw { margin-top: 0; }
-  .scr-player-me .pl-prof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
-  .scr-player-me .pl-prof-b > .lbl.pl-gap:first-child { margin-top: 0; }
-  :is(.scr-player-table, .scr-player-profile) .split-side { max-height: calc(100vh - var(--h-header) - 48px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: var(--sp-4); }
-  :is(.scr-player-table, .scr-player-profile) .chips { margin: 0 0 8px; padding: 0; }
-  .pl-tbl tr.you td { bottom: 0; }
+  .pl-prof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .pl-prof-b > .lbl:first-child { margin-top: 0; }
 }
+@media (max-width: 959px) { .pl-prof-b > .lbl:first-child { margin-top: var(--sp-6); } }
 
 /* ---------------------------------------------------------------- sheets */
-.sh-player-share .pl-close { font-family: var(--font); font-size: 13px; color: var(--ink3); font-weight: 400; min-height: var(--h-target-player); padding: 0 2px; }
-.sh-player-share h4 { margin-bottom: 8px; }
-.pl-cardwrap { display: flex; justify-content: center; }
-.pl-card { width: 100%; max-width: 300px; height: auto; aspect-ratio: 4 / 5; display: block; }
-.pl-cardctl { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.sh-player-share .seg > button:disabled { opacity: .35; pointer-events: none; }
-.sh-player-full .pl-ftbl th, .sh-player-full .pl-ftbl td { padding: 0 4px; }
-.sh-player-full .pl-ftbl th { padding: 6px 4px; }
-.sh-player-live .pl-rr, .sh-player-feed .r { min-height: 44px; }
-.sh-player-feed .min { width: 44px; }
-@media (max-height: 700px) { .pl-card { max-width: 240px; } }
+:is(.sh-player-subs, .sh-player-live, .sh-player-feed) h4 .end { font-family: var(--font); }
+.pl-te { font: 600 13px var(--font); color: var(--ink2); font-variant-numeric: tabular-nums; }
+.sh-player-live .pl-rr, .sh-player-feed .r { min-height: 48px; }
+.sh-player-feed .min { width: 46px; flex: none; font: 500 12px var(--mono); color: var(--ink3); }
+.sh-player-subs .r .meta { overflow-wrap: anywhere; }
+/* live breakdown: a team-tinted top, the head, the sum (the sheet's hero), "Season page ›" */
+.sheet.sh-player-bd { background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 20%, var(--sheet)), var(--sheet) 150px), var(--sheet); }
+.pl-bdh { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; }
+.pl-bdn { font-size: 22px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.pl-bdh .meta { margin-top: 3px; font-size: 13px; color: var(--ink2); }
+.sh-player-bd .sheet-f { padding-top: var(--sp-3); }
+.sh-player-bd .pl-season-btn { box-shadow: none; background: transparent; color: var(--ink2); font-weight: 600; }
 
 /* ---------------------------------------------------------------- GoalMoment (viewers' phones only) */
 .pl-gm {
-  position: fixed; inset: 0; z-index: 95; background: var(--bg); color: var(--ink);
-  display: grid; place-items: center; padding: 24px var(--gutter); cursor: pointer;
+  position: fixed; inset: 0; z-index: 95; color: var(--ink); cursor: pointer;
+  display: grid; place-items: center; padding: 24px var(--gutter);
+  background: radial-gradient(70% 55% at 50% 42%, color-mix(in srgb, var(--tc) 30%, var(--bg)), var(--bg) 78%), var(--bg);
   animation: fade-in .16s ease;
 }
-.pl-gm::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--tc); }
-.pl-gm-in { width: 100%; max-width: 420px; text-align: center; }
-.pl-gm-team { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+.pl-gm-in { width: 100%; max-width: 440px; text-align: center; }
+.pl-gm-team { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
 .pl-gm-team::before { content: ''; width: 10px; height: 10px; border-radius: 2px; background: var(--tc); }
-.pl-gm-word { font-size: var(--fs-share); font-weight: 650; letter-spacing: -.04em; line-height: 1; margin-top: 12px; }
-.pl-gm-who { font-size: var(--fs-title); font-weight: 600; margin-top: 16px; overflow-wrap: anywhere; }
-.pl-gm-who .n { color: var(--ink2); font-weight: 500; }
-.pl-gm-score { margin-top: 32px; padding: var(--card-pad); border-radius: var(--r-card); background: var(--s1); box-shadow: var(--ring); text-align: left; }
+.pl-gm-word { font: 800 92px/1 var(--font); letter-spacing: -.03em; text-transform: uppercase; margin-top: 14px; color: var(--tc);
+  text-shadow: 0 0 40px color-mix(in srgb, var(--tc) 45%, transparent); }
+[data-theme="light"] .pl-gm-word { color: color-mix(in srgb, var(--tc) 85%, #000); text-shadow: none; }
+.pl-gm-who { font-size: 22px; font-weight: 650; margin-top: 18px; overflow-wrap: anywhere; }
+.pl-gm-who .n { color: var(--ink2); font: 500 15px var(--mono); }
+.pl-gm-score { margin: 32px auto 0; max-width: 420px; text-align: left; }
