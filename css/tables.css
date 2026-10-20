@@ -84,6 +84,10 @@
 .sh-tables-share .tb-cardwrap { display: flex; justify-content: center; margin-top: 14px; }
 .sh-tables-share .tb-card { width: 100%; max-width: 320px; height: auto; aspect-ratio: 4 / 5; display: block; border-radius: 14px; }
 .sh-tables-share .tb-cardctl { margin: 12px auto 0; max-width: 320px; }
+/* full-time card: Page 1 · Full time | Page 2 · Unseen heroes (48 px, the sheet also opens from referee screens) */
+.sh-tables-share .tb-pages { margin: 12px auto 0; max-width: 320px; }
+.sh-tables-share .tb-pages[hidden] { display: none; }
+.sh-tables-share .tb-pages .seg > button { min-height: var(--h-target); font-size: 13px; padding: 0 4px; }
 .sh-tables-share .tb-cardctl .seg > button { min-height: var(--h-target); font-size: 13.5px; }   /* 48 px: also opened from referee screens */
 .sh-tables-share .seg > button:disabled { opacity: .35; pointer-events: none; }
 @media (max-height: 760px) { .sh-tables-share .tb-card { max-width: 260px; } }

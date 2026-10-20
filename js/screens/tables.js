@@ -23,7 +23,14 @@
      'share.fullTime'    ({ sid })   the Full-time card sheet for one match (offered after Publish).
                          ({ sid, canvas, theme? })  draws the card into your <canvas> and returns it, no sheet:
                                     the full-time check uses this for its scaled preview.
-                         ({ sid, save: true, theme? })  downloads the PNG straight away (no sheet); returns a Promise.
+                         ({ sid, canvas, theme?, page: 2 })  the same, page 2 (Unseen heroes).
+                         ({ sid, save: true, theme? })  downloads BOTH pages straight away (no sheet); returns a Promise.
+   FULL-TIME CARD = TWO PAGES. Page 1 · Full time (score, scorers, top points). Page 2 · Unseen heroes:
+     hero of the night = the outfielder with the most defensive credits (block 2, clearance 1; ties → more blocks,
+     more clearances, name; nobody → top assister, then the keeper with most saves), category leaders (Saves incl.
+     penalty saves as Scoring counts them, Blocks, Clearances: top 2 with ties; Assists: everyone, up to 4 names),
+     and a team strip (blocks · clearances · saves). The sheet's Page 1 | Page 2 switch previews one page; Share
+     posts both PNGs together (one-file-only phones: share page 1, save page 2; no Web Share: save both).
    The share sheet's controls are all 48 px (it also opens from referee screens).
    SHARE CARDS: broadcast graphics, 1080 × 1350 (drawn at 300 × 375 × 3.6). Team light behind the big number,
    a fine diagonal texture, a team edge on top, big numerals in Geist 700 (never Mono). Position-aware last game:
@@ -398,6 +405,58 @@
       top: mb.top && mb.top.players.length ? { names: mb.top.players.map(x => x.name), pts: mb.top.pts } : null };
   }
 
+  // Page 2 of the full-time card: UNSEEN HEROES. Everything from Scoring.matchPoints (the app's own tallies):
+  //   defensive credits = block 2 + clearance 1 (the def-pts weights); saves as Scoring counts them (keepers only,
+  //   big poles only from the switch) with penalty saves added and noted.
+  const DEF_CREDIT = { block: 2, clearance: 1 };
+  function heroesData(sid) {
+    const sess = Store.session(sid); if (!sess) return null;
+    const teams = Scoring.orderTeams(Scoring.teamsOf(sess));
+    if (!teams.length) return null;
+    const mps = Scoring.sessPlayers(sess, db()).map(p => Scoring.matchPoints(sess, p.pid, db())).filter(Boolean).map(m => {
+      const t = m.tally, gk = m.pos === 'GK';
+      return { pid: m.pid, name: m.name, team: m.team, pos: m.pos, gk, blocks: t.blocks || 0, clearances: t.clearances || 0,
+        assists: t.assists || 0, saves: gk ? (t.saves || 0) + (t.penSaves || 0) : 0, pens: gk ? (t.penSaves || 0) : 0,
+        credits: (t.blocks || 0) * DEF_CREDIT.block + (t.clearances || 0) * DEF_CREDIT.clearance };
+    });
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    const pl = (n, w) => fmt.plural(n, w);
+    // 1. hero of the night: most defensive credits among outfielders; ties → more blocks, more clearances, name
+    let hero = null;
+    const out = mps.filter(m => !m.gk && m.credits > 0).sort((a, b) => b.credits - a.credits || b.blocks - a.blocks || b.clearances - a.clearances || byName(a, b));
+    if (out.length) {
+      const h = out[0];
+      hero = { kind: 'defence', pid: h.pid, name: h.name, team: h.team, pos: h.pos,
+        line: [h.blocks ? pl(h.blocks, 'block') : '', h.clearances ? pl(h.clearances, 'clearance') : ''].filter(Boolean).join(' · ') };
+    } else {
+      const as = mps.filter(m => m.assists > 0).sort((a, b) => b.assists - a.assists || byName(a, b));
+      const sv = mps.filter(m => m.saves > 0).sort((a, b) => b.saves - a.saves || byName(a, b));
+      if (as.length) hero = { kind: 'assists', pid: as[0].pid, name: as[0].name, team: as[0].team, pos: as[0].pos, line: pl(as[0].assists, 'assist') };
+      else if (sv.length) hero = { kind: 'saves', pid: sv[0].pid, name: sv[0].name, team: sv[0].team, pos: sv[0].pos,
+        line: pl(sv[0].saves, 'save') + (sv[0].pens ? ` (${pl(sv[0].pens, 'penalty save')})` : '') };
+    }
+    // 2. category leaders: top 2, ties at the cut-off shown together; an empty row is left out
+    const top2 = key => {
+      const list = mps.filter(m => m[key] > 0).sort((a, b) => b[key] - a[key] || byName(a, b));
+      if (!list.length) return [];
+      const cut = (list[1] || list[0])[key];
+      return list.filter(m => m[key] >= cut);
+    };
+    const rows = [];
+    const addRow = (label, list, fmtOne, max) => { if (list.length) rows.push({ label, entries: list.slice(0, max).map(fmtOne), more: Math.max(0, list.length - max) }); };
+    addRow('Saves', top2('saves'), m => ({ name: m.name, value: m.saves, note: m.pens ? `incl. ${m.pens} pen` : '' }), 4);
+    addRow('Blocks', top2('blocks'), m => ({ name: m.name, value: m.blocks }), 4);
+    addRow('Clearances', top2('clearances'), m => ({ name: m.name, value: m.clearances }), 4);
+    addRow('Assists', mps.filter(m => m.assists > 0).sort((a, b) => b.assists - a.assists || byName(a, b)),
+      m => ({ name: m.name, value: m.assists > 1 ? m.assists : null }), 4);
+    // 3. team strip: blocks · clearances · saves per team
+    const strip = teams.map(t => {
+      const ms = mps.filter(m => m.team === t);
+      return { team: t, blocks: ms.reduce((s, m) => s + m.blocks, 0), clearances: ms.reduce((s, m) => s + m.clearances, 0), saves: ms.reduce((s, m) => s + m.saves, 0) };
+    });
+    return { kind: 'heroes', sid, date: sess.date, corner: fmt.date(sess.date), teams, hero, rows, strip };
+  }
+
   // ---------------------------------------------------------------- drawing
   function setup(canvas) {
     canvas.width = CW * SCALE; canvas.height = CH * SCALE;
@@ -529,7 +588,113 @@
     }
   }
 
-  function drawCard(canvas, D, theme) { if (D.kind === 'ft') drawFullTime(canvas, D, theme); else drawPlayer(canvas, D, theme); }
+  // Page 2 · UNSEEN HEROES: hero of the night (lit in his team colour), category leaders, the team strip.
+  function drawHeroes(canvas, D, theme) {
+    const ctx = setup(canvas);
+    const P = palette(theme, D.teams.concat(D.hero ? [D.hero.team] : []));
+    const HT = D.hero ? teamOf(P, D.hero.team) : null;
+    frame(ctx, P, HT ? [{ x: 150, y: 112, r: 190, rgb: HT.rgb, a: 0.34 }] : [], D.teams.map(t => teamOf(P, t).rgb));
+    header(ctx, P, D.corner);
+    ctx.fillStyle = P.ink2; ctx.font = `800 14px ${FONT}`; spaced(ctx, 'UNSEEN HEROES', CW / 2, 60, 4, 'center');
+    let y0 = 74;
+    // 1. hero of the night
+    if (D.hero) {
+      const x = 20, y = 74, w = CW - 40, h = 64;
+      ctx.save(); rr(ctx, x, y, w, h, 12); ctx.clip();
+      const g = ctx.createLinearGradient(x, 0, x + w, 0);
+      g.addColorStop(0, rgba(HT.rgb, P.dark ? 0.24 : 0.14)); g.addColorStop(1, rgba(HT.rgb, P.dark ? 0.06 : 0.03));
+      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = rgba(HT.rgb, 0.75); ctx.fillRect(x, y, w, 1.5);                 // glowing top edge
+      ctx.restore();
+      ctx.strokeStyle = rgba(HT.rgb, P.dark ? 0.3 : 0.35); ctx.lineWidth = 1; rr(ctx, x + 0.5, y + 0.5, w - 1, h - 1, 12); ctx.stroke();
+      const s = fitSize(ctx, D.hero.name, 700, FONT, 28, 14, w - 28);
+      ctx.font = `700 ${s}px ${FONT}`; ctx.fillStyle = P.ink; ctx.textAlign = 'left';
+      if ('letterSpacing' in ctx) ctx.letterSpacing = (-0.02 * s) + 'px';
+      ctx.fillText(D.hero.name, 34, 103); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+      // bottom row: team chip (■ GREEN), then "4 blocks · 1 clearance"
+      const chip = fmt.team(D.hero.team).toUpperCase();
+      ctx.font = `700 12px ${FONT}`; const cw = ctx.measureText(chip).width + 28;
+      rr(ctx, 34, 110, cw, 20, 10); ctx.fillStyle = rgba(HT.rgb, P.dark ? 0.16 : 0.1); ctx.fill();
+      ctx.strokeStyle = rgba(HT.rgb, P.dark ? 0.5 : 0.45); ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = rgba(HT.rgb, 1); rr(ctx, 43, 116.5, 7, 7, 2); ctx.fill();
+      ctx.fillStyle = P.ink; ctx.fillText(chip, 55, 124.5);
+      ctx.fillStyle = P.ink2; fitSize(ctx, D.hero.line, 500, FONT, 14, 12, w - 28 - cw - 8); ctx.fillText(D.hero.line, 34 + cw + 8, 125);
+      y0 = y + h + 8;
+    }
+    // 3. team strip (laid out bottom-up so the categories know their room)
+    const n = D.strip.length, lhT = n <= 2 ? 18 : 14, valFs = n <= 2 ? 15 : 13;
+    const lastY = 362, firstY = lastY - (n - 1) * lhT, headY = firstY - 18, ruleY = headY - 14;
+    const colEnds = [132, 228, CW - 20], labs = ['BLOCKS', 'CLEARANCES', 'SAVES'];
+    ctx.fillStyle = P.dark ? 'rgba(255,255,255,.14)' : P.line; ctx.fillRect(20, ruleY, CW - 40, 1);
+    ctx.fillStyle = P.ink3; ctx.font = `500 12px ${FONT}`;
+    labs.forEach((l, i) => spaced(ctx, l, colEnds[i], headY, 0.3, 'right'));
+    D.strip.forEach((r, k) => {
+      const y = firstY + k * lhT, T = teamOf(P, r.team);
+      teamLabel(ctx, P, T, fmt.team(r.team).toUpperCase(), 20, y, 1, 'left', 12);
+      ctx.fillStyle = P.ink; ctx.font = `700 ${valFs}px ${FONT}`; ctx.textAlign = 'right';
+      [r.blocks, r.clearances, r.saves].forEach((v, i) => ctx.fillText(String(v), colEnds[i], y));
+      ctx.textAlign = 'left';
+    });
+    // 2. category leaders: label column, then "Name n · Name n" wrapping in the value column (never cut)
+    const top = y0, bottom = ruleY - 8, X = 118, W = CW - 20 - X;
+    if (!D.rows.length) {
+      if (!D.hero) { ctx.fillStyle = P.ink3; ctx.font = `500 13px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('Nothing logged beyond the goals', CW / 2, (top + bottom) / 2); ctx.textAlign = 'left'; }
+      return;
+    }
+    const segsOf = (e, fs) => [{ t: e.name, f: `500 ${fs}px ${FONT}`, c: P.ink }]
+      .concat(e.value != null ? [{ t: ' ' + e.value, f: `700 ${fs}px ${FONT}`, c: P.ink }] : [])
+      .concat(e.note ? [{ t: ' ' + e.note, f: `500 12px ${FONT}`, c: P.ink3 }] : []);
+    const width = segs => segs.reduce((s, g) => { ctx.font = g.f; return s + ctx.measureText(g.t).width; }, 0);
+    const layoutRows = (fs, max) => D.rows.map(r => {
+      const tokens = r.entries.slice(0, max).map(e => segsOf(e, fs));
+      const more = r.more + Math.max(0, r.entries.length - max);
+      if (more) tokens.push([{ t: `+${more} more`, f: `500 ${fs}px ${FONT}`, c: P.ink3 }]);
+      ctx.font = `500 ${fs}px ${FONT}`; const sepW = ctx.measureText(' · ').width;
+      const lines = [[]]; let lw = 0;
+      let fit = true;
+      tokens.forEach(tk0 => {
+        // a token too wide for the column moves its last part (the note) to the next line
+        const parts = width(tk0) > W && tk0.length > 1 ? [tk0.slice(0, -1), tk0.slice(-1).map(g => Object.assign({}, g, { t: g.t.trim() }))] : [tk0];
+        parts.forEach((tk, pi) => {
+          const tw = width(tk);
+          if (tw > W) fit = false;
+          if (pi) { lines.push([tk]); lw = tw; return; }
+          if (lines[lines.length - 1].length && lw + sepW + tw > W) { lines.push([]); lw = 0; }
+          if (lines[lines.length - 1].length) { lines[lines.length - 1].push([{ t: ' · ', f: `500 ${fs}px ${FONT}`, c: P.ink3 }]); lw += sepW; }
+          lines[lines.length - 1].push(tk); lw += tw;
+        });
+      });
+      return { label: r.label, lines, fit };
+    });
+    let L = null, cfg = null;
+    for (const c of [[13, 16.5, 9, 4], [12, 15, 8, 4], [12, 14.5, 6, 4], [12, 14, 5, 3], [12, 14, 4, 2]]) {
+      L = layoutRows(c[0], c[3]); cfg = c;
+      const hTot = L.reduce((s, r) => s + r.lines.length * c[1] + c[2] * 2, 0);
+      if (hTot <= bottom - top && L.every(r => r.fit)) break;
+    }
+    const [fs, lh, pad] = cfg;
+    let y = top;
+    L.forEach((r, i) => {
+      if (i) { ctx.fillStyle = P.dark ? 'rgba(255,255,255,.08)' : P.line; ctx.fillRect(20, y, CW - 40, 1); }
+      const by = y + pad + fs;
+      ctx.fillStyle = P.ink3; ctx.font = `650 12px ${FONT}`; spaced(ctx, r.label.toUpperCase(), 20, by, 0.6, 'left');
+      r.lines.forEach((ln, k) => {
+        let x = X; const yy = by + k * lh;
+        ln.forEach(tk => tk.forEach(g => { ctx.font = g.f; ctx.fillStyle = g.c; ctx.textAlign = 'left'; ctx.fillText(g.t, x, yy); x += ctx.measureText(g.t).width; }));
+      });
+      y += r.lines.length * lh + pad * 2;
+    });
+  }
+
+  function drawCard(canvas, D, theme) { if (D.kind === 'ft') drawFullTime(canvas, D, theme); else if (D.kind === 'heroes') drawHeroes(canvas, D, theme); else drawPlayer(canvas, D, theme); }
+  // Both full-time pages as PNG blobs (page 1 · Full time, page 2 · Unseen heroes)
+  function ftBlobs(sid, theme) {
+    const pages = [ftData(sid), heroesData(sid)];
+    if (!pages[0] || !pages[1]) return Promise.resolve(null);
+    return Promise.all(pages.map(D => new Promise(res => { const c = document.createElement('canvas'); drawCard(c, D, theme); c.toBlob(b => res(b), 'image/png'); })))
+      .then(bs => (bs.every(Boolean) ? bs : null));
+  }
+  const ftNames = date => [`befit-full-time-${date || 'match'}.png`, `befit-unseen-heroes-${date || 'match'}.png`];
   const fontsReady = () => (document.fonts && document.fonts.load
     ? Promise.all([`700 132px Geist`, `800 14px Geist`, `500 13px Geist`, `400 14px Geist`, `500 12px "Geist Mono"`].map(f => document.fonts.load(f).catch(() => null)))
     : Promise.resolve());
@@ -553,46 +718,63 @@
     const can = { season: !!pid, last: !!lastH, ft: !!(ftSid && Store.session(ftSid)) };
     let kind = can[o.kind] ? o.kind : (pid ? 'season' : 'ft');
     if (!can[kind]) { UI.toast(pid ? 'No card yet' : 'Match not found'); return null; }
-    const st = { kind, theme: App.theme.effective(), blob: null };
-    const data = () => kind === 'season' ? seasonData(pid) : kind === 'last' ? lastData(pid) : ftData(ftSid);
-    const fileName = () => {
+    // The full-time card has two pages (1 · Full time, 2 · Unseen heroes): the switch previews one,
+    // Share and Save always send both. Season and Last game stay single-page.
+    const st = { kind, page: o.page === 2 ? 2 : 1, theme: App.theme.effective(), blobs: null, gen: 0 };
+    const data = () => kind === 'season' ? seasonData(pid) : kind === 'last' ? lastData(pid) : st.page === 2 ? heroesData(ftSid) : ftData(ftSid);
+    const fileNames = () => {
+      if (kind === 'ft') return ftNames((Store.session(ftSid) || {}).date);
       const D = data();
-      return D.kind === 'ft' ? `befit-full-time-${D.date || 'match'}.png` : `befit-${slug(D.name) || 'player'}-${D.kind === 'last' ? 'last-game' : 'season'}.png`;
+      return [`befit-${slug(D.name) || 'player'}-${D.kind === 'last' ? 'last-game' : 'season'}.png`];
     };
     const views = pid ? UI.seg('cview', [{ value: 'season', label: 'Season' }, { value: 'last', label: 'Last game' }, { value: 'ft', label: 'Full time' }], kind) : '';
+    const pages = `<div class="tb-pages"${kind === 'ft' ? '' : ' hidden'}>` +
+      UI.seg('cpage', [{ value: '1', label: 'Page 1 · Full time' }, { value: '2', label: 'Page 2 · Unseen heroes' }], String(st.page)) + '</div>';
     const name = pid ? Store.player(pid).name : 'the match';
     const h = UI.sheet.open({
       title: pid ? 'Share card' : 'Full-time card', cls: 'sh-tables-share sh-player-share',
       titleEnd: '<button type="button" class="tb-close" data-tap="sheet-cancel">Close</button>',
       body: views + `<div class="tb-cardwrap pl-cardwrap"><canvas class="tb-card" width="${CW * SCALE}" height="${CH * SCALE}" role="img" aria-label="Share card for ${esc(name)}"></canvas></div>` +
-        `<div class="tb-cardctl">${UI.seg('ctheme', [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }], st.theme)}</div>`,
+        pages + `<div class="tb-cardctl">${UI.seg('ctheme', [{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }], st.theme)}</div>`,
       footer: `<div class="grid2">${UI.btn('Share', { kind: 'w', tap: 'share-img' })}${UI.btn('Save image', { kind: 'g', tap: 'save-img' })}</div>`,
     });
     const canvas = h.el.querySelector('canvas');
+    const pagesEl = h.el.querySelector('.tb-pages');
     ['season', 'last', 'ft'].forEach(k => { if (!can[k]) { const b = h.el.querySelector(`[data-seg="cview"] [data-value="${k}"]`); if (b) { b.disabled = true; b.setAttribute('aria-disabled', 'true'); } } });
     const draw = () => {
       const D = data();
       if (!D) return;
       drawCard(canvas, D, st.theme);
       canvas.setAttribute('aria-label', D.kind === 'ft'
-        ? `Full-time card: ${D.teams.map(t => fmt.team(t.team) + ' ' + t.goals).join(', ')}`
+        ? `Full-time card, page 1: ${D.teams.map(t => fmt.team(t.team) + ' ' + t.goals).join(', ')}`
+        : D.kind === 'heroes' ? `Full-time card, page 2, unseen heroes: ${D.hero ? `${D.hero.name}, ${D.hero.line}` : 'nothing logged beyond the goals'}`
         : `${D.kind === 'last' ? 'Last game' : 'Season'} card for ${D.name}: ${D.big} points`);
-      st.blob = null;
-      canvas.toBlob(b => { st.blob = b; }, 'image/png');
+      if (pagesEl) pagesEl.hidden = kind !== 'ft';
+      // the PNGs to send: both pages for the full-time card, else this one card
+      const gen = ++st.gen; st.blobs = null;
+      const ready = kind === 'ft' ? ftBlobs(ftSid, st.theme) : new Promise(res => canvas.toBlob(b => res(b ? [b] : null), 'image/png'));
+      st.ready = ready.then(bs => { if (gen === st.gen) st.blobs = bs; return bs; });
     };
     draw();
     fontsReady().then(() => { if (!h.closed) draw(); });
     UI.onSeg(h.el, 'cview', v => { kind = v; draw(); });
+    UI.onSeg(h.el, 'cpage', v => { st.page = Number(v) === 2 ? 2 : 1; draw(); });
     UI.onSeg(h.el, 'ctheme', v => { st.theme = v; draw(); });
-    const withBlob = fn => { if (st.blob) fn(st.blob); else canvas.toBlob(b => b && fn(b), 'image/png'); };
-    UI.on(h.el, 'save-img', () => withBlob(b => { download(b, fileName()); UI.toast('Image saved'); }));
-    UI.on(h.el, 'share-img', () => withBlob(b => {
-      let file = null;
-      try { file = new File([b], fileName(), { type: 'image/png' }); } catch (e) { file = null; }
-      if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-        // a cancelled share is fine; any other failure falls back to saving the image
-        navigator.share({ files: [file], title: 'BE Fit Club' }).catch(e => { if (!e || e.name !== 'AbortError') { download(b, fileName()); UI.toast('Image saved'); } });
-      } else { download(b, fileName()); UI.toast('Image saved'); }
+    const withBlobs = fn => { if (st.blobs) fn(st.blobs); else st.ready.then(bs => bs && fn(bs)); };
+    const saveAll = (bs, from) => { const names = fileNames(); bs.slice(from || 0).forEach((b, i) => download(b, names[(from || 0) + i])); };
+    UI.on(h.el, 'save-img', () => withBlobs(bs => { saveAll(bs); UI.toast(bs.length > 1 ? `${bs.length} images saved` : 'Image saved'); }));
+    UI.on(h.el, 'share-img', () => withBlobs(bs => {
+      const names = fileNames();
+      let files = null;
+      try { files = bs.map((b, i) => new File([b], names[i], { type: 'image/png' })); } catch (e) { files = null; }
+      const can = f => !!(f && navigator.share && navigator.canShare && navigator.canShare({ files: f }));
+      // a cancelled share is fine; any other failure falls back to saving
+      const onErr = from => e => { if (!e || e.name !== 'AbortError') { saveAll(bs, from); UI.toast(bs.length - from > 1 ? `${bs.length - from} images saved` : 'Image saved'); } };
+      if (can(files)) navigator.share({ files, title: 'BE Fit Club' }).catch(onErr(0));
+      else if (files && files.length > 1 && can(files.slice(0, 1))) {   // one file at a time only: share page 1, save page 2
+        saveAll(bs, 1); UI.toast('Page 2 saved');
+        navigator.share({ files: files.slice(0, 1), title: 'BE Fit Club' }).catch(e => { if (!e || e.name !== 'AbortError') { download(bs[0], names[0]); UI.toast('Image saved'); } });
+      } else { saveAll(bs); UI.toast(bs.length > 1 ? `${bs.length} images saved` : 'Image saved'); }
     }));
     return h;
   }
@@ -604,27 +786,27 @@
   });
   App.registerAction('share.fullTime', args => {
     const sid = args && args.sid;
-    if (args && args.canvas) {   // preview: draw into the caller's canvas, no sheet
-      const D = sid && ftData(sid);
+    if (args && args.canvas) {   // preview: draw page 1 (or page: 2) into the caller's canvas, no sheet
+      const get = () => (args.page === 2 ? heroesData(sid) : ftData(sid));
+      const D = sid && get();
       if (!D) return null;
       const theme = args.theme || App.theme.effective();
-      drawFullTime(args.canvas, D, theme);
-      fontsReady().then(() => { if (args.canvas.isConnected) drawFullTime(args.canvas, ftData(sid) || D, theme); });
+      drawCard(args.canvas, D, theme);
+      fontsReady().then(() => { if (args.canvas.isConnected) drawCard(args.canvas, get() || D, theme); });
       return args.canvas;
     }
-    if (args && args.save) {     // "Save image" elsewhere: draw off-screen and download, no sheet
-      const D = sid && ftData(sid);
-      if (!D) { UI.toast('Match not found'); return null; }
+    if (args && args.save) {     // "Save image" elsewhere: both pages, downloaded straight away, no sheet
+      const sess = sid && Store.session(sid);
+      if (!sess || !ftData(sid)) { UI.toast('Match not found'); return null; }
       const theme = args.theme || App.theme.effective();
-      const c = document.createElement('canvas');
-      return fontsReady().then(() => new Promise(resolve => {
-        drawFullTime(c, ftData(sid) || D, theme);
-        c.toBlob(b => {
-          if (b) { download(b, `befit-full-time-${D.date || 'match'}.png`); UI.toast('Image saved'); }
-          resolve(!!b);
-        }, 'image/png');
-      }));
+      return fontsReady().then(() => ftBlobs(sid, theme)).then(bs => {
+        if (!bs) return false;
+        const names = ftNames(sess.date);
+        bs.forEach((b, i) => download(b, names[i]));
+        UI.toast(`${bs.length} images saved`);
+        return true;
+      });
     }
-    return openSheet({ sid, kind: 'ft' });
+    return openSheet({ sid, kind: 'ft', page: args && args.page });
   });
 })();
