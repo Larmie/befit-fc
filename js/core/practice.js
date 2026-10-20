@@ -12,10 +12,15 @@
   let loaded = false;
   try {
     // Synchronous on purpose: Store.start() must see the data on its first read.
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', window.BF_CONFIG.firebase.databaseURL + '/.json', false);
-    xhr.send();
-    if (xhr.status === 200) { data = Object.assign(data, JSON.parse(xhr.responseText) || {}); loaded = true; }
+    // One read per area: the locked rules allow these, not a read of the whole database.
+    loaded = ['players', 'sessions', 'paymentDays'].every(root => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', window.BF_CONFIG.firebase.databaseURL + '/' + root + '.json', false);
+      xhr.send();
+      if (xhr.status !== 200) return false;
+      data[root] = JSON.parse(xhr.responseText) || {};
+      return true;
+    });
   } catch (e) { /* stay on empty data; the banner says so */ }
 
   window.__BEFIT_TEST__ = { data, practice: true };

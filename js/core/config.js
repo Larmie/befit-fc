@@ -15,7 +15,9 @@ window.BF_CONFIG = Object.freeze({
   }),
   sdkVersion: '10.12.0',
 
-  // TODO(auth): remove once Firebase Auth is live (only js/core/auth.js reads it).
+  // Shared referee login (Firebase Auth). The referee only types the password.
+  refereeEmail: "referee@befitclub.app",
+  // Test mode only (the harness signs in with it). Real sign-in uses Firebase Auth.
   ADMIN_PW: "befit2024",
 
   seasonLabel: 'Season 2026',

@@ -335,16 +335,28 @@
   // ---------------------------------------------------------------- sign-in & appearance sheets
   function openSignIn(opts) {
     opts = opts || {};
+    // Referee: password only (the shared email is filled in by Auth). Admin: email + password.
     const h = UI.sheet.open({
       title: 'Referee sign-in',
       body: `<form class="stack" data-signin novalidate style="padding-top:8px">
-          <label class="inp"><input type="email" name="email" autocomplete="username" placeholder="Email" aria-label="Email"></label>
-          <label class="inp"><input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password"></label>
+          <label class="inp" data-email-row hidden><input type="email" name="email" autocomplete="username" placeholder="Email" aria-label="Email"></label>
+          <label class="inp"><input type="password" name="password" autocomplete="current-password" placeholder="Referee password" aria-label="Password"></label>
           <div class="field-err" data-err></div>
           <button type="submit" class="btn w">Sign in</button>
+          <button type="button" class="link" data-admin-toggle style="min-height:48px;align-self:center">Sign in as admin ›</button>
         </form>`,
     });
     const form = h.el.querySelector('[data-signin]');
+    form.querySelector('[data-admin-toggle]').addEventListener('click', e => {
+      const row = form.querySelector('[data-email-row]');
+      const admin = row.hidden;
+      row.hidden = !admin;
+      form.email.value = '';
+      form.password.placeholder = admin ? 'Password' : 'Referee password';
+      e.currentTarget.textContent = admin ? '‹ Referee sign-in' : 'Sign in as admin ›';
+      h.setTitle(admin ? 'Admin sign-in' : 'Referee sign-in');
+      (admin ? form.email : form.password).focus();
+    });
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const btn = form.querySelector('button[type=submit]');
