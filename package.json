@@ -1,0 +1,20 @@
+{
+  "name": "befit-club-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "BE Fit Club checks only (the app itself has no build step). See AGENTS.md: npm run test:changed / test:unit / test:full.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "snapshot": "node tests/tools/snapshot.js",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:changed": "node tests/tools/run.js --changed",
+    "test:full": "node tests/tools/run.js --full",
+    "test:pick": "node tests/tools/run.js --changed --dry-run",
+    "test": "node tests/tools/run.js"
+  },
+  "devDependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}

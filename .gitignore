@@ -4,3 +4,12 @@
 !.dev.vars.example
 .env*
 !.env.example
+
+# tests (see AGENTS.md): dependencies, the live-data copy, output, screenshots, caches
+node_modules/
+tests/.data/
+tests/.out/
+tests/.cache/
+tests/**/*.png
+tests/**/shots/
+npm-debug.log*

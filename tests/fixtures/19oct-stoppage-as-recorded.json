@@ -1,0 +1,42 @@
+{
+ "about": "Mon 19 Oct 2026 (session -P4KcMogcPM8_RRG9wAQ): the stoppage labels exactly as first recorded on the night (cumulative, 46+7 to 46+18), before the 20 Oct relabel. Only event ids and minutes, no names. Used by tests/browser/r5-fulltime/data.js copy19(\"old\"). Replaces the old snapshot-20oct-early.json.",
+ "session": "-P4KcMogcPM8_RRG9wAQ",
+ "events": {
+  "-P4Kn-g8aBW5Y7xRwJBB": {
+   "stoppageMin": 2,
+   "stoppageBaseMin": 45
+  },
+  "-P4Kn591PKTlWwwosnqS": {
+   "stoppageMin": 2,
+   "stoppageBaseMin": 45
+  },
+  "-P4KnTXUBIvjUInLZwoq": {
+   "stoppageMin": 4,
+   "stoppageBaseMin": 45
+  },
+  "-P4Kq0tSTPxO5-9BuGlQ": {
+   "stoppageMin": 7,
+   "stoppageBaseMin": 46
+  },
+  "-P4Kqz7ib1fvXycl4OpW": {
+   "stoppageMin": 11,
+   "stoppageBaseMin": 46
+  },
+  "-P4Kr6eKOfW5Rp9grsyM": {
+   "stoppageMin": 11,
+   "stoppageBaseMin": 46
+  },
+  "-P4KsFGn09hGyFHr8mqB": {
+   "stoppageMin": 16,
+   "stoppageBaseMin": 46
+  },
+  "-P4KsRFgYzRufcleWsKn": {
+   "stoppageMin": 17,
+   "stoppageBaseMin": 46
+  },
+  "-P4Ksa4ZzCgxA7ZHe4YN": {
+   "stoppageMin": 18,
+   "stoppageBaseMin": 46
+  }
+ }
+}

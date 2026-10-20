@@ -1,0 +1,16 @@
+# Cloudflare Pages publishes every committed file. These are for building and testing the app, not for
+# the public: send any request for them to the home page, so their contents are never served.
+# (Checked on each branch preview: AGENTS.md, "Keep tests off the live site".)
+/tests / 302
+/tests/* / 302
+/node_modules / 302
+/node_modules/* / 302
+/package.json / 302
+/package-lock.json / 302
+/AGENTS.md / 302
+/CLAUDE.md / 302
+/.github/* / 302
+/.claude/* / 302
+/.gitignore / 302
+/_redirects / 302
+/wrangler.jsonc / 302

@@ -1,0 +1,80 @@
+name: Checks
+
+# Every pull request into main, and every push to a branch that is not main (so a branch is checked before
+# anyone opens a pull request). main itself is not tested here: it only ever receives merges that were green.
+# The app is never built or deployed from here; Cloudflare Pages does that on its own.
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: ['**/*.md', 'design-review/**', '.claude/**']
+  push:
+    branches-ignore: [main]
+    paths-ignore: ['**/*.md', 'design-review/**', '.claude/**']
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Run every suite (not just the ones the change can affect)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      TZ: Africa/Accra          # the app's dates are local; Reuben's laptop runs in Accra (UTC+0)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0       # the picker compares this branch with main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # A READ-ONLY copy of the live data (GET only, public parts), cut back to the day the tests were pinned.
+      - name: Test data (read-only snapshot)
+        run: npm run snapshot
+
+      - name: Unit checks (maths, no browser)
+        run: npm run test:unit
+
+      - name: Fonts cache
+        uses: actions/cache@v6
+        with:
+          path: tests/.cache
+          key: befit-fonts-${{ hashFiles('index.html') }}
+          restore-keys: befit-fonts-
+
+      # Only the browser suites this change can affect (tests/tools/pick.js). Every suite runs locally at the end of
+      # each batch (npm run test:full, AGENTS.md), which is what makes skipping the rest here safe.
+      - name: Browser suites this change can affect (Chrome)
+        env:
+          TEST_BASE: origin/main
+          TEST_JOBS: '2'
+        run: |
+          google-chrome --version
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.full }}" = "true" ]; then
+            node tests/tools/run.js --full --no-unit
+          else
+            node tests/tools/run.js --changed --no-unit
+          fi
+
+      - name: Keep the output when something failed
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-output
+          path: tests/.out/
+          retention-days: 7

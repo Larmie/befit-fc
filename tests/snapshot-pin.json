@@ -1,0 +1,16 @@
+{
+  "about": "The day the test numbers were written for. npm run snapshot cuts the live data back to asOf; the fingerprint says whether the older data has changed since (see AGENTS.md, Test data).",
+  "asOf": "2026-10-19",
+  "pinnedOn": "2026-10-20",
+  "fingerprint": {
+    "players": 76,
+    "sessions": 37,
+    "paymentDays": 5,
+    "hash": {
+      "players": "0261063576e6",
+      "sessions": "30dc0b55369e",
+      "paymentDays": "3cc9a4ee3141",
+      "settings": "bf21a9e8fbc5"
+    }
+  }
+}
