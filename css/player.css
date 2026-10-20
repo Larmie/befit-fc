@@ -166,3 +166,7 @@
 .pl-gm-who { font-size: 22px; font-weight: 650; margin-top: 18px; overflow-wrap: anywhere; }
 .pl-gm-who .n { color: var(--ink2); font: 500 15px var(--mono); }
 .pl-gm-score { margin: 32px auto 0; max-width: 420px; text-align: left; }
+
+/* Share the full-time card from a match summary (any role) */
+.pl-mshare { align-self: stretch; width: 100%; margin: 2px 0 10px; }
+.pl-mshare > span { width: 100%; justify-content: center; height: 44px; }

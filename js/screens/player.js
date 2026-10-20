@@ -394,8 +394,11 @@
     const mb = Scoring.matchBreakdown(sess, d);
     const live = isLive(sess);
     const card = scoreCard(sess, { liveSid: sid, hero: true, lead: live ? liveLead(sess) : esc(fmt.date(sess.date) + ' · Summary') });
+    // Anyone (guests too) can post the full-time card of a finished match from here.
+    const share = !live && sess.status === 'completed'
+      ? `<button type="button" class="pl-share pl-mshare" data-tap="mshare" data-sid="${esc(sid)}"><span>Share full-time card</span></button>` : '';
     const cols = mb.columns.filter(c => c.players.length);
-    if (!cols.length) return twoCol(card, UI.empty('No player points for this match', ''));
+    if (!cols.length) return twoCol(card + share, UI.empty('No player points for this match', ''));
     const top = mb.top ? `<div class="card pl-top"><span class="meta">Top points</span><span class="grow pl-top-n">${esc(mb.top.players.map(p => p.name).join(', '))}</span><b class="hn pl-top-p">${esc(mb.top.pts)}</b></div>` : '';
     const vTeam = ctx.viewer && cols.find(c => c.players.some(p => p.pid === ctx.viewer));
     let team = MATCH.team[sid];
@@ -416,7 +419,7 @@
         `<span class="end"><span class="pts pl-pts">${esc(p.total)}</span><span class="chev">${open ? '⌄' : '›'}</span></span></button>` +
         (open ? `<div class="pl-xsum">${UI.sum({ rows: p.breakdown.map(b => ({ label: b.label, value: b.pts })), total: p.total, label: first + ' · pts', team: p.team })}</div>` : '') + `</div>`;
     }).join('');
-    return twoCol(card + top, `${sw}<div class="rows pl-xrows">${rows}</div>`);
+    return twoCol(card + share + top, `${sw}<div class="rows pl-xrows">${rows}</div>`);
   }
 
   App.registerScreen('player.match', {
@@ -433,6 +436,7 @@
         if (MATCH.open.has(k)) MATCH.open.delete(k); else MATCH.open.add(k);
         this.render(el, ctx);
       });
+      UI.on(el, 'mshare', b => App.action('share.fullTime', { sid: b.dataset.sid }));
       ctx.every(1000, () => tickCentres(el));
     },
     render(el, ctx) {
