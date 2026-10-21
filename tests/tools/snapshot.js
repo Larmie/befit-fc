@@ -5,16 +5,21 @@
 // settings); the database rules allow anyone to read those. It never writes, and the tests never write either
 // (the harness blocks every request to Firebase).
 //
-// The tests were written against the data as it stood on a fixed day (tests/snapshot-pin.json "asOf"), and
-// several of them check exact numbers ("24 players owe", "40 owed dates"). New Mondays must not break them, so
-// the copy is cut back to that day: matches and payment days after it, and players created after it, are left
-// out. What it cannot undo is an edit to the older data (a renamed player, a fixed match). The fingerprint check
-// below says when that happened; then refresh the pin and the numbers together (AGENTS.md, "Test data").
+// The tests were written against the data as it stood on a fixed day, and several of them check exact numbers
+// ("24 players owe", "All 76" players) or names. tests/snapshot-pin.json keeps that data reproducible from live:
+//   asOf         matches and payment days after this day, and players created after it, are left out
+//   patch        later edits to the older data, undone: { players: { <id>: <value then> | null }, ... }
+//                (null = that entry did not exist then). Made with --pin --keep <the old copy>.
+//   fingerprint  what the result must look like; checked on every run
+// Result: the same data the tests were written for, every time, on any machine and in CI.
 //
-//   npm run snapshot                    live data, cut back to the pinned day → tests/.data/snapshot.json
-//   npm run snapshot -- --as-of 2026-10-26   cut back to another day (use when moving the pin)
-//   npm run snapshot -- --raw           everything, no cut (for looking, not for the tests)
-//   npm run snapshot -- --pin           after moving the pin: write the new asOf + fingerprint into snapshot-pin.json
+//   npm run snapshot                          → tests/.data/snapshot.json, checked against the pin
+//   npm run snapshot -- --raw                 everything as it is now, nothing cut or undone (for looking)
+//   npm run snapshot -- --as-of 2026-10-26 --pin
+//                                             move the pin forward (no patch): then update the test numbers
+//   npm run snapshot -- --pin --keep <file>   keep today's pin after someone edited old data: stores the
+//                                             difference between live and <file> (a copy made before the edit)
+//   --out <file>  write somewhere else · --strict  exit 3 when the result does not match the pin
 'use strict';
 const https = require('https');
 const fs = require('fs');
@@ -24,13 +29,8 @@ const P = require('../paths.js');
 
 const DB = 'https://befit-fc-default-rtdb.firebaseio.com';
 const ROOTS = ['players', 'sessions', 'paymentDays', 'settings'];
+const KEYED = ['players', 'sessions', 'paymentDays'];
 const PIN_FILE = path.join(P.TESTS, 'snapshot-pin.json');
-const argv = process.argv.slice(2);
-const opt = f => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : null; };
-const pin = JSON.parse(fs.readFileSync(PIN_FILE, 'utf8'));
-const RAW = argv.includes('--raw');
-const AS_OF = opt('--as-of') || pin.asOf;
-const OUT = argv.includes('--out') ? path.resolve(opt('--out')) : P.SNAPSHOT;
 
 function get(root, tries = 3) {
   const url = `${DB}/${root}.json`;
@@ -50,7 +50,7 @@ function get(root, tries = 3) {
   }).catch(e => (tries > 1 ? new Promise(r => setTimeout(r, 2000)).then(() => get(root, tries - 1)) : Promise.reject(e)));
 }
 
-// Cut the data back to the end of a day (local dates as the app stores them: 'YYYY-MM-DD').
+// Cut the data back to the end of a day (the app stores local dates as 'YYYY-MM-DD').
 function cut(d, asOf) {
   const end = new Date(asOf + 'T23:59:59.999Z').getTime() + 14 * 3600e3;   // generous: any time zone still on that day
   const out = { players: {}, sessions: {}, paymentDays: {}, settings: d.settings || {} };   // no settings yet = {} (as the app reads it)
@@ -62,6 +62,7 @@ function cut(d, asOf) {
 
 const canon = v => (Array.isArray(v) ? v.map(canon) : v && typeof v === 'object'
   ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canon(v[k])])) : v);
+const same = (a, b) => JSON.stringify(canon(a === undefined ? null : a)) === JSON.stringify(canon(b === undefined ? null : b));
 const hash = v => crypto.createHash('sha1').update(JSON.stringify(canon(v === undefined ? null : v))).digest('hex').slice(0, 12);
 function fingerprint(d) {
   return { players: Object.keys(d.players || {}).length, sessions: Object.keys(d.sessions || {}).length,
@@ -69,30 +70,69 @@ function fingerprint(d) {
       paymentDays: hash(d.paymentDays), settings: hash(d.settings) } };
 }
 
+// The patch that turns `now` into `then`, entry by entry (whole player / match / payment day; settings whole).
+function diff(now, then) {
+  const patch = {};
+  for (const r of KEYED) {
+    const a = now[r] || {}, b = then[r] || {};
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) if (!same(a[k], b[k])) (patch[r] = patch[r] || {})[k] = b[k] === undefined ? null : b[k];
+  }
+  if (!same(now.settings, then.settings)) patch.settings = then.settings;
+  return patch;
+}
+function applyPatch(d, patch) {
+  const out = JSON.parse(JSON.stringify(d));
+  for (const r of KEYED) for (const [k, v] of Object.entries((patch || {})[r] || {})) { if (v === null) delete out[r][k]; else out[r][k] = v; }
+  if (patch && 'settings' in patch) out.settings = patch.settings;
+  return out;
+}
+const describe = patch => KEYED.concat('settings').filter(r => patch[r]).map(r => (r === 'settings' ? 'settings' : `${Object.keys(patch[r]).length} ${r}`)).join(', ') || 'nothing';
+
 async function main() {
+  const argv = process.argv.slice(2);
+  const opt = f => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : null; };
+  const pin = JSON.parse(fs.readFileSync(PIN_FILE, 'utf8'));
+  const RAW = argv.includes('--raw'), PIN = argv.includes('--pin');
+  const AS_OF = opt('--as-of') || pin.asOf;
+  const OUT = opt('--out') ? path.resolve(opt('--out')) : P.SNAPSHOT;
+
   const live = {};
   for (const r of ROOTS) live[r] = await get(r);
-  const data = RAW ? live : cut(live, AS_OF);
+  const liveCut = cut(live, AS_OF);
+
+  if (PIN) {
+    if (RAW) { console.log('Not pinning a --raw copy.'); process.exit(2); }
+    const keep = opt('--keep');
+    const then = keep ? JSON.parse(fs.readFileSync(path.resolve(keep), 'utf8')) : null;
+    const patch = then ? diff(liveCut, then) : {};
+    const data = applyPatch(liveCut, patch);
+    if (then && !same(data, then)) throw new Error('the patch does not rebuild ' + keep);
+    const next = { about: pin.about, asOf: AS_OF, pinnedOn: new Date().toISOString().slice(0, 10), fingerprint: fingerprint(data), patch };
+    fs.writeFileSync(PIN_FILE, JSON.stringify(next, null, 1) + '\n');
+    fs.mkdirSync(path.dirname(OUT), { recursive: true });
+    fs.writeFileSync(OUT, JSON.stringify(data));
+    console.log(`Pinned tests/snapshot-pin.json: asOf ${AS_OF}, undoing ${describe(patch)} edited since. ` +
+      `${next.fingerprint.players} players, ${next.fingerprint.sessions} matches, ${next.fingerprint.paymentDays} payment days.` +
+      (keep ? '' : '\nCommit it together with the test numbers you updated (AGENTS.md, "Test data").'));
+    return;
+  }
+
+  const data = RAW ? live : applyPatch(liveCut, AS_OF === pin.asOf ? pin.patch : {});
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(data));
   const fp = fingerprint(data);
   console.log(`Saved ${path.relative(P.REPO, OUT)}: ${fp.players} players, ${fp.sessions} matches, ${fp.paymentDays} payment days` +
-    (RAW ? ' (everything, not cut back)' : ` (live data cut back to ${AS_OF}; live has ${Object.keys(live.sessions || {}).length} matches)`));
-  if (argv.includes('--pin')) {
-    if (RAW) { console.log('Not pinning a --raw copy.'); process.exit(2); }
-    fs.writeFileSync(PIN_FILE, JSON.stringify(Object.assign({}, pin, { asOf: AS_OF, pinnedOn: new Date().toISOString().slice(0, 10), fingerprint: fp }), null, 2) + '\n');
-    console.log(`Pinned: tests/snapshot-pin.json now says asOf ${AS_OF}. Commit it with the test numbers you updated.`);
-    return;
-  }
+    (RAW ? ' (everything as it is now)' : ` (live has ${Object.keys(live.sessions || {}).length} matches; cut back to ${AS_OF}` +
+      (AS_OF === pin.asOf && pin.patch && describe(pin.patch) !== 'nothing' ? `, with ${describe(pin.patch)} put back as they were then)` : ')')));
   if (RAW || AS_OF !== pin.asOf) return;
-  const want = pin.fingerprint || {};
-  const differs = Object.keys(fp.hash).filter(k => (want.hash || {})[k] !== fp.hash[k]);
-  if (!differs.length) { console.log(`Matches the pinned data the tests were written for (${pin.asOf}).`); return; }
-  console.log(`\nHEADS-UP: the live data up to ${pin.asOf} has changed since the tests were pinned (${differs.join(', ')} differ: ` +
+  const want = pin.fingerprint || { hash: {} };
+  const differs = Object.keys(fp.hash).filter(k => want.hash[k] !== fp.hash[k]);
+  if (!differs.length) { console.log(`Identical to the data the tests were pinned to (${pin.asOf}).`); return; }
+  console.log(`\nHEADS-UP: the live data up to ${pin.asOf} was edited after the tests were pinned (${differs.join(', ')} differ: ` +
     `${want.players}→${fp.players} players, ${want.sessions}→${fp.sessions} matches, ${want.paymentDays}→${fp.paymentDays} payment days).\n` +
-    'Suites that check exact numbers or names may now fail for that reason alone. See AGENTS.md "Test data" to refresh the pin.');
+    'Suites that check exact numbers or names may now fail for that reason alone. See AGENTS.md "Test data".');
   if (argv.includes('--strict')) process.exit(3);
 }
 
-module.exports = { cut, fingerprint };
+module.exports = { cut, fingerprint, diff, applyPatch };
 if (require.main === module) main().catch(e => { console.error('Snapshot failed (nothing was written to the database; only GETs are sent): ' + e.message); process.exit(1); });

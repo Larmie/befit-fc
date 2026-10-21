@@ -8,7 +8,7 @@
 //   npm run test:pick                show what test:changed would run, run nothing
 //
 // Options: --base <git ref> (what "changed" is measured against; default origin/main) · --jobs N (suites at once;
-// default 1 for --full, 2 otherwise) · --no-unit · --dry-run. Env: CHROME_PATH, BEFIT_SNAPSHOT, TEST_TIMEOUT_S.
+// default 1 for --full, 3 otherwise; the sweep checks phone sizes only, --full checks every size) · --no-unit · --dry-run. Env: CHROME_PATH, BEFIT_SNAPSHOT, TEST_TIMEOUT_S.
 //
 // A run is red only for a NEW failure: tests/known-failures.json lists suites that fail for a known reason
 // ("failing") or must not run somewhere ("skip", e.g. in CI), each with a reason and a date.
@@ -26,12 +26,12 @@ const flag = f => argv.includes(f);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const names = argv.filter((a, i) => !a.startsWith('--') && !['--base', '--jobs'].includes(argv[i - 1]));
 const FULL = flag('--full'), CHANGED = flag('--changed'), DRY = flag('--dry-run');
-const JOBS = Math.max(1, Number(opt('--jobs', process.env.TEST_JOBS || (FULL ? 1 : 2))));
+const JOBS = Math.max(1, Number(opt('--jobs', process.env.TEST_JOBS || (FULL ? 1 : 3))));
 const TIMEOUT = (Number(process.env.TEST_TIMEOUT_S) || 900) * 1000;
 const CI = !!process.env.CI;
 const known = JSON.parse(fs.readFileSync(path.join(P.TESTS, 'known-failures.json'), 'utf8'));
 const LOGS = path.join(P.OUT, 'logs');
-const secs = ms => (ms < 60000 ? `${(ms / 1000).toFixed(0)}s` : `${Math.floor(ms / 60000)}m ${String(Math.round((ms % 60000) / 1000)).padStart(2, '0')}s`);
+const secs = ms => { const t = Math.round(ms / 1000); return t < 60 ? `${t}s` : `${Math.floor(t / 60)}m ${String(t % 60).padStart(2, '0')}s`; };
 const git = args => execFileSync('git', args, { cwd: P.REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 
 function changedFiles() {
@@ -102,7 +102,7 @@ async function suite(s) {
   const skip = (known.skip || {})[s.name];
   if (skip && (skip.when === 'always' || (skip.when === 'CI' && CI))) { console.log(`skip  ${s.name.padEnd(18)} ${skip.reason}`); return { name: s.name, skipped: true, ms: 0 }; }
   const file = path.join(P.BROWSER, s.file);
-  const r = await runProc(process.execPath, [file, ...(s.args || [])], path.dirname(file), s.name);
+  const r = await runProc(process.execPath, [file, ...((!FULL && s.quickArgs) || s.args || [])], path.dirname(file), s.name);
   const c = counts(r.out);
   const ok = r.code === 0 && !(s.failIf && s.failIf.test(r.out));
   const knownFail = !ok && (known.failing || {})[s.name];

@@ -27,7 +27,7 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       CI: true
       TZ: Africa/Accra          # the app's dates are local; Reuben's laptop runs in Accra (UTC+0)
@@ -62,7 +62,7 @@ jobs:
       - name: Browser suites this change can affect (Chrome)
         env:
           TEST_BASE: origin/main
-          TEST_JOBS: '2'
+          TEST_JOBS: '3'
         run: |
           google-chrome --version
           if [ "${{ github.event_name == 'workflow_dispatch' && inputs.full }}" = "true" ]; then

@@ -1,5 +1,7 @@
 {
   "about": "Read by tests/tools/run.js. 'failing': suites that fail today for a known reason; the run stays green for them but goes red on any other failure. 'skip': suites that must not run somewhere ('when': 'CI' or 'always'). Every entry carries a reason and a date. Remove an entry the moment its suite passes again (the runner says so).",
   "failing": {},
-  "skip": {}
+  "skip": {
+    "setup-visual": { "when": "always", "reason": "stale since round 6: it looks for the old 'usual teams' button, which the lineup picker replaced; setup-flow covers the Match tab now. Update it or delete it.", "since": "2026-10-21" }
+  }
 }

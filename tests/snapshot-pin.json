@@ -1,16 +1,49 @@
 {
-  "about": "The day the test numbers were written for. npm run snapshot cuts the live data back to asOf; the fingerprint says whether the older data has changed since (see AGENTS.md, Test data).",
-  "asOf": "2026-10-19",
-  "pinnedOn": "2026-10-20",
-  "fingerprint": {
-    "players": 76,
-    "sessions": 37,
-    "paymentDays": 5,
-    "hash": {
-      "players": "0261063576e6",
-      "sessions": "30dc0b55369e",
-      "paymentDays": "3cc9a4ee3141",
-      "settings": "bf21a9e8fbc5"
-    }
+ "about": "The data the test numbers were written for, rebuilt from live by npm run snapshot: cut back to asOf, then patch puts back entries edited since (null = did not exist then). The fingerprint must match. See AGENTS.md, Test data.",
+ "asOf": "2026-10-19",
+ "pinnedOn": "2026-10-21",
+ "fingerprint": {
+  "players": 76,
+  "sessions": 37,
+  "paymentDays": 5,
+  "hash": {
+   "players": "0261063576e6",
+   "sessions": "30dc0b55369e",
+   "paymentDays": "3cc9a4ee3141",
+   "settings": "bf21a9e8fbc5"
   }
+ },
+ "patch": {
+  "players": {
+   "-Owsuv9KRX7xnYU7GTcC": {
+    "defaultPosition": "MID",
+    "defaultTeam": "red",
+    "name": "New red guy"
+   },
+   "seed_p029": {
+    "carryover": {
+     "a": 0,
+     "apps": 2,
+     "g": 1,
+     "pts": 10,
+     "r": 0,
+     "sv": 0,
+     "y": 0
+    },
+    "defaultPosition": "DEF",
+    "defaultTeam": "red",
+    "name": "Solo's Guy"
+   },
+   "-P-p72RROkSAaOqRBNtT": {
+    "defaultPosition": "MID",
+    "defaultTeam": "green",
+    "name": "New francis guy"
+   },
+   "-P-p75eNr_uqq_3n_tiQ": {
+    "defaultPosition": "MID",
+    "defaultTeam": "green",
+    "name": "New francis guy"
+   }
+  }
+ }
 }

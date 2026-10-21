@@ -22,7 +22,7 @@ test('every browser test file is in the catalogue or used by a suite (nothing si
 test('css/tables.css → the tables suites and the tables sweep groups, nothing else', () => {
   const r = pick(['css/tables.css']);
   assert.equal(r.all, false);
-  assert.deepEqual(r.suites, ['tables', 'unseen', 'sweep-player', 'sweep-tables', 'sweep-tablesguest', 'sweep-tablesblue']);
+  assert.deepEqual(r.suites, ['tables', 'unseen', 'sweep-tables', 'sweep-tablesguest', 'sweep-tablesblue']);
 });
 test('js/core/scoring.js → Monday night, classic-compat (and what it needs) and the suites that show points', () => {
   const r = pick(['js/core/scoring.js']);

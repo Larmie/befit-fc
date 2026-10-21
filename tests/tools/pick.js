@@ -25,7 +25,7 @@ const EVERYTHING_APP = [/^js\/ui\//, /^css\/(tokens|base|components)\.css$/, /^i
 const EVERYTHING_TOOLS = [/^tests\/(paths|suites)\.js$/, /^tests\/browser\/harness\.js$/, /^tests\/tools\//, /^package(-lock)?\.json$/, /^\.github\//];
 // Can't change what a browser suite sees (unit checks always run anyway; deploy files are checked on the preview).
 const INERT = [/\.md$/, /^\.gitignore$/, /^\.gitattributes$/, /^\.claude\//, /^design-review\//, /^tests\/unit\//,
-  /^tests\/known-failures\.json$/, /^(manifest\.json|icon\.svg|Image\.jpg|wrangler\.jsonc|_redirects|_headers)$/];
+  /^tests\/known-failures\.json$/, /^(manifest\.json|icon\.svg|Image\.jpg|wrangler\.jsonc|_redirects|_headers|site-build\.sh)$/];
 
 const norm = f => f.replace(/\\/g, '/').replace(/^\.\//, '');
 

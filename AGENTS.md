@@ -111,16 +111,19 @@ Once Reuben approves a specific sensitive operation and its scope, don't re-ask 
 - Tests run on a **read-only copy of the live data** in `tests/.data/snapshot.json` (git-ignored, never
   committed: it holds people's names and payments). `npm run snapshot` only sends GET requests for the
   four public parts (players, sessions, paymentDays, settings).
-- Several suites check exact numbers from the real data ("24 players owe", "40 owed dates", named
-  players). So the copy is **cut back to the pinned day** in `tests/snapshot-pin.json` (`asOf`): later
-  matches, payment days and new players are left out, and new Mondays don't break the tests.
-- An edit to the older data (a renamed player, a fixed match) can't be cut back: `npm run snapshot` then
-  prints a HEADS-UP. **Refresh the pin and the numbers together**, on a branch:
-  1. `npm run snapshot -- --as-of <the latest match date>`
-  2. `npm run test:full`; for every failure, confirm it is the data (a count, a name) and not a bug;
-     update that number in the test, with the new value's source in a comment
-  3. `npm run snapshot -- --as-of <same date> --pin` (writes the new date and fingerprint)
-  4. commit the pin and the test changes together; CI must be green.
+- Several suites check exact numbers and names from the real data ("24 players owe", "All 76",
+  "New francis guy ×3"). So the copy is **rebuilt as it was on the pinned day** (`tests/snapshot-pin.json`):
+  - `asOf`: later matches, payment days and new players are left out, so new Mondays don't break tests;
+  - `patch`: older entries edited since (a renamed or deleted player, a fixed match) are put back as they
+    were (on 21 Oct: 4 players Reuben tidied on 20 Oct);
+  - `fingerprint`: the result is checked; "Identical to the data the tests were pinned to" = all good.
+- If `npm run snapshot` prints a **HEADS-UP**, someone edited old data again. Two ways out, on a branch:
+  - **Keep the pin** (quick): if you still have a copy from before the edit (`tests/.data/snapshot.json`
+    on a machine that hasn't refreshed, or CI's last good run), save it aside and run
+    `npm run snapshot -- --pin --keep <that copy>`. Commit `tests/snapshot-pin.json`.
+  - **Move the pin forward** (when tests should see newer matches): `npm run snapshot -- --as-of <latest
+    match date> --pin`, then `npm run test:full`; for each failure confirm it is only the data (a count, a
+    name), not a bug, and update that number in the test. Commit the pin and the tests together.
 - Made-up fixtures live in `tests/fixtures/` (no names, no money) and are preferred for new tests.
 
 ## 7. Project rules (facts every session needs)
@@ -144,9 +147,14 @@ Once Reuben approves a specific sensitive operation and its scope, don't re-ask 
   the site publishes every committed file: never commit it.
 - **Keep tests off the live site:** Cloudflare Pages serves the whole repo folder. `_redirects` sends
   `/tests/*`, `/package.json`, `/node_modules/*`, `AGENTS.md`, `CLAUDE.md` and the other non-app files to
-  the home page, so their contents are never served. If you add a top-level non-app file or folder,
-  add it to `_redirects` too and check it on the branch preview (`curl -sI <preview>/<path>` must
-  answer 302, not the file).
+  the home page (302), so a normal link to them never returns the file. `tests/unit/site.test.js` fails if
+  a committed top-level file or folder is neither in the app list of `site-build.sh` nor in `_redirects`:
+  add new tooling to `_redirects`, new app files to `site-build.sh`, and check the branch preview
+  (`curl -sI <preview>/<path>` answers 302 for tooling, 200 for the app).
+  Known gap: a deliberately percent-encoded address (e.g. `/tests%2Fpaths.js`) slips past `_redirects`.
+  It only reveals files that are already public in the GitHub repo. The full fix is one Cloudflare
+  setting (Builds: build command `bash site-build.sh`, output directory `dist`), which publishes only
+  the app; Reuben decides whether to switch it on.
 - **No build step, no frameworks:** plain files (`index.html`, `css/`, `js/core`, `js/ui`,
   `js/screens`). `package.json` exists only for the tests.
 - **Editing on this Windows machine:** don't use PowerShell `Set-Content` (it breaks emoji and ₵); shell

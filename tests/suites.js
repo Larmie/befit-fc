@@ -15,7 +15,10 @@
 'use strict';
 
 const SWEEP = 'integration/sweep.js';
-const sweep = (group, areas, extra) => Object.assign({ name: 'sweep-' + group, file: SWEEP, args: ['all', group], areas: ['sweep', ...areas],
+// test:changed and CI check two sizes (phone dark, with the deep sheet checks, and laptop light): about half the
+// time of all of them. test:full checks every size and theme, including "light app, console in app colours".
+const QUICK = process.env.SWEEP_VARIANTS || '390-dark,1280-light';
+const sweep = (group, areas, extra) => Object.assign({ name: 'sweep-' + group, file: SWEEP, args: ['all', group], quickArgs: [QUICK, group], areas: ['sweep', ...areas],
   uses: ['browser/console/data.js', 'browser/r5-tables/data.js', 'browser/r5-fulltime/data.js'],
   failIf: /, [1-9]\d* with problems/ }, extra || {});
 
@@ -52,7 +55,7 @@ module.exports = [
   { name: 'classic-compat', file: 'integration/classic-compat.js', areas: ['scoring', 'classic'], uses: ['browser/integration/classic-engine.js'],
     needs: ['monday', 'console-match', 'setup-flow'], failIf: /[1-9]\d* crashes/, node: true },
   // ---- the screen-check sweep (no sideways scroll, nothing clipped, tap targets, one hero …), one entry per group
-  sweep('player', ['player', 'welcome', 'tables']),
+  sweep('player', ['player', 'welcome']),          // it passes through Tables too; the three tables groups cover those screens
   sweep('playerlive', ['player']),
   sweep('guest', ['player']),
   sweep('playernogame', ['player']),

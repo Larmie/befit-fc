@@ -13,3 +13,4 @@ tests/.cache/
 tests/**/*.png
 tests/**/shots/
 npm-debug.log*
+dist/
