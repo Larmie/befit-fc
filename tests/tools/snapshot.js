@@ -118,9 +118,15 @@ async function main() {
   }
 
   const data = RAW ? live : applyPatch(liveCut, AS_OF === pin.asOf ? pin.patch : {});
+  const fp = fingerprint(data);
+  const matchesPin = f => !!pin.fingerprint && Object.keys(f.hash).every(k => pin.fingerprint.hash[k] === f.hash[k]);
+  // About to replace a copy that matches the pin with one that doesn't: keep the good one for --pin --keep.
+  let kept = null;
+  if (!RAW && AS_OF === pin.asOf && !matchesPin(fp) && fs.existsSync(OUT)) {
+    try { if (matchesPin(fingerprint(JSON.parse(fs.readFileSync(OUT, 'utf8'))))) { kept = path.join(path.dirname(OUT), 'pinned-copy.json'); fs.copyFileSync(OUT, kept); } } catch (e) { /* not a usable copy */ }
+  }
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(data));
-  const fp = fingerprint(data);
   console.log(`Saved ${path.relative(P.REPO, OUT)}: ${fp.players} players, ${fp.sessions} matches, ${fp.paymentDays} payment days` +
     (RAW ? ' (everything as it is now)' : ` (live has ${Object.keys(live.sessions || {}).length} matches; cut back to ${AS_OF}` +
       (AS_OF === pin.asOf && pin.patch && describe(pin.patch) !== 'nothing' ? `, with ${describe(pin.patch)} put back as they were then)` : ')')));
@@ -130,7 +136,9 @@ async function main() {
   if (!differs.length) { console.log(`Identical to the data the tests were pinned to (${pin.asOf}).`); return; }
   console.log(`\nHEADS-UP: the live data up to ${pin.asOf} was edited after the tests were pinned (${differs.join(', ')} differ: ` +
     `${want.players}→${fp.players} players, ${want.sessions}→${fp.sessions} matches, ${want.paymentDays}→${fp.paymentDays} payment days).\n` +
-    'Suites that check exact numbers or names may now fail for that reason alone. See AGENTS.md "Test data".');
+    'Suites that check exact numbers or names may now fail for that reason alone. See AGENTS.md "Test data".' +
+    (kept ? `\nThe last copy that matched the pin is saved at ${path.relative(P.REPO, kept)}. To keep the pin:\n` +
+      `  npm run snapshot -- --pin --keep ${path.relative(P.REPO, kept).replace(/\\/g, '/')}` : ''));
   if (argv.includes('--strict')) process.exit(3);
 }
 

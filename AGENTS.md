@@ -32,9 +32,10 @@ gets its own preview at `https://<branch>.the-be-fit-club.pages.dev` (slashes be
 3. Run the checks for the change's lane (§3). `npm run test:changed` picks them for you.
 4. Commit and push the branch: `git push -u origin <branch>`. Open one PR per request into `main`
    (`gh pr create`); small cosmetic items from the same message may share one.
-5. Wait for **CI** (GitHub Actions "Checks": unit + the browser suites the change can affect, about
-   3–5 minutes) and the **Cloudflare Pages** check (the preview). **Nothing red merges.** A run
-   cancelled before any test ran is re-run, not "fixed".
+5. Wait for **CI** (GitHub Actions "Checks": unit + the browser suites the change can affect; about
+   2 minutes for one screen, about 15 when test tooling changes, because then every suite runs) and the
+   **Cloudflare Pages** check (the preview). **Nothing red merges.** A run cancelled before any test ran
+   is re-run, not "fixed".
 6. If the change is visible: open the branch preview and look at it (phone width first).
 7. Merge: `gh pr merge --squash --delete-branch`. Cloudflare deploys `main`.
 8. Live check: `gh api repos/Larmie/befit-fc/commits/<main sha>/check-runs` shows "Cloudflare Pages"
@@ -49,7 +50,7 @@ on their next load with signal. Bump `CACHE` in `sw.js` only when the **list** o
 
 | Lane | What | Checks before merge |
 |---|---|---|
-| **Cosmetic** | layout, colours, copy, one screen, docs | `npm run test:changed` (unit + the affected screen's suites and sweep groups, about 1–3 min) + CI. Docs only: read-through |
+| **Cosmetic** | layout, colours, copy, one screen, docs | `npm run test:changed` (unit + the affected screen's suites and sweep groups: 1 m 45 s for a tables colour, measured 21 Oct) + CI. Docs only: read-through |
 | **Logic** | points, payments, the clock, stoppage, poles/keepers, rules, what a screen calculates | A test for the change that **fails without the fix and passes with it** (report both counts) + `npm run test:unit` + the affected suites (`test:changed`) + CI |
 | **Sensitive** | see §4: always ask Reuben first | Logic lane + a read-only count of what it would change on the real data, shown to Reuben before anything is written |
 
@@ -85,9 +86,9 @@ Once Reuben approves a specific sensitive operation and its scope, don't re-ask 
 
 | Command | What it runs | Time |
 |---|---|---|
-| `npm run test:unit` | the Node-only maths: engine equal to `classic.html` (0 differences), big poles, stoppage per half, keepers on small poles, Teams, the payments rule, the clock | seconds |
-| `npm run test:changed` | unit + only the browser suites the change can affect (vs `origin/main`, including uncommitted edits) | 1–3 min for one screen |
-| `npm run test:full` | unit + every browser suite, one at a time | the end-of-batch run |
+| `npm run test:unit` | 94 Node-only checks: the maths, engine equal to `classic.html` (0 differences), big poles, stoppage per half, keepers on small poles, Teams, the payments rule, the clock, the picker, what the site publishes | under 2 s |
+| `npm run test:changed` | unit + only the browser suites the change can affect (vs `origin/main`, including uncommitted edits) | about 2 min for one screen (3 suites at a time) |
+| `npm run test:full` | unit + every browser suite, one at a time, every sweep size | about 80 min (78 m 30 s on 21 Oct); `npm run test:full -- --jobs 3` is quicker if the laptop is free |
 | `npm test -- tables fix` | unit + the suites named | |
 | `npm run test:pick` | shows what `test:changed` would run, runs nothing | instant |
 | `npm run snapshot` | refreshes the read-only test data | seconds |
@@ -118,9 +119,10 @@ Once Reuben approves a specific sensitive operation and its scope, don't re-ask 
     were (on 21 Oct: 4 players Reuben tidied on 20 Oct);
   - `fingerprint`: the result is checked; "Identical to the data the tests were pinned to" = all good.
 - If `npm run snapshot` prints a **HEADS-UP**, someone edited old data again. Two ways out, on a branch:
-  - **Keep the pin** (quick): if you still have a copy from before the edit (`tests/.data/snapshot.json`
-    on a machine that hasn't refreshed, or CI's last good run), save it aside and run
-    `npm run snapshot -- --pin --keep <that copy>`. Commit `tests/snapshot-pin.json`.
+  - **Keep the pin** (quick, usual): the HEADS-UP saves the last copy that matched as
+    `tests/.data/pinned-copy.json` and prints the command: `npm run snapshot -- --pin --keep
+    tests/.data/pinned-copy.json`. Commit `tests/snapshot-pin.json`; nothing else changes. (Only a machine
+    that had a good copy can do this; Reuben's laptop normally has one.)
   - **Move the pin forward** (when tests should see newer matches): `npm run snapshot -- --as-of <latest
     match date> --pin`, then `npm run test:full`; for each failure confirm it is only the data (a count, a
     name), not a bug, and update that number in the test. Commit the pin and the tests together.

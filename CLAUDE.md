@@ -20,7 +20,9 @@ the season tables, and subs (payments). Plain files, no build step, no framework
 - `index.html` shell · `css/` (tokens, base, components + one file per screen) · `js/core/` (config, practice,
   store, teams, scoring, pay, clock, auth, save) · `js/ui/` (components, shell) · `js/screens/` (welcome, player,
   tables, setup, console, fix, admin) · `sw.js` network-first service worker
-- `tests/`: unit checks (`tests/unit`), browser suites (`tests/browser`), runner and picker (`tests/tools`)
+- `tests/`: unit checks (`tests/unit`), browser suites (`tests/browser`), runner and picker (`tests/tools`).
+  First time: `npm ci` then `npm run snapshot`; day to day `npm run test:changed` (AGENTS.md §6). Tests never
+  write to the real database.
 - `design-review/`: mock-ups and backups, kept out of git (`.git/info/exclude`)
 
 ## Firebase
