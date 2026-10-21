@@ -12,10 +12,10 @@ const fs = require('fs');
 const path = require('path');
 const classicOf = require('./classic-engine.js');
 const Scoring = classicOf.Scoring;
-const P = require('../../paths.js');
+const PATHS = require('../../paths.js');
 const B = path.join(__dirname, '..');
-const OB = path.join(P.OUT);   // output of monday.js, console/match.js, setup/flow.js (run them first)
-const snap = P.snapshot();
+const OB = path.join(PATHS.OUT);   // output of monday.js, console/match.js, setup/flow.js (run them first)
+const snap = PATHS.snapshot();
 const out = [];
 const say = (...a) => { const l = a.join(' '); console.log(l); out.push(l); };
 const clone = v => JSON.parse(JSON.stringify(v));
@@ -109,4 +109,4 @@ for (const [label, sess] of cases) {
 }
 say(`\nSUMMARY: ${cases.length} new-app matches, ${crashes} crashes, ${totalDiffRows} player rows where classic shows different points.`);
 say(`Fields that change classic's numbers: ${fieldsSeen.size ? [...fieldsSeen].join('; ') : 'none'}`);
-fs.writeFileSync(path.join(P.out(__dirname), 'classic-compat-result.txt'), out.join('\n') + '\n');
+fs.writeFileSync(path.join(PATHS.out(__dirname), 'classic-compat-result.txt'), out.join('\n') + '\n');

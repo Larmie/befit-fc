@@ -116,7 +116,7 @@ async function suite(s) {
     console.log('      ' + (interesting.length ? interesting : lines.slice(-15)).slice(0, 25).join('\n      '));
     console.log(`      full output: tests/.out/logs/${s.name}.log`);
   }
-  return { name: s.name, ok, known: !!knownFail, ms: r.ms, ...c };
+  return { name: s.name, ok, known: !!knownFail, ms: r.ms, okLines: c.ok, failLines: c.fail };
 }
 
 (async () => {
