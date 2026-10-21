@@ -108,6 +108,7 @@ async function suite(s) {
   const knownFail = !ok && (known.failing || {})[s.name];
   const word = ok ? 'pass' : knownFail ? 'known' : 'FAIL';
   const detail = s.file === 'integration/sweep.js' ? ((r.out.match(/(\d+) screen\/sheet checks, (\d+) with problems/) || [, '?', '?']).slice(1).join(' checks, ') + ' with problems')
+    : s.summary ? ((r.out.match(s.summary) || [, 'no summary line'])[1])
     : `${c.ok} ok, ${c.fail} FAIL`;
   console.log(`${word.padEnd(5)} ${s.name.padEnd(18)} ${detail.padEnd(28)} ${secs(r.ms)}${r.code && r.code !== 1 ? `  (exit ${r.code})` : ''}`);
   if (!ok && !knownFail) {

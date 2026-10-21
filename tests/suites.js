@@ -9,6 +9,8 @@
 //   uses    shared test files the suite reads (a change to one of them re-runs the suite)
 //   needs   suites whose output this one reads (they are run first)
 //   failIf  for the few suites that print a result but always exit 0: output that means "failed"
+//   summary  the line the runner shows for a suite that prints no ok/FAIL lines
+//   quickArgs  the arguments test:changed and CI use (test:full uses args: every sweep size and theme)
 //
 // Area words: welcome player tables setup console fix admin (screens) · ui (shell, shared components, colours)
 // scoring pay clock teams store auth config practice offline classic (core rules and plumbing).
@@ -53,7 +55,7 @@ module.exports = [
   // ---- the whole Monday night, then classic.html on what the new app wrote
   { name: 'monday', file: 'integration/monday.js', areas: ['scoring', 'pay', 'clock', 'teams', 'store', 'auth', 'config'] },
   { name: 'classic-compat', file: 'integration/classic-compat.js', areas: ['scoring', 'classic'], uses: ['browser/integration/classic-engine.js'],
-    needs: ['monday', 'console-match', 'setup-flow'], failIf: /[1-9]\d* crashes/, node: true },
+    needs: ['monday', 'console-match', 'setup-flow'], failIf: /[1-9]\d* crashes/, summary: /SUMMARY: \d+ new-app matches, (\d+ crashes)/, node: true },
   // ---- the screen-check sweep (no sideways scroll, nothing clipped, tap targets, one hero …), one entry per group
   sweep('player', ['player', 'welcome']),          // it passes through Tables too; the three tables groups cover those screens
   sweep('playerlive', ['player']),
