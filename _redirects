@@ -12,6 +12,7 @@
 /.github/* / 302
 /.claude/* / 302
 /.gitignore / 302
+/.gitattributes / 302
 /_redirects / 302
 /wrangler.jsonc / 302
 /site-build.sh / 302
