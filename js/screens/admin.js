@@ -15,7 +15,9 @@
                             position, Name, Subs, Merge with another player, Hold to delete.
      'ref.money' {all?|view?} tab money   Admin: a "Tonight · All dates" switch on the page. Tonight = the register
                             (collected of expected, chips To collect / Paid / Everyone, tap a row → quick amounts
-                            inline, then Cancel or Save). All dates = the season list. The referee: tonight only.
+                            inline, then Cancel or Save). No match today: a card for the latest match day with no
+                            money entered and "Record money ›" (→ its register). All dates = "Needs recording"
+                            (each "Record ›") on top, then the entered days, "+ Other date". The referee: tonight only.
      'ref.moneyDay' {date}  tab money     The register for one date (admin), plus Hold to clear payment record.
      'admin.settings'       tab settings  Club (name, season, fee, quick amounts), Teams (+ Add a team), Match rules
                             (read-only), Access (how to change the referee password), Appearance, Data (CSV, practice).
@@ -323,7 +325,7 @@
     mount(el) {
       UI.on(el, 'edit', b => App.go('ref.edit', { sid: b.dataset.sid }));
       UI.on(el, 'finish', openFinishList);
-      UI.on(el, 'need-money', () => App.go('ref.money', { all: 1 }));
+      UI.on(el, 'need-money', () => openUnrecorded());
       UI.on(el, 'need-tonight', () => App.go('ref.money', { view: 'tonight' }));
       UI.on(el, 'need-owes', () => App.go('ref.squad', { f: 'owes' }));
       UI.on(el, 'need-twice', () => App.go('ref.squad', { f: 'twice' }));
@@ -1031,10 +1033,40 @@
     setDraft(el, el._reg.open, v);
   }
 
+  // ---- match days with no money entered (since tracking started; tonight has its own register)
+  function unrecorded() {
+    const t = tonightDate();
+    return moneyOverview().missing.filter(r => r.date !== t);
+  }
+  const recordTag = '<span class="adm-rec">Record ›</span>';
+  // The Money landing when there's no match today: the latest unrecorded match day, ready to record.
+  function recordHtml(list) {
+    const r = list[0];
+    return `<div class="card hero adm-hero adm-record"><div class="lbl adm-k">No match today · next to record</div>` +
+      `<div class="adm-rec-d">${esc(fmt.date(r.date))}</div>` +
+      `<div class="adm-progline"><span>${esc(r.played)} played</span><span class="adm-chip">not entered</span></div>` +
+      `<div class="mt-4">${UI.btn('Record money ›', { tap: 'record', data: { date: r.date } })}</div>` +
+      (list.length > 1 ? `<button type="button" class="link adm-lnk adm-moredays" data-tap="more-days">+ ${esc(plural(list.length - 1, 'more match day'))} not entered ›</button>` : '') +
+      `</div>`;
+  }
+  // Needs you › Money not entered: each day goes straight to its register.
+  function openUnrecorded() {
+    const list = unrecorded();
+    if (!list.length) { App.go('ref.money', { all: 1 }); return null; }
+    if (list.length === 1) { App.go('ref.moneyDay', { date: list[0].date }); return null; }
+    const h = UI.sheet.open({ title: 'Money not entered', titleEnd: plural(list.length, 'match day'), cls: 'sh-admin-missing', cancel: 'Close',
+      body: UI.rows(list.map(r => UI.row({ tap: 'rec', data: { date: r.date }, title: fmt.date(r.date), meta: `${r.played} played`, right: recordTag, cls: 'adm-needrec' }))) });
+    UI.on(h.el, 'rec', b => { h.close(); App.go('ref.moneyDay', { date: b.dataset.date }); });
+    return h;
+  }
+
   // ---- list of dates
   function moneyListHtml(el) {
     const ov = moneyOverview();
     const range = ov.first ? `${fmt.short(ov.first)} – ${fmt.short(ov.last)}` : '';
+    const need = unrecorded();
+    const needSet = new Set(need.map(r => r.date));
+    const needRow = r => UI.row({ tap: 'day', data: { date: r.date }, title: fmt.date(r.date), meta: `${r.played} played · not entered`, right: recordTag, cls: 'adm-needrec' });
     const row = r => UI.row({ tap: 'day', data: { date: r.date }, title: fmt.date(r.date),
       meta: !r.entered ? (r.isMatch ? `${r.played} played` : 'No match') :
         r.isMatch ? `${r.paidPlayed} of ${r.played} paid${r.others ? ` · ${r.others} didn’t play` : ''}` : `${plural(r.paid, 'person', 'people')} paid · no match`,
@@ -1045,8 +1077,10 @@
     const summary = `<div class="card hero adm-hero adm-collected"><div class="lbl adm-k">Collected${range ? ' · ' + esc(range) : ''}</div>` +
       `<div class="adm-big"><b class="hn">${esc(fmt.money(ov.total))}</b></div>` +
       `<div class="adm-progline"><span>${plural(entered, 'date')} entered</span>${missing.length ? `<span class="adm-chip">${plural(missing.length, 'match day')} not entered</span>` : ''}</div></div>`;
-    const list = `<div class="lbl adm-lblrow"><span>Match days</span><button type="button" class="link adm-lnk" data-tap="add-date">+ Date</button></div>` +
-      (ov.tracked.length ? UI.rows(ov.tracked.map(row)) : UI.empty('Nothing yet', '')) +
+    const rest = ov.tracked.filter(r => !needSet.has(r.date));
+    const list = (need.length ? `<div class="lbl adm-lblrow"><span>Needs recording <b class="n">${need.length}</b></span></div>` + UI.rows(need.map(needRow), { cls: 'adm-needs-rec' }) : '') +
+      `<div class="lbl adm-lblrow${need.length ? ' mt-6' : ''}"><span>Match days</span><button type="button" class="link adm-lnk" data-tap="add-date">+ Other date</button></div>` +
+      (rest.length ? UI.rows(rest.map(row)) : UI.empty('Nothing yet', '')) +
       (ov.earlier.length ? (st.early
         ? `<div class="lbl mt-6">Before ${esc(fmt.short(ov.first))}</div>` + UI.rows(ov.earlier.map(row))
         : `<div class="mt-3">${UI.btn(`Show ${plural(ov.earlier.length, 'earlier day')}`, { kind: 'o', sm: true, tap: 'early' })}</div>`) : '');
@@ -1081,12 +1115,22 @@
       UI.on(el, 'day', b => App.go('ref.moneyDay', { date: b.dataset.date }));
       UI.on(el, 'early', () => { el._ml = { early: true }; App.rerender(); });
       UI.on(el, 'add-date', () => openAddDate());
+      UI.on(el, 'record', b => App.go('ref.moneyDay', { date: b.dataset.date }));
+      UI.on(el, 'more-days', () => App.go('ref.money', { all: 1 }, { replace: true }));
       mountRegister(el);
     },
     render(el, ctx) {
       const seg = showSeg(ctx);
-      const view = !seg ? 'tonight' : ctx.params.all ? 'all' : (ctx.params.view === 'tonight' || tonightDate()) ? 'tonight' : 'all';
+      const view = !seg ? 'tonight' : ctx.params.all ? 'all' : (ctx.params.view === 'tonight' || tonightDate() || unrecorded().length) ? 'tonight' : 'all';
       el.classList.toggle('is-ref', !seg);
+      // No match today (admin): land on the latest match day that still needs its money recorded.
+      const need = seg && view === 'tonight' && !tonightDate() ? unrecorded() : [];
+      if (need.length) {
+        el._reg = null;
+        el.classList.remove('adm-has-bar');
+        el.innerHTML = `${moneySeg('tonight')}<div class="adm-money adm-landing">${recordHtml(need)}</div>`;
+        return;
+      }
       if (view === 'tonight') { regShell(el, tonightDate() || today(), seg ? moneySeg('tonight') : ''); return; }
       el._reg = null;
       el.classList.remove('adm-has-bar');

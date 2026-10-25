@@ -200,3 +200,12 @@
   font-family: var(--font); font-variant-numeric: tabular-nums; }
 @media (min-width: 960px) { .scr-admin-settings .adm-set-b > .lbl:first-child { margin-top: 0; } }
 .scr-admin-home .adm-review { font-size: 13px; font-weight: 650; color: var(--warn); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- money: record a match day (no match today) */
+:is(.scr-ref-money, .sh-admin-missing) .adm-rec { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 999px;
+  background: var(--ink); color: var(--on-ink); font-size: 13px; font-weight: 650; white-space: nowrap; }
+.scr-ref-money .adm-needrec, .sh-admin-missing .adm-needrec { min-height: 60px; box-shadow: inset 3px 0 0 var(--warnfill); }
+.scr-ref-money .adm-landing { display: block; max-width: 560px; }
+.scr-ref-money .adm-rec-d { font-size: var(--fs-head); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; margin-top: 2px; }
+.scr-ref-money .adm-record .btn { height: 56px; font-size: 16px; }
+.scr-ref-money .adm-moredays { display: flex; justify-content: center; width: 100%; margin-top: 6px; }

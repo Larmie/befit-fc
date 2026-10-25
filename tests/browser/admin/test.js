@@ -136,9 +136,20 @@ const PING = () => Store.set('sessions/-Oz8393enopc2awvN6-n/zzPing', Math.random
   check('"All dates" (on the page) shows the list', await p.evaluate(() => !!document.querySelector('.adm-collected')));
   const listTxt = await p.evaluate(() => document.querySelector('#app-screen').textContent);
   check('list: "6 match days not entered", "5 of 21 paid", "not entered", never ₵0.00', listTxt.includes('6 match days not entered') && listTxt.includes('5 of 21 paid') && listTxt.includes('not entered') && !listTxt.includes('₵0.00'));
+  // Monday-ready fix: match days with nothing entered come first, each with "Record ›"; tonight keeps its own register
+  const order = await p.evaluate(() => ({ labels: [...document.querySelectorAll('.adm-reg-b > .lbl')].map(l => l.firstElementChild.textContent.replace(/\s+/g, ' ').trim()),
+    need: [...document.querySelectorAll('.adm-needs-rec [data-tap="day"]')].map(b => ({ d: b.dataset.date, t: b.innerText.replace(/\s+/g, ' ').trim() })),
+    want: BF_PAY.overview().missing.filter(r => r.date !== '2026-10-19').map(r => r.date) }));
+  check('All dates: "Needs recording 5" on top (12 Oct … 14 Sep, each "Record ›"), then "Match days"', order.labels[0] === 'Needs recording 5' && order.labels[1] === 'Match days' &&
+    JSON.stringify(order.need.map(x => x.d)) === JSON.stringify(order.want) && order.need.length === 5 && order.need.every(x => x.t.endsWith('Record ›')), order);
+  check('… the "Match days" rows below hold no unrecorded day', await p.evaluate(want => ![...document.querySelectorAll('.adm-reg-b > .rows:not(.adm-needs-rec) [data-tap="day"]')].some(b => want.includes(b.dataset.date)), order.want));
+  check('the link reads "+ Other date"', (await p.evaluate(() => document.querySelector('[data-tap="add-date"]').textContent.trim())) === '+ Other date');
   await click(p, '[data-tap="add-date"]');
-  check('+ Date opens a date sheet', await p.evaluate(() => !!document.querySelector('.sh-admin-date [data-newdate]')));
-  await p.keyboard.press('Escape'); await sleep(200);
+  check('+ Other date opens a date sheet', await p.evaluate(() => !!document.querySelector('.sh-admin-date [data-newdate]')));
+  await p.$eval('.sh-admin-date [data-newdate]', e => { e.value = '2026-10-15'; });
+  await click(p, '.sh-admin-date [data-tap="go"]', 400);
+  check('… a non-match date opens its register (Thu 15 Oct, Everyone)', await p.evaluate(() => document.querySelector('#app-screen section').dataset.screen === 'ref.moneyDay' && location.hash.includes('2026-10-15') && document.querySelector('[data-chips="reg-tab"] .on').dataset.value === 'all'));
+  await p.evaluate(() => history.back()); await sleep(300);
 
   // ---------------------------------------------------------------- 5. Squad: search, duplicates, merge (on this in-memory copy)
   await s.go('#/ref.squad'); await sleep(300);

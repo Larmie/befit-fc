@@ -19,8 +19,12 @@
                                                   in stoppage: amber "End stoppage · +1:36"; after 4 min of the SAME
                                                   stoppage it pulses: "Still in stoppage? / End · +7:10" (no banner)
                                                   at half time: "Resume second half" (primary, full width)
-                                                row 2: Half time · Adjust clock (hold 1.5 s) · Poles · + Player ·
-                                                  Teams tonight · Edit events (3 × 2, 52 px)
+                                                poles slot (25 Oct): small poles "Switch to big poles ›" / "Now: small
+                                                  poles · no keepers" (56 px, ink outline); after the switch a quiet card
+                                                  "Big poles since 46' · Toby · Mike" (or "from kick-off"), tap to change
+                                                  keepers. Both open setup.bigPoles.
+                                                row 2: Half time · Adjust clock (hold 1.5 s) · + Player · Teams tonight ·
+                                                  Edit events (5 tiles: 3 + 2, 52 px)
                                                 row 3: Hold to end the game (1.5 s, amber fill) → ref.ftcheck
                             LATEST              the last 3 events (minute · name · type · team chip, amber dot =
                                                 still on the phone), "All n ›"
@@ -495,6 +499,20 @@
     o = o || {};
     return `<button type="button" class="cn-ctile${o.cls ? ' ' + o.cls : ''}" data-tap="${tap}"${o.attrs || ''}>${o.html || esc(label)}</button>`;
   }
+  // The poles slot, just above the controls grid (25 Oct): on small poles an obvious action
+  // "Switch to big poles ›" (ink outline, not amber: amber means stoppage); after the switch a quiet status card
+  // "Big poles since 46' · Toby · Mike" (or "from kick-off"), tap to change keepers. Both open setup.bigPoles.
+  function polesHtml(sess, f) {
+    if (!f.everBig) {
+      return `<button type="button" class="cn-poles is-small" data-tap="poles">` +
+        `<span class="cn-pt">Switch to big poles ›</span><span class="cn-ps">Now: small poles · no keepers</span></button>`;
+    }
+    const names = keepersOf(sess).map(k => k.name);
+    const when = f.start === 'small' && f.switchedAt != null ? `since ${f.switchedAt}'` : 'from kick-off';
+    return `<button type="button" class="cn-poles is-big" data-tap="poles">` +
+      `<span class="cn-pt">${esc(['Big poles ' + when].concat(names).join(' · '))}</span>` +
+      `<span class="cn-ps">${names.length ? 'Tap to change keepers' : 'Tap to choose keepers'}</span></button>`;
+  }
   function controlsHtml(sess) {
     const st = Clock.status(sess);
     if (st === 'ended') return primaryHtml(sess);
@@ -506,9 +524,8 @@
       : ctlTile('Half time', 'halftime', { cls: Clock.canLog(sess) ? '' : 'is-off' });
     const adjust = `<button type="button" class="hold cn-ctile cn-adjust${active ? '' : ' is-off'}" data-hold="adjust" data-ms="${HOLD_MS}" style="--hold-ms:${HOLD_MS}ms" data-done-text="Adjust clock">` +
       `<span class="fill"></span><span class="hl">Adjust clock</span></button>`;
-    const poles = f.everBig ? ctlTile('Poles: big', 'poles', { cls: 'is-quiet' }) : ctlTile('Poles: small', 'poles', { cls: 'is-quiet' });
-    return primaryHtml(sess) +
-      `<div class="cn-grid">${ht}${adjust}${poles}${ctlTile('+ Player', 'player')}${ctlTile('Teams tonight', 'teams')}${ctlTile('Edit events', 'events')}</div>` +
+    return primaryHtml(sess) + polesHtml(sess, f) +
+      `<div class="cn-grid n5">${ht}${adjust}${ctlTile('+ Player', 'player')}${ctlTile('Teams tonight', 'teams')}${ctlTile('Edit events', 'events')}</div>` +
       `<div class="cn-endw">${UI.hold('Hold to end the game', { name: 'end', ms: HOLD_MS, warn: true, doneText: 'Ending…' })}</div>`;
   }
 
@@ -622,7 +639,9 @@
       UI.on(el, 'ev', once(b => App.action('fix.eventSheet', { sid: sid(), eid: b.dataset.eid })));
       UI.on(el, 'player', once(() => App.action('setup.addArrival', { sid: sid() })));
       UI.on(el, 'teams', once(() => App.action('setup.teamsTonight', { sid: sid() })));
-      UI.on(el, 'poles', once(() => App.action('setup.bigPoles', { sid: sid() })));
+      // the poles button sits right under the clock buttons: the 2nd tap of a double-tapped Kick off / + Stoppage
+      // (within their 0.7 s guard) must not open the poles sheet
+      UI.on(el, 'poles', b => { if (Date.now() >= ctlBusyUntil) once(() => App.action('setup.bigPoles', { sid: sid() }))(b); });
       UI.on(el, 'ftcheck', once(() => App.go('ref.ftcheck', { sid: sid() })));
       UI.on(el, 'ctl', b => { if (!afterBar()) clockAction(sid(), b.dataset.act, b); });
       UI.on(el, 'halftime', b => { if (!b.classList.contains('is-done') && !afterBar()) halfTime(sid(), b); });

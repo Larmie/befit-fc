@@ -283,11 +283,27 @@ async function signIn(page, who) {
   check("half time at 45:10 (stamped 46', same rule as classic); the 1st half's stoppage is kept per half (stoppageAtHalf)", ht && ht.min === 46 && t.pauseReason === 'halftime' && t.stoppageAtHalf === t.stoppageTotal && t.stoppageAtHalf > 8 * 60000, { ht, atHalf: t.stoppageAtHalf });
   check('at half time the primary control is "Resume second half"', (await txt(p, '.cn-row1 .btn')) === 'Resume second half');
   await waitBarGone();
-  await tap('.cn-grid [data-tap="poles"]', 500);
+  check('small poles: "Switch to big poles ›" is on the deck, visible without scrolling', await p.evaluate(() => { const b = document.querySelector('.cn-poles.is-small'); return !!b && b.getBoundingClientRect().bottom <= innerHeight; }));
+  await tap('.cn-poles[data-tap="poles"]', 500);
   check('sheet "Big poles from 46\'" + "Score carries over: 2–2"', (await txt(p, '.sh-setup-poles h4')) === "Big poles from 46'" && (await txt(p, '.sh-setup-poles .sh-s')).startsWith('Score carries over: 2–2'));
-  const kp = await p.$$eval('.sh-setup-poles .su-k', (cols, bona) => cols.map(c => ([...c.querySelectorAll('[data-tap="keeper"]')].find(b => b.dataset.pid !== bona) || {}).dataset?.pid), BONA);
-  await tap(`.sh-setup-poles [data-tap="keeper"][data-pid="${kp[0]}"]`, 250);
-  await tap(`.sh-setup-poles [data-tap="keeper"][data-pid="${kp[1]}"]`, 250);
+  // 25 Oct keeper picker: known keepers on that side tonight first, then "Other ›" = tonight's players on that side.
+  // Pick each side's keeper through "Other ›": a MID who is not a usual keeper.
+  const kp = [];
+  for (const side of ['green', 'red']) {
+    await tap(`.sh-setup-poles [data-tap="kother"][data-team="${side}"]`, 450);
+    const rows = await p.$$eval('.sh-setup-kother [data-tap="kpick"]', a => a.map(x => ({ pid: x.dataset.pid, meta: x.querySelector('.meta').textContent })));
+    const sessNow = await S();
+    check(`"Other ›" for ${side}: tonight's ${side} players only (${rows.length})`, rows.length === Object.keys(sessNow.teams[side].players).length && rows.every(r => sessNow.teams[side].players[r.pid]));
+    // the night's keepers (Toby, Mike) arrive at the switch: "+ Someone not here yet" (15 + 2 = 17 players tonight)
+    const kname = side === 'green' ? 'Toby' : 'Mike';
+    const pick = pidOf(kname);
+    check(`${kname} is not here yet, so not in the "Other ›" list`, !rows.some(r => r.pid === pick));
+    await tap('.sh-setup-kother [data-tap="ksome"]', 450);
+    await p.type('.sh-setup-new [data-search="q"]', kname); await sleep(300);
+    await tap(`.sh-setup-new [data-tap="pick"][data-pid="${pick}"]`, 400);
+    kp.push(pick);
+  }
+  check('both keepers picked, shown first and selected on their side', (await p.$$eval('.sh-setup-poles .su-k [data-tap="keeper"].sel', a => a.map(x => x.dataset.pid).join())) === kp.join());
   await s.shot(path.join(SHOTS, '08-big-poles-sheet.png'));
   await tap('.sh-setup-poles [data-tap="switch"]', 800);
   sess = await S();

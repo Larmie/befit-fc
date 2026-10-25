@@ -168,11 +168,23 @@ async function noTruncation(p, label) {
   await sleep(350);
   check('sheet title "Big poles from 46\'"', (await p.$eval('.sh-setup-poles h4', e => e.textContent)) === "Big poles from 46'");
   check('subtitle "Score carries over: 2–2 · keepers count from 46\'"', (await p.$eval('.sh-setup-poles .sh-s', e => e.textContent)) === "Score carries over: 2–2 · keepers count from 46'");
-  const gk = await p.$$eval('.sh-setup-poles .su-k', els => els.map(e => Array.from(e.querySelectorAll('.pt-name')).map(x => x.textContent)));
-  check('keeper choices: Toby, Bona, + Someone | Mike, Joel, + Someone', JSON.stringify(gk) === JSON.stringify([['Toby', 'Bona', '+ Someone'], ['Mike', 'Joel', '+ Someone']]), gk);
+  // 25 Oct keeper picker: only tonight's players on each side. Toby, Mike, Bona and Joel aren't here tonight in this
+  // flow, so neither side has a known keeper: "Other ›" is the main choice; the keepers arrive via "+ Someone not here yet".
+  const mains = await p.$$eval('.sh-setup-poles .su-kother.is-main', els => els.map(e => e.dataset.team + ':' + e.innerText.replace(/\s+/g, ' ').trim()));
+  check('no known keeper here tonight: "Other ›" is the main choice per side, "Pick tonight’s keeper"', JSON.stringify(mains) === JSON.stringify(['green:Other › Pick tonight’s keeper', 'red:Other › Pick tonight’s keeper']), mains);
   check('switch disabled until a keeper is picked', await p.$eval('.sh-setup-poles [data-tap="switch"]', e => e.disabled));
-  await tap(p, `.sh-setup-poles [data-tap="keeper"][data-pid="${TOBY}"]`);
-  await tap(p, `.sh-setup-poles [data-tap="keeper"][data-pid="${MIKE}"]`);
+  const viaSomeone = async (team, pid, nm) => {
+    await tap(p, `.sh-setup-poles [data-tap="kother"][data-team="${team}"]`, 450);
+    const n = await p.$$eval('.sh-setup-kother [data-tap="kpick"]', a => a.length);
+    const want = await p.evaluate((id, t) => Object.keys(Store.session(id).teams[t].players).length, sid, team);
+    check(`"Other ›" (${team}) lists tonight's ${team} players only: ${n} = ${want}`, n === want);
+    await tap(p, '.sh-setup-kother [data-tap="ksome"]', 450);
+    await p.type('.sh-setup-new [data-search="q"]', nm); await sleep(300);
+    await tap(p, `.sh-setup-new [data-tap="pick"][data-pid="${pid}"]`, 400);
+  };
+  await viaSomeone('green', TOBY, 'Toby');
+  await viaSomeone('red', MIKE, 'Mike');
+  check('picked keepers show first on their side, selected', (await p.$$eval('.sh-setup-poles .su-k [data-tap="keeper"].sel', a => a.map(x => x.dataset.pid).join())) === `${TOBY},${MIKE}`);
   await s.shot(path.join(OUT, 'big-poles-390-dark.png'));
   const before = await p.evaluate(id => JSON.stringify(Store.session(id)), sid);
   await tap(p, '.sh-setup-poles [data-tap="switch"]', 700);
@@ -187,8 +199,8 @@ async function noTruncation(p, label) {
   check('Undo restores the match exactly', await p.evaluate(id => JSON.stringify(Store.session(id)), sid) === before);
   await p.evaluate(id => App.action('setup.bigPoles', { sid: id }), sid);
   await sleep(300);
-  await tap(p, `.sh-setup-poles [data-tap="keeper"][data-pid="${TOBY}"]`);
-  await tap(p, `.sh-setup-poles [data-tap="keeper"][data-pid="${MIKE}"]`);
+  await viaSomeone('green', TOBY, 'Toby');
+  await viaSomeone('red', MIKE, 'Mike');
   await tap(p, '.sh-setup-poles [data-tap="switch"]', 700);
 
   // ---------------------------------------------------------------- 8 · second half: resume, keeper events after the switch
@@ -226,10 +238,13 @@ async function noTruncation(p, label) {
   const p2 = s2.page;
   await tap(p2, '[data-seg="poles"] [data-value="big"]');
   await addFromChips(p2, 4);
-  await tap(p2, `[data-tap="keeper"][data-team="green"][data-pid="${TOBY}"]`);
+  // 25 Oct: the known keepers are tonight's usual keepers on that side, so tick Toby first: on big poles he fills the slot
+  await tap(p2, `.scr-ref-setup [data-tap="tick"][data-pid="${TOBY}"]`);
+  check('Toby ticked for Green on big poles → Green keeper, shown first and selected', (await p2.$eval('[data-tap="keeper"][data-team="green"]', e => e.dataset.pid + ':' + e.classList.contains('sel'))) === `${TOBY}:true`);
   await tap(p2, '[data-seg="side"] [data-value="red"]');
   await addFromChips(p2, 4);
-  await tap(p2, `[data-tap="keeper"][data-team="red"][data-pid="${MIKE}"]`);
+  await tap(p2, `.scr-ref-setup [data-tap="tick"][data-pid="${MIKE}"]`);
+  check('Mike → Red keeper; Toby is offered only on Green', (await p2.$eval('[data-tap="keeper"][data-team="red"]', e => e.dataset.pid + ':' + e.classList.contains('sel'))) === `${MIKE}:true` && !(await p2.$(`[data-tap="keeper"][data-team="red"][data-pid="${TOBY}"]`)));
   check('picking a keeper puts him on that side (Green 5 · Red 5)', (await sideCount(p2, 'green')) === 5 && (await sideCount(p2, 'red')) === 5);
   await s2.shot(path.join(OUT, 'whos-here-big-poles-390-dark.png'), { fullPage: true });
   await tap(p2, '[data-tap="kickoff"]', 700);

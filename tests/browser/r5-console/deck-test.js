@@ -351,6 +351,81 @@ async function main() {
   check('no console errors', s.errors.length === 0, s.errors);
   await s.close();
 
+  // ======================================================================== 8. 25 Oct · the poles switch + the keeper picker
+  note('Poles switch: an obvious "Switch to big poles ›" on small poles, a status card after; known keepers first, then "Other ›"');
+  const d9 = liveData({ format: { start: 'small' }, timer: running(30) });
+  const t9 = d9.sessions[SID].teams;
+  const nm9 = pid => H.snapshot().players[pid].name;
+  const gkOf = t => Object.keys(t9[t].players).filter(k => t9[t].players[k].position === 'GK');
+  // a usual keeper playing for the other side tonight: move Red's second keeper to Green
+  const movedGK = gkOf('red').find(k => k !== gkOf('red')[0]);
+  t9.green.players[movedGK] = t9.red.players[movedGK]; delete t9.red.players[movedGK];
+  s = await H.open({ width: 390, referee: 'referee', route: '#/ref.console', data: d9 });
+  h = helpers(s); p = h.p; await s.freeze(); await sleep(1100);
+  const pb = await p.evaluate(() => { const b = document.querySelector('.cn-poles'); const r = b.getBoundingClientRect(); const g = document.querySelector('.cn-grid').getBoundingClientRect();
+    return { pt: b.querySelector('.cn-pt').textContent, ps: b.querySelector('.cn-ps').textContent, h: Math.round(r.height), w: Math.round(r.width), bottom: r.bottom, vh: innerHeight, aboveGrid: r.bottom <= g.top, bg: getComputedStyle(b).backgroundColor, warn: getComputedStyle(document.documentElement).getPropertyValue('--warnfill').trim() }; });
+  check('small poles: "Switch to big poles ›" / "Now: small poles · no keepers", full width, ≥ 56 px, just above the controls grid, visible without scrolling at 390', pb.pt === 'Switch to big poles ›' && pb.ps === 'Now: small poles · no keepers' && pb.h >= 56 && pb.w >= 350 && pb.aboveGrid && pb.bottom <= pb.vh, pb);
+  check('…not amber (amber means stoppage)', !/255, 159, 67|rgb\(255, 166, 84\)/.test(pb.bg), pb.bg);
+  check('the grid keeps 5 tiles, no "Poles:" tile', (await p.$$eval('.cn-grid > *', a => a.map(x => x.textContent.trim()).join(' | '))) === 'Half time | Adjust clock | + Player | Teams tonight | Edit events');
+  await h.shot('poles-small-390-dark.png');
+  await h.tap('.cn-poles', 500);
+  const k1 = await p.evaluate(() => [...document.querySelectorAll('.sh-setup-poles .su-k')].map(c => [...c.querySelectorAll('[data-tap]')].map(b => b.dataset.tap === 'kother' ? 'Other' : b.dataset.pid)));
+  const appsOf = pid => p.evaluate(id => (Scoring.seasonStats(id) || {}).apps || 0, pid);
+  const greenKnown = gkOf('green');   // includes the usual Red keeper moved to Green tonight
+  const greenSorted = []; for (const k of greenKnown) greenSorted.push([k, await appsOf(k)]);
+  greenSorted.sort((a, b) => b[1] - a[1] || nm9(a[0]).localeCompare(nm9(b[0])));
+  check('Green: the known keepers on Green tonight (incl. the usual Red keeper playing Green), most apps first, then "Other ›"', JSON.stringify(k1[0]) === JSON.stringify(greenSorted.map(x => x[0]).concat('Other')), { got: k1[0].map(x => x === 'Other' ? x : nm9(x)), want: greenSorted.map(x => nm9(x[0]) + ' ' + x[1]) });
+  check('…and he is NOT offered on Red (only the side he plays for tonight)', !k1[1].includes(movedGK) && k1[1].every(x => x === 'Other' || t9.red.players[x]), k1[1].map(x => x === 'Other' ? x : nm9(x)));
+  await h.shot('poles-sheet-390-dark.png');
+  await h.tap('.sh-setup-poles [data-tap="kother"][data-team="green"]', 500);
+  const otherList = await p.$$eval('.sh-setup-kother [data-tap="kpick"]', a => a.map(x => x.dataset.pid));
+  check('"Other ›" lists tonight\'s Green players only (the roster, not the club), with "+ Someone not here yet"', otherList.length === Object.keys(t9.green.players).length && otherList.every(x => t9.green.players[x]) && (await h.text('.sh-setup-kother [data-tap="ksome"]')) === '+ Someone not here yet', otherList.length);
+  await h.shot('poles-other-list-390-dark.png');
+  const mid = Object.keys(t9.green.players).find(k => t9.green.players[k].position === 'MID');
+  check(`before the switch, ${nm9(mid)} (MID) plays as MID`, (await p.evaluate((sid, id) => Scoring.playsAs(Store.session(sid), id), SID, mid)) === 'MID');
+  await h.tap(`.sh-setup-kother [data-tap="kpick"][data-pid="${mid}"]`, 400);
+  check('picked via Other: he shows first on Green, selected, "MID · in goal"', (await p.$eval('.sh-setup-poles .su-k [data-tap="keeper"]', e => e.dataset.pid + '|' + e.classList.contains('sel') + '|' + e.querySelector('.pos').textContent)) === `${mid}|true|MID · in goal`);
+  const swm = await p.evaluate(sid => Clock.minute(Store.session(sid)), SID);
+  // Red's usual keeper tonight is pre-selected (he is GK on the team sheet); tap only if not
+  if (!(await p.$(`.sh-setup-poles [data-tap="keeper"][data-pid="${gkOf('red')[0]}"].sel`))) await h.tap(`.sh-setup-poles [data-tap="keeper"][data-pid="${gkOf('red')[0]}"]`, 250);
+  await h.tap('.sh-setup-poles [data-tap="switch"]', 900);
+  const f9 = await p.evaluate(sid => Store.session(sid).format, SID);
+  check('switch writes format.switchedAt + format.keepers; he is GK on the team sheet', f9.switchedAt === swm && f9.keepers.green === mid && f9.keepers.red === gkOf('red')[0] && (await p.evaluate((sid, id) => Store.session(sid).teams.green.players[id].position, SID, mid)) === 'GK', f9);
+  check(`after the switch, ${nm9(mid)} scores as GK`, (await p.evaluate((sid, id) => [Scoring.playsAs(Store.session(sid), id), Scoring.matchPoints(Store.session(sid), id).pos].join(), SID, mid)) === 'GK,GK');
+  await h.barGone();
+  check(`status card: "Big poles since ${swm}' · ${nm9(mid)} · ${nm9(gkOf('red')[0])}" / "Tap to change keepers"`, (await h.text('.cn-poles .cn-pt')) === `Big poles since ${swm}' · ${nm9(mid)} · ${nm9(gkOf('red')[0])}` && (await h.text('.cn-poles .cn-ps')) === 'Tap to change keepers' && !!(await p.$('.cn-poles.is-big')), await h.text('.cn-poles'));
+  await h.shot('poles-after-switch-390-dark.png');
+  await h.tap('.cn-poles', 500);
+  check('the status card opens the keepers sheet ("Keepers")', (await h.text('.sh-setup-poles .sheet-title')) === 'Keepers');
+  await h.esc();
+  check('no console errors', s.errors.length === 0, s.errors);
+  await s.close();
+  // a match that started on big poles
+  const d10 = liveData({ format: { start: 'big', keepers: {} }, timer: running(10) });
+  const t10 = d10.sessions[SID].teams;
+  d10.sessions[SID].format.keepers = { green: Object.keys(t10.green.players).find(k => t10.green.players[k].position === 'GK'), red: Object.keys(t10.red.players).find(k => t10.red.players[k].position === 'GK') };
+  s = await H.open({ width: 390, referee: 'referee', route: '#/ref.console', data: d10 });
+  h = helpers(s); p = h.p; await s.freeze(); await sleep(900);
+  const kk = d10.sessions[SID].format.keepers;
+  check('started on big poles: "Big poles from kick-off · <keepers>"', (await h.text('.cn-poles .cn-pt')) === `Big poles from kick-off · ${nm9(kk.green)} · ${nm9(kk.red)}`, await h.text('.cn-poles .cn-pt'));
+  check('no console errors', s.errors.length === 0, s.errors);
+  await s.close();
+  // the lineup on big poles: a side with no known keeper tonight → "Other ›" is the main choice
+  s = await H.open({ width: 390, referee: 'referee', route: '#/ref.setup' });
+  h = helpers(s); p = h.p; await s.freeze(); await sleep(400);
+  const gkRow = await p.$$eval('.scr-ref-setup .su-sq', a => { const r = a.find(x => /^GK/.test(x.querySelector('.meta').textContent)); return r ? r.querySelector('.meta').textContent : null; });
+  check('lineup on small poles: a usual keeper reads "GK · plays outfield on small poles"', /^GK · plays outfield on small poles/.test(gkRow || ''), gkRow);
+  const nonGk = await p.$$eval('.scr-ref-setup .su-sq', a => a.filter(x => !/^GK/.test(x.querySelector('.meta').textContent)).slice(0, 2).map(x => x.dataset.pid));
+  for (const id of nonGk) await h.tap(`.scr-ref-setup [data-tap="tick"][data-pid="${id}"]`, 150);
+  await h.tap('[data-seg="poles"] > button[data-value="big"]', 300);
+  check('big poles, no usual keeper ticked for Green: "Other ›" is the main choice, "Pick tonight\'s keeper"', /Other ›\s*Pick tonight’s keeper/.test(await p.$eval('.scr-ref-setup [data-tap="kother"][data-team="green"]', e => e.innerText)) && !!(await p.$('.scr-ref-setup .su-kother.is-main[data-team="green"]')));
+  await h.tap('.scr-ref-setup [data-tap="kother"][data-team="green"]', 500);
+  check('…its list = the 2 ticked for Green tonight', JSON.stringify((await p.$$eval('.sh-setup-kother [data-tap="kpick"]', a => a.map(x => x.dataset.pid))).sort()) === JSON.stringify(nonGk.slice().sort()));
+  await h.tap(`.sh-setup-kother [data-tap="kpick"][data-pid="${nonGk[0]}"]`, 400);
+  check('…picking one makes him Green\'s keeper in the lineup (team sheet "GK · in goal")', /GK · in goal/.test(await h.text(`.su-tsr[data-pid="${nonGk[0]}"]`) || '') || (await p.evaluate(id => JSON.parse(localStorage.getItem('befit_setup_draft')).keepers.green === id, nonGk[0])));
+  check('no console errors', s.errors.length === 0, s.errors);
+  await s.close();
+
   // ======================================================================== 6. screens: light console option, laptop
   note('390 light (console = app) and 1280 dark');
   for (const v of [{ width: 390, theme: 'light', consoleTheme: 'app', tag: '390-light-app' }, { width: 1280, theme: 'dark', tag: '1280-dark' }, { width: 1280, theme: 'light', consoleTheme: 'app', tag: '1280-light-app' }]) {

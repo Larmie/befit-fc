@@ -64,7 +64,7 @@ async function run(width, theme, consoleTheme) {
     ctlTop: Math.round(document.querySelector('.cn-sec-ctl').getBoundingClientRect().top),
     screenW: Math.round(document.querySelector('#app-screen section').getBoundingClientRect().width),
   }));
-  check(`[${tag}] round 6 deck: 2 team columns, Goal 88, Save 56, Block/Clear and Yellow/Red 60, controls 52, actions above Match controls in the first screen`, sizes.cols === 2 && sizes.goal.every(h => h === 88) && sizes.save.length === 2 && sizes.save.every(h => h === 56) && sizes.act.length === 4 && sizes.act.every(h => h === 60) && sizes.card.length === 4 && sizes.card.every(h => h === 60) && sizes.ctlTop < (width < 960 ? 844 : 820) && sizes.ctl.length === 6 && sizes.ctl.every(h => h === 52), sizes);
+  check(`[${tag}] round 6 deck: 2 team columns, Goal 88, Save 56, Block/Clear and Yellow/Red 60, controls 52, actions above Match controls in the first screen`, sizes.cols === 2 && sizes.goal.every(h => h === 88) && sizes.save.length === 2 && sizes.save.every(h => h === 56) && sizes.act.length === 4 && sizes.act.every(h => h === 60) && sizes.card.length === 4 && sizes.card.every(h => h === 60) && sizes.ctlTop < (width < 960 ? 844 : 820) && sizes.ctl.length === 5 && sizes.ctl.every(h => h === 52), sizes);
   if (width >= 960) check(`[${tag}] console stays phone-width on a laptop`, sizes.screenW <= 448, sizes.screenW);
   let m = await measure(p, SCOPES);
   check(`[${tag}] console: targets ≥ 48, no truncation, no sideways scroll, type ≥ 12`, !m.small.length && !m.trunc.length && !m.hscroll && !m.tinyType.length, m);

@@ -27,7 +27,8 @@
      'setup.addArrival'   ({ sid })   "Who's arrived?": usually-here rows not on yet + search; one tap on a side
                           adds them at once (Save.run: Saving… → Undo 5 s), the sheet stays open for the next.
      'setup.teamsTonight' ({ sid })   one team per tab, full-width rows, a quiet "→ Red" per row, "Moved 27'" tag.
-     'setup.bigPoles'     ({ sid })   one keeper per side → format.switchedAt (first big-poles minute),
+     'setup.bigPoles'     ({ sid })   one keeper per side (known keepers on that side first, then "Other ›" = tonight's
+                          players on that side; "+ Someone not here yet") → format.switchedAt (first big-poles minute),
                           format.keepers = { team: pid }, those players' position 'GK'. Score untouched.
    RULES KEPT HERE (one place)
      · Up to 9 outfield + 1 keeper per side: the 10th outfield add or move needs a second tap (toast says so).
@@ -253,22 +254,38 @@
     return html;
   }
 
-  // Keeper picks: two suggestions + "+ Someone" per side (3 across, 64 px).
-  function keeperCands(team, rosterTeam, chosen, taken, extra) {
-    const out = [];
-    const push = pid => { if (pid && Store.player(pid) && !out.includes(pid) && !taken.includes(pid)) out.push(pid); };
+  // Keeper picks (Reuben, 25 Oct): per side, the known keepers first: tonight's players ON THAT SIDE whose usual
+  // position is GK, most apps first (a usual keeper playing for the other side tonight shows only there). Then
+  // "Other ›": tonight's players on that side, to put anyone in goal. No known keeper → "Other ›" is the main choice.
+  // onSide(team) → tonight's pids on that side; chosen = the side's pick (shown first even when not a usual GK).
+  function knownKeepers(team, onSide, chosen, taken) {
     const byApps = (a, b) => appsOf(b) - appsOf(a) || nameOf(a).localeCompare(nameOf(b));
-    const all = Object.keys(Store.players());
-    push(chosen); push(extra);
-    all.filter(pid => rosterTeam(pid) === team && defPos(pid) === 'GK').sort(byApps).forEach(push);
-    all.filter(pid => !rosterTeam(pid) && defPos(pid) === 'GK' && (Store.player(pid) || {}).defaultTeam === team).sort(byApps).forEach(push);
-    all.filter(pid => !rosterTeam(pid) && defPos(pid) === 'GK').sort(byApps).forEach(push);
-    return out.slice(0, 2);
+    const out = onSide(team).filter(pid => Store.player(pid) && defPos(pid) === 'GK' && !taken.includes(pid)).sort(byApps);
+    if (chosen && !out.includes(chosen) && !taken.includes(chosen)) out.unshift(chosen);
+    return out;
   }
   function keeperBlock(team, cands, chosen) {
-    return `<div class="lbl su-kl">${UI.teamMark(team, { label: T(team) + ' keeper' })}</div><div class="grid3 su-k">` +
-      cands.map(pid => UI.tile({ name: nameOf(pid), tap: 'keeper', data: { pid, team }, sel: pid === chosen })).join('') +
-      `<button type="button" class="ptile c su-some" data-tap="someone" data-team="${esc(team)}"><span class="pt-name">+ Someone</span></button></div>`;
+    const head = `<div class="lbl su-kl">${UI.teamMark(team, { label: T(team) + ' keeper' })}</div>`;
+    if (!cands.length) {
+      return head + `<button type="button" class="su-kother is-main" data-tap="kother" data-team="${esc(team)}">` +
+        `<span class="grow"><span class="nm">Other ›</span><span class="meta">Pick tonight’s keeper</span></span></button>`;
+    }
+    return head + `<div class="grid3 su-k">` +
+      cands.map(pid => UI.tile({ name: nameOf(pid), pos: defPos(pid) === 'GK' ? 'GK' : defPos(pid) + ' · in goal', tap: 'keeper', data: { pid, team }, sel: pid === chosen })).join('') +
+      `<button type="button" class="ptile c su-some su-kother" data-tap="kother" data-team="${esc(team)}"><span class="pt-name">Other ›</span></button></div>`;
+  }
+  // "Other ›": tonight's players on that side only; "+ Someone not here yet" (secondary) adds a new arrival.
+  function openKeeperOther(team, pids, chosen, onPick, onSomeone) {
+    const rows = pids.slice().sort((a, b) => nameOf(a).localeCompare(nameOf(b))).map(pid =>
+      `<button type="button" class="r tall su-korow${pid === chosen ? ' chg' : ''}" data-tap="kpick" data-pid="${esc(pid)}">` +
+      `<span class="grow"><span class="nm">${esc(nameOf(pid))}</span><span class="meta" style="display:block">${esc(defPos(pid))}${pid === chosen ? ' · in goal' : ''}</span></span>` +
+      `<span class="chev">›</span></button>`);
+    const h = UI.sheet.open({ title: T(team) + ' keeper', sub: `Tonight’s ${T(team)} players`, cls: 'sh-setup sh-setup-kother',
+      body: rows.length ? UI.rows(rows) : `<div class="su-none">No one on ${esc(T(team))} yet</div>`,
+      footer: UI.btn('+ Someone not here yet', { kind: 'g', sm: true, tap: 'ksome' }), cancel: 'Cancel' });
+    UI.on(h.el, 'kpick', b => { h.close(); onPick(b.dataset.pid); });
+    UI.on(h.el, 'ksome', () => { h.close(); onSomeone(); });
+    return h;
   }
 
   // ======================================================================== "Who's here?" draft
@@ -369,10 +386,12 @@
           onDone: pid => { getDraft(); if (dAdd(pid, team)) { draft.side = team; saveDraft(); } drawAll(el); } });
       });
       UI.on(el, 'keeper', b => { getDraft(); dKeeper(b.dataset.team, b.dataset.pid); drawAll(el); });
-      UI.on(el, 'someone', b => {
+      UI.on(el, 'kother', b => {
+        getDraft();
         const team = b.dataset.team;
-        App.action('setup.newPerson', { team, teams: [team], position: 'GK', title: T(team) + ' keeper',
-          onDone: pid => { getDraft(); ui.extra[team] = pid; dKeeper(team, pid); drawAll(el); } });
+        const pick = pid => { getDraft(); dKeeper(team, pid); drawAll(el); };
+        openKeeperOther(team, dSide(team), draft.keepers[team], pick,
+          () => App.action('setup.newPerson', { team, teams: [team], position: 'GK', title: T(team) + ' keeper', onDone: pick }));
       });
       UI.on(el, 'kickoff', b => kickOff(el, b));
       UI.on(el, 'to-match', () => App.go('ref.console', {}, { replace: true }));
@@ -416,7 +435,8 @@
     const elsewhere = !on && dTeam(pid);
     const ut = usualTeam(pid);
     const n = lastN(pid);
-    const meta = [defPos(pid), ut && ut !== team ? 'usually ' + T(ut) : '', elsewhere ? `on ${T(elsewhere)} tonight` : '', n ? `${n} of last 8` : 'not in the last 8'].filter(Boolean).join(' · ');
+    const posTxt = defPos(pid) === 'GK' && draft.poles !== 'big' ? 'GK · plays outfield on small poles' : defPos(pid);
+    const meta = [posTxt, ut && ut !== team ? 'usually ' + T(ut) : '', elsewhere ? `on ${T(elsewhere)} tonight` : '', n ? `${n} of last 8` : 'not in the last 8'].filter(Boolean).join(' · ');
     return `<button type="button" class="r su-sq ${tcls(team)}${on ? ' on wash' : ''}" data-tap="tick" data-pid="${esc(pid)}" aria-pressed="${on}">` +
       UI.avatar(nameOf(pid), ut || team) + `<span class="grow"><span class="nm">${esc(nameOf(pid))}</span><span class="meta">${esc(meta)}</span></span>` +
       `<span class="su-tick${on ? ' on' : ''}" aria-hidden="true">${on ? '✓' : ''}</span></button>`;
@@ -458,7 +478,7 @@
     let html = `<div class="mt-6">${UI.seg('poles', [{ value: 'small', label: 'Small poles' }, { value: 'big', label: 'Big poles' }], draft.poles, { ref: true })}</div>`;
     if (draft.poles === 'big') {
       const taken = t => Object.keys(draft.keepers).filter(x => x !== t).map(x => draft.keepers[x]);
-      html += draft.teams.filter(t => dSide(t).length || draft.teams.length <= 2).map(t => keeperBlock(t, keeperCands(t, dTeam, draft.keepers[t], taken(t), ui.extra[t]), draft.keepers[t])).join('');
+      html += draft.teams.filter(t => dSide(t).length || draft.teams.length <= 2).map(t => keeperBlock(t, knownKeepers(t, dSide, draft.keepers[t], taken(t)), draft.keepers[t])).join('');
     }
     html += `<div class="su-go">${UI.btn(ready ? `Kick off · ${plural(n, 'player')}` : 'Pick both teams to kick off', { kind: 'w', big: true, tap: 'kickoff', attrs: ready ? '' : ' disabled' })}</div>`;
     box.innerHTML = html;
@@ -725,7 +745,7 @@
       const rTeam = pid => (roster[pid] ? roster[pid].team : null);
       h.setBody(teams.map(t => {
         const taken = teams.filter(x => x !== t).map(x => chosen[x]).filter(Boolean);
-        return keeperBlock(t, keeperCands(t, rTeam, chosen[t], taken, extra[t]), chosen[t]);
+        return keeperBlock(t, knownKeepers(t, x => Object.keys(roster).filter(pid => rTeam(pid) === x), chosen[t], taken), chosen[t]);
       }).join(''));
       const n = teams.filter(t => chosen[t]).length;
       h.el.querySelector('[data-r="go"]').innerHTML = UI.btn(alreadyBig ? 'Save keepers' : 'Switch to big poles',
@@ -737,10 +757,14 @@
       teams.forEach(x => { if (x !== t && chosen[x] === pid) chosen[x] = null; });
       draw();
     });
-    UI.on(h.el, 'someone', b => {
+    const pickKeeper = (t, pid) => { chosen[t] = pid; teams.forEach(x => { if (x !== t && chosen[x] === pid) chosen[x] = null; }); if (!h.closed) draw(); };
+    // "Other ›": tonight's players on that side only; "+ Someone not here yet" joins at the switch (arrived)
+    UI.on(h.el, 'kother', b => {
       const t = b.dataset.team;
-      App.action('setup.newPerson', { team: t, teams: [t], position: 'GK', title: T(t) + ' keeper',
-        onDone: pid => { extra[t] = pid; chosen[t] = pid; teams.forEach(x => { if (x !== t && chosen[x] === pid) chosen[x] = null; }); if (!h.closed) draw(); } });
+      const roster = rosterOf(Store.session(sid) || sess0);
+      openKeeperOther(t, Object.keys(roster).filter(pid => roster[pid].team === t), chosen[t], pid => pickKeeper(t, pid),
+        () => App.action('setup.newPerson', { team: t, teams: [t], position: 'GK', title: T(t) + ' keeper',
+          onDone: pid => { extra[t] = pid; pickKeeper(t, pid); } }));
     });
     UI.on(h.el, 'switch', b => {
       const sess = Store.session(sid);

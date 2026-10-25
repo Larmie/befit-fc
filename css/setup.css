@@ -48,6 +48,16 @@
 .scr-ref-setup .su-k .ptile, .sh-setup .su-k .ptile { padding: 8px 12px; }
 .scr-ref-setup .su-k .ptile:not(.sel) { background: var(--s1); box-shadow: var(--ring); }
 .scr-ref-setup .su-some .pt-name, .sh-setup .su-some .pt-name { font-size: 13.5px; font-weight: 600; }
+/* "Other ›" (any of tonight's players on that side); with no known keeper it is the main, full-width choice */
+.scr-ref-setup .su-kother.is-main, .sh-setup .su-kother.is-main { width: 100%; min-height: 64px; border-radius: var(--r-btn); padding: 10px 14px; text-align: left;
+  display: flex; align-items: center; background: var(--s1); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.sh-setup .su-kother.is-main { background: var(--s2); }
+.su-kother.is-main .grow { display: flex; flex-direction: column; gap: 2px; }
+.su-kother.is-main .nm { font-weight: 700; font-size: 15px; }
+.su-kother.is-main .meta { font-size: 12.5px; color: var(--ink2); }
+.su-kother:active { transform: scale(.98); }
+.sh-setup-kother .su-korow.chg { box-shadow: inset 3px 0 0 var(--ink); }
+.sh-setup-kother .sheet-f .btn { flex: none; }
 
 /* ---------------------------------------------------------------- sheets */
 .sh-setup .su-res { padding-bottom: 2px; }

@@ -45,7 +45,17 @@ const check = (l, ok, x) => { ok ? passes++ : fails++; console.log(ok ? 'ok  ' :
       await s.shot(path.join(OUT, 'finish-sheet-390-dark.png'));
       await p.$eval('.sh-admin-finish [data-tap="pick"]', e => e.click()); await sleep(300);
       check('picking one opens their page', (await p.evaluate(() => document.querySelector('#app-screen section').dataset.screen)) === 'ref.player');
-      for (const [tap, want, extra] of [['need-money', 'ref.money', 'all=1'], ['need-tonight', 'ref.money', 'view=tonight'], ['need-twice', 'ref.squad', 'f=twice'], ['need-owes', 'ref.squad', 'f=owes']]) {
+      // Money not entered: a sheet, each day "Record ›" straight to its register (Monday-ready fix)
+      await p.evaluate(() => { location.hash = '#/admin.home'; }); await sleep(300);
+      await p.$eval('[data-tap="need-money"]', e => e.click()); await sleep(350);
+      const miss = await p.evaluate(() => [...document.querySelectorAll('.sh-admin-missing [data-tap="rec"]')].map(b => ({ d: b.dataset.date, t: b.innerText.replace(/\s+/g, ' ').trim() })));
+      const wantMiss = await p.evaluate(() => { const t = '2026-10-19'; return BF_PAY.overview().missing.filter(r => r.date !== t).map(r => r.date); });
+      check('Money not entered › sheet: the 5 unrecorded match days (12 Oct first), each "Record ›"', miss.length === 5 && JSON.stringify(miss.map(m => m.d)) === JSON.stringify(wantMiss) && miss[0].d === '2026-10-12' && miss.every(m => m.t.endsWith('Record ›')), miss);
+      await s.shot(path.join(OUT, 'needs-money-sheet-390-dark.png'));
+      await p.$eval('.sh-admin-missing [data-tap="rec"]', e => e.click()); await sleep(400);
+      check('… Record › on 12 Oct opens its register on "To collect" with the 18 who played', await p.evaluate(() => document.querySelector('#app-screen section').dataset.screen === 'ref.moneyDay' && location.hash.includes('2026-10-12') &&
+        document.querySelector('[data-chips="reg-tab"] .on').dataset.value === 'unpaid' && document.querySelectorAll('[data-part="rows"] .adm-pay').length === 18));
+      for (const [tap, want, extra] of [['need-tonight', 'ref.money', 'view=tonight'], ['need-twice', 'ref.squad', 'f=twice'], ['need-owes', 'ref.squad', 'f=owes']]) {
         await p.evaluate(() => { location.hash = '#/admin.home'; }); await sleep(300);
         await p.$eval(`[data-tap="${tap}"]`, e => e.click()); await sleep(300);
         check(`${tap} → ${want} (${extra})`, await p.evaluate((w, x) => document.querySelector('#app-screen section').dataset.screen === w && location.hash.includes(x), want, extra));

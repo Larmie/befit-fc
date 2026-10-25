@@ -233,6 +233,69 @@ const text = (p, sel) => p.evaluate(s => (document.querySelector(s) || {}).textC
   check('referee: no console errors', r.errors.length === 0, r.errors);
   await r.close();
 
+  // =============================================================== C · no match today: record a match day (Monday-ready fix)
+  console.log('— No match today');
+  const TUE = '2026-10-20T12:00';
+  for (const theme of ['dark', 'light']) {
+    const a = await H.open({ width: 390, theme, referee: true, route: '#/ref.money', now: TUE });
+    const m = a.page;
+    const want = await m.evaluate(() => BF_PAY.overview().missing.map(r => ({ date: r.date, played: r.played })));
+    const hero = await m.evaluate(() => { const c = document.querySelector('.adm-record'); return c ? { t: c.innerText.replace(/\s+/g, ' ').trim(), date: c.querySelector('[data-tap="record"]').dataset.date, hero: c.classList.contains('hero'), tonight: document.querySelector('[data-seg="money-view"] .on').dataset.value } : null; });
+    const latest = want[0];
+    check(`[${theme}] Money lands on the latest unrecorded match day: ${latest && latest.date} (${want.length} unrecorded), "${latest && latest.played} players played · not entered"`, !!hero && hero.date === latest.date &&
+      hero.t.includes(await m.evaluate(d => UI.fmt.date(d), latest.date)) && hero.t.includes(`${latest.played} played`) && hero.t.includes('not entered') && hero.t.includes('Record money ›') && hero.hero && hero.tonight === 'tonight', { hero, want });
+    console.log('     unrecorded match days:', want.map(x => `${x.date} (${x.played})`).join(', '));
+    check(`[${theme}] "+ ${want.length - 1} more match days not entered ›"`, hero && hero.t.includes(`+ ${want.length - 1} more match days not entered ›`), hero && hero.t);
+    await a.shot(path.join(OUT, `money-record-landing-390-${theme}.png`));
+    if (theme === 'dark') {
+      const w0 = await nW(m);
+      await click(m, '.adm-record [data-tap="record"]', 500);
+      const reg = await m.evaluate(() => ({ id: document.querySelector('#app-screen section').dataset.screen, hash: location.hash, tab: document.querySelector('[data-chips="reg-tab"] .on').dataset.value,
+        rows: [...document.querySelectorAll('[data-part="rows"] [data-tap="row"]')].map(b => b.dataset.pid).sort() }));
+      const played = await m.evaluate(d => [...BF_PAY.playedOn(d).keys()].sort(), latest.date);
+      check(`Record money › opens ${latest.date}'s register on "To collect" = exactly the ${played.length} who played, nothing written`, reg.id === 'ref.moneyDay' && reg.hash.includes(latest.date) && reg.tab === 'unpaid' && JSON.stringify(reg.rows) === JSON.stringify(played) && (await nW(m)) === w0, reg);
+      // tick one, save: one write, then that day is no longer "not entered"
+      await click(m, `[data-tap="row"][data-pid="${played[0]}"]`);
+      await click(m, '.adm-quick [data-tap="set"][data-v="60"]');
+      await a.shot(path.join(OUT, 'money-record-register-390-dark.png'));
+      await click(m, '[data-tap="pay-save"]', 700);
+      const ws = await writesSince(m, w0);
+      check('… tick ₵60 and Save: one write; that day is now entered', ws.length === 1 && ws[0][`paymentDays/${latest.date}/payments/${played[0]}`].amount === 60 && await m.evaluate(d => BF_PAY.hasRecord(d), latest.date), ws);
+      await m.evaluate(() => { location.hash = '#/ref.money'; }); await sleep(400);
+      const next = await m.evaluate(() => (document.querySelector('.adm-record [data-tap="record"]') || { dataset: {} }).dataset.date || null);
+      check(`… back on Money, the card moves to the next one (${want[1] && want[1].date})`, next === want[1].date, next);
+      await click(m, '.adm-record [data-tap="more-days"]', 400);
+      check('"+ n more" → All dates with "Needs recording" first', await m.evaluate(() => location.hash.includes('all=1') && document.querySelector('.adm-reg-b > .lbl').textContent.includes('Needs recording')));
+      await a.shot(path.join(OUT, 'money-all-needs-recording-390-dark.png'));
+      // Needs you › Money not entered → the sheet
+      await m.evaluate(() => { location.hash = '#/admin.home'; }); await sleep(400);
+      await click(m, '[data-tap="need-money"]', 400);
+      check(`Needs you › Money not entered: a sheet with the ${want.length - 1} still unrecorded, each "Record ›"`, await m.evaluate(n => { const r = [...document.querySelectorAll('.sh-admin-missing [data-tap="rec"]')]; return r.length === n && r.every(b => b.innerText.trim().endsWith('Record ›')); }, want.length - 1));
+      await a.shot(path.join(OUT, 'needs-money-sheet-390-dark.png'));
+    }
+    check(`[${theme}] no console errors`, a.errors.length === 0, a.errors);
+    await a.close();
+  }
+  // only one unrecorded day: Needs you goes straight to its register
+  {
+    const d1 = H.snapshot();
+    const keep = '2026-10-12';
+    Object.values(d1.sessions).forEach(x => { if (x && x.date !== keep && x.date > '2026-09-07' && x.date <= '2026-10-19') { x.payments = { seed_p001: { amount: 60, updatedAt: 1 } }; } });
+    const a = await H.open({ width: 390, theme: 'dark', referee: true, route: '#/admin.home', now: TUE, data: d1 });
+    const left = await a.page.evaluate(() => BF_PAY.overview().missing.map(r => r.date));
+    await click(a.page, '[data-tap="need-money"]', 400);
+    check('only one unrecorded (12 Oct): Money not entered goes straight to its register', left.length === 1 && left[0] === keep && await a.page.evaluate(k => document.querySelector('#app-screen section').dataset.screen === 'ref.moneyDay' && location.hash.includes(k) && !document.querySelector('.sh-admin-missing'), keep), left);
+    await a.close();
+  }
+  // the referee on a day with no match: still just tonight's register (unchanged)
+  {
+    const rr = await H.open({ width: 390, theme: 'dark', referee: 'referee', route: '#/ref.money', now: TUE });
+    check('referee, no match today: no record card, no switch, today\'s register', await rr.page.evaluate(() => !document.querySelector('.adm-record') && !document.querySelector('[data-seg="money-view"]') && !!document.querySelector('[data-part="top"]')));
+    await rr.shot(path.join(OUT, 'referee-money-nomatch-390-dark.png'));
+    check('referee: no console errors', rr.errors.length === 0, rr.errors);
+    await rr.close();
+  }
+
   console.log(`\n${passes} passed, ${fails} failed`);
   process.exitCode = fails ? 1 : 0;
 })().catch(e => { console.error(e); process.exit(1); });
