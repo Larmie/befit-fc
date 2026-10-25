@@ -9,8 +9,9 @@ where they came from (the root `Claude Code/CLAUDE.md` has the full "how to talk
 
 ## 1. Approval and release authority
 
-- **An approved task includes its full release:** branch → checks → push → CI green → merge to `main` →
-  live check → report. Do not ask "commit?", "push?" or "merge?" again.
+- **An approved task includes its full release:** branch → local checks green → push to `main` →
+  live check → report. Do not ask "commit?", "push?" or "merge?" again. (Decided 25 Oct 2026, the
+  xPoints Lab way: GitHub's CI runs *after* going live as a safety alarm, not as a gate to wait for.)
 - **A batch approval** ("all approved, go") covers every item named, done in order, stopping only at a
   blocker. It does not cover new items found on the way: report those and wait.
 - **Narrower instructions win:** "mock-up first", "don't push", "stop at the preview", "review only".
@@ -30,14 +31,16 @@ gets its own preview at `https://<branch>.the-be-fit-club.pages.dev` (slashes be
 2. Build. When you change a rule, wording or limit, **search for every copy of it** (screens, share
    cards, guides, tests) and make them all agree in the same release.
 3. Run the checks for the change's lane (§3). `npm run test:changed` picks them for you.
-4. Commit and push the branch: `git push -u origin <branch>`. Open one PR per request into `main`
-   (`gh pr create`); small cosmetic items from the same message may share one.
-5. Wait for **CI** (GitHub Actions "Checks": unit + the browser suites the change can affect; about
-   2 minutes for one screen, about 15 when test tooling changes, because then every suite runs) and the
-   **Cloudflare Pages** check (the preview). **Nothing red merges.** A run cancelled before any test ran
-   is re-run, not "fixed".
-6. If the change is visible: open the branch preview and look at it (phone width first).
-7. Merge: `gh pr merge --squash --delete-branch`. Cloudflare deploys `main`.
+4. Commit on the branch. **Nothing red goes live:** the local checks from step 3 must be green.
+5. Go live without waiting for CI: fast-forward `main` to the branch (`git fetch origin && git push origin
+   <branch>:main`; if `main` moved, rebase the branch on `origin/main` and re-run step 3 first). Cloudflare
+   deploys `main`. Also push the branch itself for the record.
+6. **CI is the safety alarm, after release.** GitHub Actions "Checks" runs on every push, `main`
+   included. Glance at the result before reporting if it has finished; if it later goes red on `main`,
+   fixing it (or reverting the release) is the next job, before anything else. A red caused only by
+   changed live data is fixed with `npm run snapshot -- --pin --keep tests/.data/pinned-copy.json`.
+   **Sensitive lane only (§4): wait for CI green before step 5.**
+7. If the change is visible, look at it live (phone width first).
 8. Live check: `gh api repos/Larmie/befit-fc/commits/<main sha>/check-runs` shows "Cloudflare Pages"
    success; then load https://the-be-fit-club.pages.dev and confirm the change is there (fetch the changed
    file or look at the screen). Say plainly what you did not see.
@@ -48,11 +51,11 @@ on their next load with signal. Bump `CACHE` in `sw.js` only when the **list** o
 
 ## 3. Risk lanes
 
-| Lane | What | Checks before merge |
+| Lane | What | Checks before going live |
 |---|---|---|
-| **Cosmetic** | layout, colours, copy, one screen, docs | `npm run test:changed` (unit + the affected screen's suites and sweep groups: 1 m 45 s for a tables colour, measured 21 Oct) + CI. Docs only: read-through |
-| **Logic** | points, payments, the clock, stoppage, poles/keepers, rules, what a screen calculates | A test for the change that **fails without the fix and passes with it** (report both counts) + `npm run test:unit` + the affected suites (`test:changed`) + CI |
-| **Sensitive** | see §4: always ask Reuben first | Logic lane + a read-only count of what it would change on the real data, shown to Reuben before anything is written |
+| **Cosmetic** | layout, colours, copy, one screen, docs | `npm run test:changed` (unit + the affected screen's suites and sweep groups: 1 m 45 s for a tables colour, measured 21 Oct). CI follows as the alarm. Docs only: read-through |
+| **Logic** | points, payments, the clock, stoppage, poles/keepers, rules, what a screen calculates | A test for the change that **fails without the fix and passes with it** (report both counts) + `npm run test:unit` + the affected suites (`test:changed`). CI follows as the alarm |
+| **Sensitive** | see §4: always ask Reuben first | Logic lane + a read-only count of what it would change on the real data, shown to Reuben before anything is written + **CI green before going live** |
 
 - New maths goes in a Node unit check (`tests/unit/*.test.js`, `node --test`, no browser) wherever it
   can: those run in seconds. Load the real core files whole (see `tests/unit/core.test.js`), never cut

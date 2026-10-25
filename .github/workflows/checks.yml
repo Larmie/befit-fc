@@ -1,14 +1,13 @@
 name: Checks
 
-# Every pull request into main, and every push to a branch that is not main (so a branch is checked before
-# anyone opens a pull request). main itself is not tested here: it only ever receives merges that were green.
+# Runs on every push, main included. Since 25 Oct 2026 it is the safety alarm AFTER a release goes live
+# (AGENTS.md section 2), not a gate: local checks gate the release. A red run on main is the next job to fix.
 # The app is never built or deployed from here; Cloudflare Pages does that on its own.
 on:
   pull_request:
     branches: [main]
     paths-ignore: ['**/*.md', 'design-review/**', '.claude/**']
   push:
-    branches-ignore: [main]
     paths-ignore: ['**/*.md', 'design-review/**', '.claude/**']
   workflow_dispatch:
     inputs:
