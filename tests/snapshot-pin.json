@@ -1,7 +1,7 @@
 {
  "about": "The data the test numbers were written for, rebuilt from live by npm run snapshot: cut back to asOf, then patch puts back entries edited since (null = did not exist then). The fingerprint must match. See AGENTS.md, Test data.",
  "asOf": "2026-10-19",
- "pinnedOn": "2026-10-21",
+ "pinnedOn": "2026-10-25",
  "fingerprint": {
   "players": 76,
   "sessions": 37,
@@ -19,6 +19,11 @@
     "defaultPosition": "MID",
     "defaultTeam": "red",
     "name": "New red guy"
+   },
+   "-P4LMRz4pTxalRzRGgCq": {
+    "defaultPosition": "MID",
+    "defaultTeam": "red",
+    "name": "NY Chris' guy"
    },
    "seed_p029": {
     "carryover": {
@@ -43,6 +48,456 @@
     "defaultPosition": "MID",
     "defaultTeam": "green",
     "name": "New francis guy"
+   }
+  },
+  "sessions": {
+   "-P4KcMogcPM8_RRG9wAQ": {
+    "cleanSheets": {
+     "green": false,
+     "red": false
+    },
+    "date": "2026-10-19",
+    "events": {
+     "-P4KdMw_YfszYodi9nOs": {
+      "min": 5,
+      "playerId": "seed_p047",
+      "timestamp": 1792438271856,
+      "type": "save"
+     },
+     "-P4KdnUTbLUo_FKTZfRB": {
+      "min": 7,
+      "playerId": "seed_p039",
+      "timestamp": 1792438384643,
+      "type": "save"
+     },
+     "-P4KeTtm7xIDlYUQsInm": {
+      "assistId": "-Oy0N--T6eH5HHWJei3j",
+      "min": 10,
+      "scorerId": "seed_p001",
+      "team": "green",
+      "timestamp": 1792438562455,
+      "type": "goal"
+     },
+     "-P4KeaTfl08bb4tcA3-T": {
+      "min": 10,
+      "playerId": "seed_p039",
+      "timestamp": 1792438593490,
+      "type": "save"
+     },
+     "-P4KerWCfYMoVBNntt9_": {
+      "min": 11,
+      "playerId": "seed_p039",
+      "timestamp": 1792438663280,
+      "type": "save"
+     },
+     "-P4Kez8NOM-Ibfy98-ub": {
+      "min": 12,
+      "scorerId": "seed_p010",
+      "team": "red",
+      "timestamp": 1792438694525,
+      "type": "goal"
+     },
+     "-P4KfJpHkVwAVqJ4gnAz": {
+      "min": 13,
+      "playerId": "seed_p007",
+      "timestamp": 1792438783349,
+      "type": "block"
+     },
+     "-P4KfXtYnmPiSXDviLRt": {
+      "min": 14,
+      "playerId": "-Ou48vI1AasjuLzZFYwF",
+      "timestamp": 1792438840967,
+      "type": "block"
+     },
+     "-P4KfhZ13u9ii7JcGo6Q": {
+      "min": 15,
+      "playerId": "seed_p039",
+      "timestamp": 1792438884648,
+      "type": "save"
+     },
+     "-P4Kfpi2EUDMaQaiRSQK": {
+      "min": 16,
+      "playerId": "seed_p047",
+      "timestamp": 1792438918055,
+      "type": "save"
+     },
+     "-P4Kg2Pte4-WjAinsq11": {
+      "min": 17,
+      "playerId": "seed_p001",
+      "timestamp": 1792438974173,
+      "type": "block"
+     },
+     "-P4Kh1INi7Y9O5KFIB4b": {
+      "min": 21,
+      "playerId": "seed_p002",
+      "timestamp": 1792439231728,
+      "type": "clearance"
+     },
+     "-P4KhMtGDKMuovzfGYr2": {
+      "min": 22,
+      "playerId": "seed_p047",
+      "timestamp": 1792439320165,
+      "type": "save"
+     },
+     "-P4KhfW3cCsn7_sI763X": {
+      "min": 24,
+      "scorerId": "seed_p001",
+      "team": "green",
+      "timestamp": 1792439400525,
+      "type": "goal"
+     },
+     "-P4Khopxx-KMRMoS5mrW": {
+      "min": 24,
+      "playerId": "-Ou48vI1AasjuLzZFYwF",
+      "timestamp": 1792439438726,
+      "type": "clearance"
+     },
+     "-P4Ki1bxNYBzk111NwQ7": {
+      "min": 25,
+      "playerId": "seed_p047",
+      "timestamp": 1792439495173,
+      "type": "save"
+     },
+     "-P4KiTqOrPEDDQhFkabB": {
+      "min": 27,
+      "playerId": "seed_p001",
+      "timestamp": 1792439610827,
+      "type": "block"
+     },
+     "-P4KiZTU_1dJAPRfMkDZ": {
+      "min": 28,
+      "playerId": "seed_p039",
+      "timestamp": 1792439633875,
+      "type": "save"
+     },
+     "-P4KjAX8_8068DVJrlqB": {
+      "assistId": "seed_p002",
+      "min": 30,
+      "scorerId": "seed_p010",
+      "team": "red",
+      "timestamp": 1792439793852,
+      "type": "goal"
+     },
+     "-P4KlCJxW30WMufVA-KC": {
+      "min": 39,
+      "playerId": "seed_p007",
+      "timestamp": 1792440325451,
+      "type": "block"
+     },
+     "-P4KlcHcZrC5STimcuGO": {
+      "min": 41,
+      "playerId": "seed_p008",
+      "timestamp": 1792440435839,
+      "type": "block"
+     },
+     "-P4Klkwj-mOHZH0jJtI4": {
+      "min": 41,
+      "playerId": "seed_p047",
+      "timestamp": 1792440471303,
+      "type": "save"
+     },
+     "-P4KmRJLpoEpjyESBxNQ": {
+      "min": 44,
+      "playerId": "seed_p007",
+      "timestamp": 1792440648934,
+      "type": "block"
+     },
+     "-P4KmUBxY9ph8qISlysS": {
+      "min": 45,
+      "scorerId": "seed_p001",
+      "team": "green",
+      "timestamp": 1792440660751,
+      "type": "goal"
+     },
+     "-P4Kn-g8aBW5Y7xRwJBB": {
+      "min": 45,
+      "playerId": "seed_p039",
+      "stoppageBaseMin": 45,
+      "stoppageMin": 2,
+      "timestamp": 1792440797911,
+      "type": "save"
+     },
+     "-P4Kn591PKTlWwwosnqS": {
+      "min": 45,
+      "playerId": "seed_p047",
+      "stoppageBaseMin": 45,
+      "stoppageMin": 2,
+      "timestamp": 1792440820308,
+      "type": "save"
+     },
+     "-P4KnTXUBIvjUInLZwoq": {
+      "min": 45,
+      "playerId": "seed_p047",
+      "stoppageBaseMin": 45,
+      "stoppageMin": 4,
+      "timestamp": 1792440920174,
+      "type": "save"
+     },
+     "-P4Kq0tSTPxO5-9BuGlQ": {
+      "min": 46,
+      "playerId": "seed_p047",
+      "stoppageBaseMin": 46,
+      "stoppageMin": 1,
+      "timestamp": 1792441589240,
+      "type": "save"
+     },
+     "-P4Kqz7ib1fvXycl4OpW": {
+      "min": 46,
+      "playerId": "seed_p039",
+      "stoppageBaseMin": 46,
+      "stoppageMin": 5,
+      "timestamp": 1792441840079,
+      "type": "save"
+     },
+     "-P4Kr6eKOfW5Rp9grsyM": {
+      "min": 46,
+      "playerId": "-Ou48vI1AasjuLzZFYwF",
+      "stoppageBaseMin": 46,
+      "stoppageMin": 6,
+      "timestamp": 1792441874998,
+      "type": "clearance"
+     },
+     "-P4KsFGn09hGyFHr8mqB": {
+      "min": 46,
+      "playerId": "seed_p007",
+      "stoppageBaseMin": 46,
+      "stoppageMin": 11,
+      "timestamp": 1792442172430,
+      "type": "clearance"
+     },
+     "-P4KsRFgYzRufcleWsKn": {
+      "min": 46,
+      "playerId": "seed_p047",
+      "stoppageBaseMin": 46,
+      "stoppageMin": 11,
+      "timestamp": 1792442221484,
+      "type": "save"
+     },
+     "-P4Ksa4ZzCgxA7ZHe4YN": {
+      "min": 46,
+      "scorerId": "seed_p019",
+      "stoppageBaseMin": 46,
+      "stoppageMin": 12,
+      "team": "green",
+      "timestamp": 1792442261730,
+      "type": "goal"
+     },
+     "-P4Kt6Rh8RcEpn_qWs6m": {
+      "min": 48,
+      "playerId": "seed_p007",
+      "timestamp": 1792442398375,
+      "type": "clearance"
+     },
+     "-P4KtE70MoJAKh98uduk": {
+      "min": 48,
+      "playerId": "seed_p011",
+      "timestamp": 1792442429821,
+      "type": "clearance"
+     },
+     "-P4KtIaQ2LtC5AE8QWHJ": {
+      "min": 48,
+      "scorerId": "seed_p014",
+      "team": "red",
+      "timestamp": 1792442448151,
+      "type": "goal"
+     },
+     "-P4KtnYxLHE7U63ShPAv": {
+      "min": 51,
+      "playerId": "seed_p016",
+      "timestamp": 1792442579049,
+      "type": "block"
+     },
+     "-P4KuTpSWWx8ZKQ_Nrv2": {
+      "min": 54,
+      "playerId": "seed_p014",
+      "timestamp": 1792442756308,
+      "type": "clearance"
+     },
+     "-P4KwQ7kD5DJDOoSB6ag": {
+      "min": 62,
+      "playerId": "seed_p011",
+      "timestamp": 1792443265444,
+      "type": "clearance"
+     },
+     "-P4Kwfw_EjYHtbRSv43Z": {
+      "min": 63,
+      "playerId": "seed_p011",
+      "timestamp": 1792443334292,
+      "type": "clearance"
+     },
+     "-P4Kwsa9kvPMoFhz6gjS": {
+      "min": 64,
+      "playerId": "seed_p016",
+      "timestamp": 1792443386104,
+      "type": "block"
+     },
+     "-P4KxRY-0YcuBduuX5vz": {
+      "min": 67,
+      "playerId": "seed_p039",
+      "timestamp": 1792443533355,
+      "type": "save"
+     },
+     "-P4KxdqE-kdrCb2xpS4x": {
+      "min": 67,
+      "playerId": "seed_p039",
+      "timestamp": 1792443587835,
+      "type": "save"
+     },
+     "-P4KxnMVkwh8BFmaJLcW": {
+      "min": 68,
+      "scorerId": "seed_p019",
+      "team": "green",
+      "timestamp": 1792443626827,
+      "type": "goal"
+     },
+     "-P4KyO9A25RHduJV1LrE": {
+      "min": 71,
+      "playerId": "seed_p007",
+      "timestamp": 1792443781612,
+      "type": "yellowCard"
+     },
+     "-P4KyVAHIeRrNzP3OCAt": {
+      "min": 71,
+      "playerId": "seed_p045",
+      "timestamp": 1792443810356,
+      "type": "yellowCard"
+     },
+     "-P4KylUs4VRDJWiiYkxo": {
+      "min": 72,
+      "playerId": "seed_p011",
+      "timestamp": 1792443881304,
+      "type": "block"
+     },
+     "-P4KzymFlz_Ix0AubbI4": {
+      "min": 78,
+      "playerId": "seed_p016",
+      "timestamp": 1792444197878,
+      "type": "block"
+     },
+     "-P4L--e0W2FpYwxBADs8": {
+      "min": 78,
+      "playerId": "seed_p016",
+      "timestamp": 1792444205545,
+      "type": "block"
+     },
+     "-P4L-F_Mo_0lG8xHWn7s": {
+      "min": 79,
+      "playerId": "seed_p016",
+      "timestamp": 1792444270781,
+      "type": "clearance"
+     },
+     "-P4L-p5kia84Zu1EqCzQ": {
+      "min": 81,
+      "playerId": "seed_p007",
+      "timestamp": 1792444420373,
+      "type": "clearance"
+     },
+     "-P4L071IZO-s6bFWcXSJ": {
+      "assistId": "seed_p019",
+      "min": 83,
+      "scorerId": "seed_p003",
+      "team": "green",
+      "timestamp": 1792444497904,
+      "type": "goal"
+     },
+     "-P4L0FazTBpeCSBYqdXL": {
+      "min": 83,
+      "playerId": "seed_p011",
+      "timestamp": 1792444533019,
+      "type": "block"
+     },
+     "ev_1792441011079_ixzgx48w": {
+      "min": 45,
+      "timestamp": 1792441011079,
+      "type": "halfTime"
+     },
+     "ev_1792449991230_7utiq7ly": {
+      "assistId": "seed_p047",
+      "min": 62,
+      "scorerId": "seed_p045",
+      "team": "red",
+      "timestamp": 1792449991230,
+      "type": "goal"
+     }
+    },
+    "goals": {
+     "green": 6,
+     "red": 4
+    },
+    "mode": "live",
+    "status": "completed",
+    "teams": {
+     "green": {
+      "players": {
+       "-Ou48vI1AasjuLzZFYwF": {
+        "position": "MID"
+       },
+       "-OwsuosF0CNkbBRlXFjv": {
+        "position": "MID"
+       },
+       "-Oy0N--T6eH5HHWJei3j": {
+        "position": "MID"
+       },
+       "seed_p001": {
+        "position": "FWD"
+       },
+       "seed_p003": {
+        "position": "MID"
+       },
+       "seed_p007": {
+        "position": "MID"
+       },
+       "seed_p016": {
+        "position": "DEF"
+       },
+       "seed_p019": {
+        "position": "FWD"
+       },
+       "seed_p039": {
+        "position": "GK"
+       }
+      }
+     },
+     "red": {
+      "players": {
+       "seed_p002": {
+        "position": "MID"
+       },
+       "seed_p008": {
+        "position": "MID"
+       },
+       "seed_p010": {
+        "position": "FWD"
+       },
+       "seed_p011": {
+        "position": "DEF"
+       },
+       "seed_p013": {
+        "position": "DEF"
+       },
+       "seed_p014": {
+        "position": "MID"
+       },
+       "seed_p029": {
+        "position": "DEF"
+       },
+       "seed_p045": {
+        "position": "MID"
+       },
+       "seed_p047": {
+        "position": "GK"
+       }
+      }
+     }
+    },
+    "timer": {
+     "endedAt": 1792444992396,
+     "htLogged": true,
+     "pausedTotal": 1572244,
+     "startedAt": 1792438013374,
+     "status": "ended",
+     "stoppageTotal": 1070493
+    }
    }
   }
  }
