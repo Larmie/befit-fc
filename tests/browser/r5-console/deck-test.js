@@ -373,8 +373,8 @@ async function main() {
   const appsOf = pid => p.evaluate(id => (Scoring.seasonStats(id) || {}).apps || 0, pid);
   const greenKnown = gkOf('green');   // includes the usual Red keeper moved to Green tonight
   const greenSorted = []; for (const k of greenKnown) greenSorted.push([k, await appsOf(k)]);
-  greenSorted.sort((a, b) => b[1] - a[1] || nm9(a[0]).localeCompare(nm9(b[0])));
-  check('Green: the known keepers on Green tonight (incl. the usual Red keeper playing Green), most apps first, then "Other ›"', JSON.stringify(k1[0]) === JSON.stringify(greenSorted.map(x => x[0]).concat('Other')), { got: k1[0].map(x => x === 'Other' ? x : nm9(x)), want: greenSorted.map(x => nm9(x[0]) + ' ' + x[1]) });
+  greenSorted.sort((a, b) => nm9(a[0]).localeCompare(nm9(b[0]), undefined, { sensitivity: 'base' }));   // A–Z (25 Oct)
+  check('Green: the known keepers on Green tonight (incl. the usual Red keeper playing Green), A–Z, then "Other ›"', JSON.stringify(k1[0]) === JSON.stringify(greenSorted.map(x => x[0]).concat('Other')), { got: k1[0].map(x => x === 'Other' ? x : nm9(x)), want: greenSorted.map(x => nm9(x[0]) + ' ' + x[1]) });
   check('…and he is NOT offered on Red (only the side he plays for tonight)', !k1[1].includes(movedGK) && k1[1].every(x => x === 'Other' || t9.red.players[x]), k1[1].map(x => x === 'Other' ? x : nm9(x)));
   await h.shot('poles-sheet-390-dark.png');
   await h.tap('.sh-setup-poles [data-tap="kother"][data-team="green"]', 500);
@@ -394,7 +394,7 @@ async function main() {
   check(`after the switch, ${nm9(mid)} scores as GK`, (await p.evaluate((sid, id) => [Scoring.playsAs(Store.session(sid), id), Scoring.matchPoints(Store.session(sid), id).pos].join(), SID, mid)) === 'GK,GK');
   await h.barGone();
   // 25 Oct (b): on big poles the slot is the way back: "Switch to small poles ›", "Change keepers" beside it
-  check(`big poles now: "Switch to small poles ›" / "Now: big poles · ${nm9(mid)} · ${nm9(gkOf('red')[0])}", "Change keepers" beside it`, (await h.text('.cn-poles .cn-pt')) === 'Switch to small poles ›' && (await h.text('.cn-poles .cn-ps')) === `Now: big poles · ${nm9(mid)} · ${nm9(gkOf('red')[0])}` && (await h.text('.cn-keeplink')) === 'Change keepers', await h.text('.cn-polesrow'));
+  check(`big poles now: "Switch to small poles ›" / "Now: big poles · ${nm9(mid)} · ${nm9(gkOf('red')[0])}", "In goal … Change ›" with the keepers`, (await h.text('.cn-poles .cn-pt')) === 'Switch to small poles ›' && (await h.text('.cn-poles .cn-ps')) === `Now: big poles · ${nm9(mid)} · ${nm9(gkOf('red')[0])}` && /^In goal: .+Change ›$/.test((await h.text('.cn-keeplink')).replace(/\s+/g, ' ')), await h.text('.cn-keeplink'));
   await h.shot('poles-after-switch-390-dark.png');
   await h.tap('.cn-keeplink', 500);
   check('"Change keepers" opens the keepers sheet ("Keepers")', (await h.text('.sh-setup-poles .sheet-title')) === 'Keepers');
@@ -450,7 +450,7 @@ async function main() {
   check('Save tiles are back, the slot reads "Switch to small poles ›" again', !!(await p.$('.cn-save')) && (await h.text('.cn-poles .cn-pt')) === 'Switch to small poles ›');
   await h.barGone();   // the Undo bar sits over Latest
   await h.tap('.cn-all', 500);
-  check('All events lists both changes: "60\' Small poles" and "70\' Big poles"', await p.evaluate(() => { const t = [...document.querySelectorAll('[data-evlist] .cn-evr')].map(x => x.innerText.replace(/\s+/g, ' ')); return t.some(x => /^60' Small poles/.test(x)) && t.some(x => /^70' Big poles/.test(x)); }), await p.evaluate(() => [location.hash, [...document.querySelectorAll('[data-evlist] .cn-evr')].map(x => x.innerText.replace(/s+/g, ' ')).slice(0, 6)]));
+  check('All events lists both changes: "60\' Small poles" and "70\' Big poles"', await p.evaluate(() => { const t = [...document.querySelectorAll('[data-evlist] .cn-evr')].map(x => x.innerText.replace(/\s+/g, ' ')); return t.some(x => /^60' Small poles/.test(x)) && t.some(x => /^70' Big poles/.test(x)); }), await p.evaluate(() => [location.hash, [...document.querySelectorAll('[data-evlist] .cn-evr')].map(x => x.innerText.replace(/\s+/g, ' ')).slice(0, 6)]));
   check('no console errors', s.errors.length === 0, s.errors);
   await s.close();
   // the lineup on big poles: a side with no known keeper tonight → "Other ›" is the main choice

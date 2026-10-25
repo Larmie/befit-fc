@@ -77,8 +77,7 @@
     { value: 'defence', label: 'Defence', types: ['block', 'clearance'] },
     { value: 'cards', label: 'Cards', types: ['yellowCard', 'redCard'] },
   ];
-  const ATTACK_ORDER = { FWD: 0, MID: 1, DEF: 2, GK: 3 };   // goal sheet: scorers
-  const DEFENCE_ORDER = { DEF: 0, MID: 1, FWD: 2, GK: 3 };  // block / clear / card: defenders first
+  // 25 Oct (Reuben): every pick list is A–Z by name, whatever the position (only points lists sort by points)
   const ARM_MS = 350;        // a sheet ignores taps this long after it opens or changes step (double-tap guard)
   const CTL_MS = 700;        // clock buttons: one change per 0.7 s (a double tap on Pause never resumes)
   const OPEN_MS = 500;       // deck tiles that open a sheet: a second tap within 0.5 s does nothing
@@ -95,7 +94,7 @@
     for (const [team, td] of Object.entries((sess && sess.teams) || {})) if (td && td.players && td.players[pid]) return team;
     return null;
   }
-  const byOrder = order => (a, b) => ((order[a.pos] ?? 9) - (order[b.pos] ?? 9)) || String(a.name).localeCompare(String(b.name));
+  const byName = (a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' });
   const minuteNow = sess => Scoring.minuteText(Clock.minuteParts(sess) || {});
   const ts = ev => Number(ev.timestamp) || 0;
   const eventsNewest = sess => Scoring.sessEvents(sess).sort((a, b) => ts(b) - ts(a));
@@ -253,7 +252,7 @@
       const s = Store.session(sid);
       if (!st.scorer) {
         const scoringTeam = st.og ? st.ogTeam : team;
-        const list = sideOf(scoringTeam).sort(byOrder(ATTACK_ORDER));
+        const list = sideOf(scoringTeam).sort(byName);
         const others = teamsOf(s).filter(t => t !== team);
         h.setSub(st.og ? 'Who put it in his own net?' : 'Who scored?');
         h.setBody(
@@ -265,7 +264,7 @@
           `</div>`);
         return;
       }
-      const mates = (st.og ? sideOf(team) : sideOf(team).filter(p => p.pid !== st.scorer)).sort(byOrder(ATTACK_ORDER));
+      const mates = (st.og ? sideOf(team) : sideOf(team).filter(p => p.pid !== st.scorer)).sort(byName);
       h.setSub('Who assisted?');
       h.setBody(
         `<div class="rows cn-scorer"><div class="r"><span class="grow"><span class="meta">${st.og ? 'Own goal' : 'Scorer'}</span>` +
@@ -352,7 +351,7 @@
 
     function draw() {
       const s = Store.session(sid);
-      const list = eligible(s).sort(byOrder(DEFENCE_ORDER));
+      const list = eligible(s).sort(byName);
       const booked = isCard ? bookedOf(s) : {};
       const rec = recent(s);
       h.setBody(
@@ -516,11 +515,19 @@
       return `<button type="button" class="cn-poles is-small" data-tap="poles">` +
         `<span class="cn-pt">Switch to big poles ›</span><span class="cn-ps">Small poles since ${last.from}' · keepers counted ${esc(ranges())}</span></button>`;
     }
-    // big poles now: the action is the way back to small; changing keepers is a small link beside it
+    // big poles now: the action is the way back to small. Changing keepers lives with the keepers
+    // (the "In goal" line under the Save tiles, see keepersLine), so it never reads as part of the poles switch.
     const names = keepersOf(sess).map(k => k.name);
-    return `<div class="cn-polesrow"><button type="button" class="cn-poles is-small" data-tap="tosmall">` +
-      `<span class="cn-pt">Switch to small poles ›</span><span class="cn-ps">${esc(['Now: big poles'].concat(names.length ? names : ['no keepers chosen']).join(' · '))}</span></button>` +
-      `<button type="button" class="cn-keeplink" data-tap="poles">${names.length ? 'Change keepers' : 'Choose keepers'}</button></div>`;
+    return `<button type="button" class="cn-poles is-small" data-tap="tosmall">` +
+      `<span class="cn-pt">Switch to small poles ›</span><span class="cn-ps">${esc(['Now: big poles'].concat(names.length ? names : ['no keepers chosen']).join(' · '))}</span></button>`;
+  }
+  // Under the Save tiles while big poles are on: who is in goal, and the way to change them (opens setup.bigPoles).
+  function keepersLine(sess, f) {
+    if (!f.everBig || f.bigNow === false) return '';
+    const names = keepersOf(sess).map(k => k.name);
+    return `<button type="button" class="cn-keeplink" data-tap="poles">` +
+      `<span class="cn-ig">${esc(names.length ? 'In goal: ' + names.join(' · ') : 'No keepers chosen')}</span>` +
+      `<span class="cn-igc">${names.length ? 'Change ›' : 'Choose ›'}</span></button>`;
   }
 
   function controlsHtml(sess) {
@@ -588,7 +595,8 @@
           `<div class="cn-pair">${tile(t, 'block', 'Block', cnt(t, ['block']))}${tile(t, 'clearance', 'Clear', cnt(t, ['clearance']))}</div>` +
           `<div class="cn-pair">${card(t, 'yellowCard')}${card(t, 'redCard')}</div></div>`;
       };
-      html += `<div class="cn-cols" style="--cols:${Math.min(Math.max(teams.length, 2), 3)}">${teams.map(col).join('')}</div>`;
+      html += `<div class="cn-cols" style="--cols:${Math.min(Math.max(teams.length, 2), 3)}">${teams.map(col).join('')}</div>` +
+        keepersLine(sess, Scoring.formatOf(sess));
     }
     html += sec('Match controls', `<b class="cn-total" data-total>${esc(total)}</b>`, `<div class="cn-ctl">${controlsHtml(sess)}</div>`, 'cn-sec-ctl');
     html += sec('Latest', `<button type="button" class="cn-all" data-tap="all">All${evs.length ? ' ' + evs.length : ''} ›</button>`,

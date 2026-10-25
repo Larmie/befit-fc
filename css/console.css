@@ -100,8 +100,12 @@
 .scr-ref-console .cn-poles.is-big:active { background: var(--s2); }
 /* big poles now: "Switch to small poles ›" + a small "Change keepers" link beside it */
 .scr-ref-console .cn-polesrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-2); align-items: stretch; }
-.scr-ref-console .cn-keeplink { min-height: 48px; min-width: 48px; padding: 0 12px; border-radius: var(--r-btn); font-size: 13px; font-weight: 600; color: var(--ink2);
-  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--ink2) 45%, transparent); white-space: nowrap; }
+/* "In goal: Toby · Mike · Change ›": with the keepers, under the team tiles (25 Oct), not beside the poles switch */
+.scr-ref-console .cn-keeplink { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); width: 100%;
+  min-height: 48px; margin-top: var(--sp-2); padding: 0 14px; border-radius: var(--r-btn); background: var(--s1); box-shadow: var(--edge);
+  font-size: 13.5px; text-align: left; }
+.scr-ref-console .cn-keeplink .cn-ig { min-width: 0; color: var(--ink2); font-weight: 500; overflow-wrap: anywhere; }
+.scr-ref-console .cn-keeplink .cn-igc { flex: none; color: var(--ink); font-weight: 650; }
 .scr-ref-console .cn-keeplink:active { background: var(--s2); }
 .scr-ref-console .cn-ctile {
   height: 52px; min-height: 52px; width: 100%; border-radius: var(--r-btn); background: var(--s1); color: var(--ink);

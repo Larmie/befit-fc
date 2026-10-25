@@ -83,7 +83,8 @@
     const rec = recency();
     return Object.keys(rec).filter(pid => Store.player(pid) && !exclude(pid))
       .sort((a, b) => rec[b].w - rec[a].w || String(rec[b].last).localeCompare(String(rec[a].last)) || nameOf(a).localeCompare(nameOf(b)))
-      .slice(0, limit || 30);
+      .slice(0, limit || 30)   // who: the most regular players …
+      .sort(byName);           // … shown A–Z (25 Oct)
   }
   function lastPlayed(pid) { const r = recency()[pid]; return r ? r.last : ''; }
 
@@ -262,7 +263,7 @@
   // onSide(team) → tonight's pids on that side; chosen = the side's pick (shown first even when not a usual GK).
   function knownKeepers(team, onSide, chosen, taken) {
     const byApps = (a, b) => appsOf(b) - appsOf(a) || nameOf(a).localeCompare(nameOf(b));
-    const out = onSide(team).filter(pid => Store.player(pid) && defPos(pid) === 'GK' && !taken.includes(pid)).sort(byApps);
+    const out = onSide(team).filter(pid => Store.player(pid) && defPos(pid) === 'GK' && !taken.includes(pid)).sort(byName);
     if (chosen && !out.includes(chosen) && !taken.includes(chosen)) out.unshift(chosen);
     return out;
   }
@@ -365,10 +366,12 @@
   const usualTeam = pid => (Store.player(pid) || {}).defaultTeam || null;
   const lastN = pid => (recency()[pid] || {}).n || 0;
   const byUsual = (a, b) => ((recency()[b] || {}).w || 0) - ((recency()[a] || {}).w || 0) || nameOf(a).localeCompare(nameOf(b));
+  // 25 Oct (Reuben): every list you pick people from is A–Z by name (only points lists sort by points)
+  const byName = (a, b) => nameOf(a).localeCompare(nameOf(b), undefined, { sensitivity: 'base' });
   // a team's usual squad (usual team = the player's defaultTeam), plus anyone ticked for it tonight
   function squadOf(team) {
     const all = Object.keys(Store.players()).filter(pid => { const p = Store.player(pid); return p && p.name && (usualTeam(pid) === team || dTeam(pid) === team); });
-    return all.sort(byUsual);
+    return all.sort(byName);
   }
 
   App.registerScreen('ref.setup', {
@@ -464,7 +467,7 @@
     const posRank = { GK: 0, DEF: 2, MID: 3, FWD: 4 };
     box.innerHTML = `<div class="lbl su-tslbl"><span>Team sheet · ${draft.poles === 'big' ? 'big' : 'small'} poles</span><b>Tap a name to move</b></div>` +
       `<div class="su-ts n${sides.length}">` + sides.map(t => {
-        const list = dSide(t).slice().sort((a, b) => (draft.keepers[t] === a ? -1 : draft.keepers[t] === b ? 1 : 0) || ((posRank[dPos(a)] ?? 3) - (posRank[dPos(b)] ?? 3)) || draft.picks[a].at - draft.picks[b].at);
+        const list = dSide(t).slice().sort((a, b) => (draft.keepers[t] === a ? -1 : draft.keepers[t] === b ? 1 : 0) || byName(a, b));   // keeper first, then A–Z
         return `<div class="su-tsc ${tcls(t)}"><div class="su-tsh"><span>${esc(T(t))}</span><b>${list.length}</b></div>` + list.map(pid => {
           const gk = draft.poles === 'big' && draft.keepers[t] === pid;
           return `<button type="button" class="su-tsr${gk ? ' gk' : ''}" data-tap="pl" data-pid="${esc(pid)}"><span class="nm">${esc(nameOf(pid))}</span>` +
@@ -495,7 +498,7 @@
       titleEnd: `<button type="button" class="su-done" data-tap="done">Done</button>`, body: '', theme: document.documentElement.dataset.theme });
     const head = h.el.querySelector('.sheet-h');
     if (head) head.classList.add('lit', 'su-fbar', tcls(side));
-    const usualOf = t => Object.keys(Store.players()).filter(pid => Store.player(pid) && Store.player(pid).name && usualTeam(pid) === t).sort(byUsual);
+    const usualOf = t => Object.keys(Store.players()).filter(pid => Store.player(pid) && Store.player(pid).name && usualTeam(pid) === t).sort(byName);
     const more = {};
     function draw() {
       if (h.closed) return;
@@ -670,7 +673,7 @@
       if (!teams.includes(side)) side = teams[0];
       const posRank = p => ({ GK: 3, DEF: 2, MID: 1, FWD: 0 }[p] ?? 1);
       const list = Object.keys(roster).filter(pid => roster[pid].team === side)
-        .sort((a, b) => posRank(roster[a].entry.position) - posRank(roster[b].entry.position) || nameOf(a).localeCompare(nameOf(b)));
+        .sort(byName);
       const row = pid => {
         const e = roster[pid].entry;
         const tag = e.moved && e.moved.at != null ? `<span class="tagm">Moved ${esc(e.moved.at)}'</span>` : '';

@@ -64,7 +64,10 @@ const note = t => { console.log('\n# ' + t); lines.push('\n# ' + t); };
   await adv(3);
   await tap('.cn-goal[data-team="green"]');
   await shot('02-goal-sheet-scorer-390-dark.png');
-  check('scorer tiles FWD → MID → DEF (small poles: GK-position players play as MID)', (await p.$$eval('.sheet [data-tap="scorer"] .pos', a => a.map(x => x.textContent))).join(',').replace(/(\w+)(,\1)*/g, '$1') === 'FWD,MID,DEF');
+  // 25 Oct (Reuben): pick lists are A–Z by name; on small poles a GK-position player plays as MID (no GK tile)
+  { const nms = await p.$$eval('.sheet [data-tap="scorer"] .pt-name', a => a.map(x => x.textContent.trim()));
+    const poss = await p.$$eval('.sheet [data-tap="scorer"] .pos', a => a.map(x => x.textContent));
+    check('scorer tiles A–Z by name (small poles: nobody listed as GK)', nms.length > 1 && nms.join('|') === [...nms].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })).join('|') && !poss.includes('GK'), nms.join(', ')); }
   check('own goal link offered', (await p.$eval('.sheet [data-tap="og"]', e => e.textContent)) === 'Own goal by a Red player ›');
   await tap(`.sheet [data-tap="scorer"][data-pid="${P.Harry}"]`);
   await shot('03-goal-sheet-assist-390-dark.png');
@@ -123,8 +126,8 @@ const note = t => { console.log('\n# ' + t); lines.push('\n# ' + t); };
   const sideN = await p.evaluate(sid => { const se = Store.session(sid); return ['green', 'red'].map(t => Object.keys(se.teams[t].players).length); }, SID);
   // round 5: on small poles a GK-position player plays as MID, so he is on Block too (rows = Teams tonight)
   check('Block · Green opens on Green: tinted title, no team tab, every Green player incl. GK-position', (await p.$eval('.sheet .sheet-title', e => e.textContent)) === 'Block · Green' && !(await p.$('.sheet [data-seg="team"]')) && (await p.$$eval('.sheet [data-list] .cn-prow', a => a.length)) === sideN[0], sideN);
-  const order = await p.$$eval('.sheet [data-list] .cn-prow .tally', a => a.map(x => x.textContent));
-  check('defenders first (DEF → MID → FWD)', order.join(',') === [...order].sort((a, b) => ['DEF', 'MID', 'FWD'].indexOf(a) - ['DEF', 'MID', 'FWD'].indexOf(b)).join(','), order.join(','));
+  const order = await p.$$eval('.sheet [data-list] .cn-prow [data-label]', a => a.map(x => x.textContent.trim()));
+  check('Block list A–Z by name (25 Oct, Reuben)', order.length > 1 && order.join('|') === [...order].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })).join('|'), order.join(', '));
   check('"Wrong team? Block · Red ›" at the bottom', (await p.$eval('.sheet [data-tap="wrong"]', e => e.textContent)) === 'Wrong team? Block · Red ›');
   await shot('06-block-sheet-390-dark.png');
   await tap(`.sheet [data-tap="pick"][data-pid="${P.Joshua}"]`, 600);
@@ -277,7 +280,7 @@ const note = t => { console.log('\n# ' + t); lines.push('\n# ' + t); };
   await p.evaluate((sid, m, k) => Store.update(`sessions/${sid}/format`, { switchedAt: m, keepers: k }), SID, swMin, { green: P.Toby, red: P.Mike });
   await sleep(300);
   check('Save tile appears in each column with the keeper named: "Save Toby · 0" | "Save Mike · 0"', (await p.$$eval('.cn-save', a => a.map(x => x.dataset.team + ':' + x.querySelector('b').textContent + ' ' + x.querySelector('.cn-sk').textContent).join(','))) === 'green:Save Toby · 0,red:Save Mike · 0', await p.$$eval('.cn-save', a => a.map(x => x.textContent)));
-  check('big poles now: the slot is the way back, "Switch to small poles ›" / "Now: big poles · Toby · Mike"', (await p.$eval('.cn-poles .cn-pt', e => e.textContent)) === 'Switch to small poles ›' && (await p.$eval('.cn-poles .cn-ps', e => e.textContent)) === 'Now: big poles · Toby · Mike', await p.$eval('.cn-polesrow', e => e.textContent));
+  check('big poles now: the slot is the way back, "Switch to small poles ›" / "Now: big poles · Toby · Mike"', (await p.$eval('.cn-poles .cn-pt', e => e.textContent)) === 'Switch to small poles ›' && (await p.$eval('.cn-poles .cn-ps', e => e.textContent)) === 'Now: big poles · Toby · Mike', await p.$eval('.cn-poles', e => e.textContent));
   await shot('17-console-big-poles-390-dark.png');
   wBefore = await evWrites();
   await rapid('.cn-save[data-team="green"]', 2); await sleep(700);

@@ -94,7 +94,7 @@
   }
   const teamList = sess => Scoring.orderTeams(Array.from(new Set([...Object.keys((sess && sess.teams) || {}), ...Scoring.teamsOf(sess)])));
   const rosterOf = (sess, team) => Scoring.sessPlayers(sess).filter(p => !team || p.team === team)
-    .sort((a, b) => (POS_ORDER[a.pos] ?? 9) - (POS_ORDER[b.pos] ?? 9) || a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));   // A–Z (25 Oct, Reuben)
 
   function events(sess) {
     return Scoring.sessEvents(sess).filter(e => e.type !== 'halfTime');
