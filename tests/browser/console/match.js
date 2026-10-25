@@ -277,7 +277,7 @@ const note = t => { console.log('\n# ' + t); lines.push('\n# ' + t); };
   await p.evaluate((sid, m, k) => Store.update(`sessions/${sid}/format`, { switchedAt: m, keepers: k }), SID, swMin, { green: P.Toby, red: P.Mike });
   await sleep(300);
   check('Save tile appears in each column with the keeper named: "Save Toby · 0" | "Save Mike · 0"', (await p.$$eval('.cn-save', a => a.map(x => x.dataset.team + ':' + x.querySelector('b').textContent + ' ' + x.querySelector('.cn-sk').textContent).join(','))) === 'green:Save Toby · 0,red:Save Mike · 0', await p.$$eval('.cn-save', a => a.map(x => x.textContent)));
-  check('the poles slot is now a status card: "Big poles since n\' · Toby · Mike"', (await p.$eval('.cn-poles.is-big .cn-pt', e => e.textContent)) === `Big poles since ${swMin}' · Toby · Mike`, await p.$eval('.cn-poles .cn-pt', e => e.textContent));
+  check('big poles now: the slot is the way back, "Switch to small poles ›" / "Now: big poles · Toby · Mike"', (await p.$eval('.cn-poles .cn-pt', e => e.textContent)) === 'Switch to small poles ›' && (await p.$eval('.cn-poles .cn-ps', e => e.textContent)) === 'Now: big poles · Toby · Mike', await p.$eval('.cn-polesrow', e => e.textContent));
   await shot('17-console-big-poles-390-dark.png');
   wBefore = await evWrites();
   await rapid('.cn-save[data-team="green"]', 2); await sleep(700);

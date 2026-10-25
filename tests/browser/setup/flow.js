@@ -229,6 +229,22 @@ async function noTruncation(p, label) {
   check('Mike total 2 + 0 − 0 = 2', proof.mike.total === 2, proof.mike.rows);
   check('final score 4–2 (goals before the switch still count)', proof.score === '4–2');
   check('stored clean sheets follow the rule (green yes, red no)', proof.stored.cleanSheets.green === true && proof.stored.cleanSheets.red === false, proof.stored);
+
+  // ---------------------------------------------------------------- 8b · back to small poles (25 Oct): confirm sheet, one write, Undo
+  const atS = await p.evaluate(id => Clock.minute(Store.session(id)), sid);
+  const beforeS = await p.evaluate(id => JSON.stringify(Store.session(id)), sid);
+  await p.evaluate(id => App.action('setup.smallPoles', { sid: id }), sid); await sleep(350);
+  check(`back to small: confirm sheet "Small poles from ${atS}'" · "Keepers stop counting from ${atS}' · score carries over: 4–2"`,
+    (await p.$eval('.sh-setup-small h4', e => e.textContent)) === `Small poles from ${atS}'` && (await p.$eval('.sh-setup-small .sh-s', e => e.textContent)) === `Keepers stop counting from ${atS}' · score carries over: 4–2`);
+  await tap(p, '.sh-setup-small [data-tap="tosmall"]', 700);
+  const fS = await p.evaluate(id => Store.session(id).format, sid);
+  check('…writes one change format.switches = { poles: small, at }, keepers kept', Object.values(fS.switches || {}).length === 1 && Object.values(fS.switches)[0].poles === 'small' && Object.values(fS.switches)[0].at === atS && fS.keepers.green === TOBY, fS);
+  const sv = await p.evaluate((id, T, at) => { const x = Store.session(id); return { got: Scoring.matchPoints(x, T).tally.saves,
+    want: Object.values(x.events).filter(e => e.type === 'save' && e.playerId === T && e.min >= 46 && e.min < at).length,
+    after: Object.values(x.events).filter(e => e.type === 'save' && e.playerId === T && e.min >= at).length }; }, sid, TOBY, atS);
+  check(`…Toby's saves count only on big poles, 46' to ${atS}' (${sv.want}); the ${sv.after} after the switch don't`, sv.got === sv.want && sv.after > 0, sv);
+  await tap(p, '#app-undo [data-act="undo"]', 600);
+  check('…Undo puts the match back exactly', await p.evaluate(id => JSON.stringify(Store.session(id)), sid) === beforeS);
   fs.writeFileSync(path.join(OUT, 'data-written.json'), JSON.stringify({ sid, session: sess, newPerson: kw, writes: await p.evaluate(() => Store.test.writes.map(w => ({ failed: w.failed, paths: Object.keys(w.updates) }))) }, null, 2));
   check('no console errors (390 dark flow)', s.errors.length === 0, s.errors);
   await s.close();

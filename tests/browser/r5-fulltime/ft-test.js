@@ -6,6 +6,7 @@
 //   D  Publish with no signal: the label, waits in the outbox behind an earlier save, completes when back online
 //   E  the full-time card: preview drawn by tables.js into our canvas, offered after Publish (Share / Save image)
 //   F  screenshots at 390 and 1280, dark and light (light = Referee console "Same as the app"), layout checks
+//   G  big poles → small poles (25 Oct): the check's poles line, the keepers' period lines, stored clean sheets at Publish
 // Usage: node ft-test.js [A|B|C|D|E|F]
 'use strict';
 const path = require('path');
@@ -153,6 +154,32 @@ async function Cpoles() {
 }
 
 // =================================================================================================
+async function G() {
+  // 20 Jul as if End game just happened, played big from kick-off with keepers, back to small at 30'
+  const data = D.data20Jul();
+  const sx = data.sessions[D.SID20];
+  const gkOf = t => Object.keys(sx.teams[t].players).find(k => sx.teams[t].players[k].position === 'GK');
+  const keepers = {}; ['green', 'red'].forEach(t => { const k = gkOf(t); if (k) keepers[t] = k; });
+  // 20 Jul's events have no minutes (an old match): spread them over 1'–70' in the order they were logged
+  const evs = Object.values(sx.events).sort((a, b) => a.timestamp - b.timestamp);
+  evs.forEach((e, i) => { e.min = 1 + Math.floor(i * 70 / evs.length); });
+  sx.format = { start: 'big', keepers, switches: { zz1: { poles: 'small', at: 30 } } };
+  const s = await openApp({ data, route: '#/ref.ftcheck?sid=' + D.SID20 });
+  const p = s.page;
+  check('G the check reads the poles of the night: "Big poles 0\'–30\' · small from 30\'"', (await T(p, 'text', '.scr-ref-ftcheck .fx-under')) === "Big poles 0'–30' · small from 30'", await T(p, 'text', '.scr-ref-ftcheck .fx-under'));
+  const kg = keepers.green;
+  const want = await p.evaluate((sid, k) => { const x = Store.session(sid); const m = Scoring.matchPoints(x, k);
+    const against = Scoring.sessEvents(x).filter(e => (e.type === 'goal' && e.team !== 'green') || (e.type === 'ownGoal' && e.benefitTeam !== 'green'));
+    return { lines: m.breakdown.map(b => b.label), conceded: m.tally.conceded, before30: against.filter(e => e.min < 30).length, all: against.length, stored: Scoring.storedFields(x).cleanSheets }; }, D.SID20, kg);
+  check(`G keeper lines carry the period ("… 0'–30' (big poles)"); goals conceded = the ${want.before30} before 30' (not all ${want.all})`, want.all > want.before30 && want.conceded === want.before30 && want.lines.some(l => /0'–30' \(big poles\)/.test(l)) && want.lines.every(l => !/from \d+'/.test(l)), want);
+  await click(p, '[data-tap="publish"]', 900);
+  const pub = await p.evaluate(sid => Store.session(sid), D.SID20);
+  check('G Publish stores clean sheets judged on 0\'–30\' only (= Scoring.storedFields)', pub.status === 'completed' && JSON.stringify(pub.cleanSheets) === JSON.stringify(want.stored), { stored: pub.cleanSheets, want: want.stored });
+  check('G no console errors', !s.errors.length, s.errors.join(' | '));
+  await s.close();
+}
+
+// =================================================================================================
 async function Dsignal() {
   const s = await openApp({ data: D.copy19('r5'), route: '#/ref.ftcheck?sid=' + C });
   const p = s.page;
@@ -282,6 +309,7 @@ async function F() {
   if (!only || only === 'D') await Dsignal();
   if (!only || only === 'E') await E();
   if (!only || only === 'F') await F();
+  if (!only || only === 'G') await G();
   const sum = `\n${passes} passed, ${fails} failed`;
   console.log(sum); log.push(sum);
   fs.writeFileSync(path.join(OUT, `ft-test-result${only ? '-' + only : ''}.txt`), log.join('\n') + '\n');

@@ -312,6 +312,7 @@ async function signIn(page, who) {
   await waitBarGone();
   await tap('.cn-row1 [data-act="resume"]', 800);
   check('second half running', (await S()).timer.status === 'running');
+  check('big poles now: the slot offers the way back, "Switch to small poles ›" (with "Change keepers" beside it)', (await txt(p, '.cn-poles .cn-pt')) === 'Switch to small poles ›' && (await txt(p, '.cn-keeplink')) === 'Change keepers');
   check('big poles: a Save tile in each column naming tonight’s keeper', (await p.$$eval('.cn-save', a => a.map(x => x.dataset.team + ':' + x.querySelector('.cn-sk').textContent.split(' · ')[0]).join(','))) === `green:${name(KG)},red:${name(KR)}`);
   // round 6: one keeper per side → Save · Team logs in 1 tap
   for (let i = 0; i < 4; i++) {

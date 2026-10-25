@@ -67,7 +67,7 @@
   const TYPE_LABEL = {
     goal: 'Goal', ownGoal: 'Own goal', save: 'Save', penaltySave: 'Penalty save', block: 'Block',
     clearance: 'Clearance', yellowCard: 'Yellow card', redCard: 'Red card', halfTime: 'Half time',
-    bigPoles: 'Big poles', formatSwitch: 'Big poles', poles: 'Big poles',
+    bigPoles: 'Big poles', formatSwitch: 'Big poles', poles: 'Big poles', smallPoles: 'Small poles',
   };
   const FEED_LABEL = Object.assign({}, TYPE_LABEL, { yellowCard: 'Yellow', redCard: 'Red card' });
   const BAR_LABEL = Object.assign({}, TYPE_LABEL, { yellowCard: 'Yellow' });   // "Yellow · Keith 64'"
@@ -87,7 +87,7 @@
 
   // ---------------------------------------------------------------- data helpers
   const nameOf = pid => { const p = Store.player(pid); return p ? p.name : 'Unknown'; };
-  const effPos = (sess, p) => (Scoring.effectivePos ? Scoring.effectivePos(sess, p) : p.pos) || 'MID';
+  const effPos = (sess, p) => (Scoring.playsAsNow ? Scoring.playsAsNow(sess, p.pid) : Scoring.effectivePos ? Scoring.effectivePos(sess, p) : p.pos) || 'MID';
   // players tonight with the position they PLAY as (small poles: a GK plays and scores as MID)
   const playersOf = sess => Scoring.sessPlayers(sess).map(p => Object.assign({}, p, { listed: p.pos, pos: effPos(sess, p) }));
   const teamsOf = sess => Scoring.orderTeams(Object.keys((sess && sess.teams) || {}));
@@ -106,7 +106,7 @@
   // (old matches) every player who still plays as GK. Small poles, never switched: nobody.
   function keepersOf(sess) {
     const f = Scoring.formatOf(sess);
-    if (!f.everBig) return [];
+    if (!f.everBig || f.bigNow === false) return [];   // small poles now (never big, or switched back): no keepers
     const on = playersOf(sess);
     const chosen = Object.entries(f.keepers || {}).map(([team, pid]) => on.find(p => p.pid === pid && p.team === team)).filter(Boolean);
     const list = chosen.length ? chosen : on.filter(p => p.pos === 'GK');
@@ -137,7 +137,8 @@
     if (ev.type === 'yellowCard' || ev.type === 'redCard') return `${UI.cardGlyph(ev.type === 'redCard' ? 'red' : 'yellow')} ${esc(label)}`;
     if (ev.type === 'goal' && ev.assistId) return `${esc(label)} · assist ${esc(nameOf(ev.assistId))}`;
     if (ev.type === 'ownGoal' && ev.benefitTeam) return `${esc(label)} · for ${esc(fmtTeam(ev.benefitTeam))}`;
-    if (TYPE_LABEL[ev.type] === 'Big poles') { const k = keeperNames(sess); return k.length ? `keepers ${esc(k.join(', '))}` : ''; }
+    if (ev.type === 'smallPoles') return 'keepers stop counting';
+    if (TYPE_LABEL[ev.type] === 'Big poles') { const k = (Scoring.formatOf(sess).keepers && Object.values(Scoring.formatOf(sess).keepers).filter(Boolean).map(nameOf)) || []; return k.length ? `keepers ${esc(k.join(', '))}` : ''; }
     return esc(label);
   }
 
@@ -146,9 +147,9 @@
     o = o || {};
     const who = evWho(ev);
     const team = evTeam(sess, ev);
-    const isPoles = TYPE_LABEL[ev.type] === 'Big poles';
+    const isPoles = TYPE_LABEL[ev.type] === 'Big poles' || ev.type === 'smallPoles';
     const title = who ? `<span class="nm">${esc(nameOf(who))}</span> <span class="kind">${kindHtml(ev, sess)}</span>`
-      : isPoles ? `<span class="nm">Big poles</span> <span class="kind">${kindHtml(ev, sess)}</span>`
+      : isPoles ? `<span class="nm">${ev.type === 'smallPoles' ? 'Small poles' : 'Big poles'}</span> <span class="kind">${kindHtml(ev, sess)}</span>`
       : `<span class="kind">${kindHtml(ev, sess)}</span>`;
     const tag = ev.id && !ev.synthetic ? 'button' : 'div';
     const tapA = tag === 'button' ? ` type="button" data-tap="ev" data-eid="${esc(ev.id)}"` : '';
@@ -161,11 +162,13 @@
 
   // Big-poles switch: shown in All events even when setup stores it only on `format`.
   function polesPseudo(sess) {
+    // every change of poles after kick-off (switchedAt and format.switches), as rows in All events
     const f = Scoring.formatOf(sess);
-    if (f.start !== 'small' || f.switchedAt == null) return null;
-    if (Scoring.sessEvents(sess).some(e => TYPE_LABEL[e.type] === 'Big poles')) return null;
-    return { id: 'poles', synthetic: true, type: 'bigPoles', min: f.switchedAt, timestamp: 0 };
+    if (f.legacy || !f.periods || f.periods.length < 2) return [];
+    if (Scoring.sessEvents(sess).some(e => TYPE_LABEL[e.type] === 'Big poles')) return [];
+    return f.periods.slice(1).map((x, i) => ({ id: 'poles' + i, synthetic: true, type: x.big ? 'bigPoles' : 'smallPoles', min: x.from, timestamp: i }));
   }
+
 
   // ---------------------------------------------------------------- the one log path
   // Key first, then stamp the minute, timestamp and who logged it. Save.run does lock / Undo / Retry.
@@ -467,7 +470,7 @@
     const f = Scoring.formatOf(sess);
     const on = playersOf(sess);
     const counts = teamsOf(sess).map(t => `${fmtTeam(t)} ${on.filter(p => p.team === t).length}`).join(' · ');
-    const poles = f.legacy ? '' : f.start === 'small' && f.switchedAt == null ? 'Small poles' : f.start === 'small' ? `Big poles from ${f.switchedAt}'` : 'Big poles';
+    const poles = f.legacy ? '' : Scoring.polesText(sess);
     return [poles, counts].filter(Boolean).join(' · ');
   }
   function totalText(sess) {
@@ -503,16 +506,23 @@
   // "Switch to big poles ›" (ink outline, not amber: amber means stoppage); after the switch a quiet status card
   // "Big poles since 46' · Toby · Mike" (or "from kick-off"), tap to change keepers. Both open setup.bigPoles.
   function polesHtml(sess, f) {
+    const ranges = () => f.periods.filter(x => x.big).map(x => (x.to == null ? `from ${x.from}'` : `${x.from}'–${x.to}'`)).join(', ');
     if (!f.everBig) {
       return `<button type="button" class="cn-poles is-small" data-tap="poles">` +
         `<span class="cn-pt">Switch to big poles ›</span><span class="cn-ps">Now: small poles · no keepers</span></button>`;
     }
+    if (f.bigNow === false) {   // switched back to small: say what counted, and offer big poles again
+      const last = f.periods[f.periods.length - 1];
+      return `<button type="button" class="cn-poles is-small" data-tap="poles">` +
+        `<span class="cn-pt">Switch to big poles ›</span><span class="cn-ps">Small poles since ${last.from}' · keepers counted ${esc(ranges())}</span></button>`;
+    }
+    // big poles now: the action is the way back to small; changing keepers is a small link beside it
     const names = keepersOf(sess).map(k => k.name);
-    const when = f.start === 'small' && f.switchedAt != null ? `since ${f.switchedAt}'` : 'from kick-off';
-    return `<button type="button" class="cn-poles is-big" data-tap="poles">` +
-      `<span class="cn-pt">${esc(['Big poles ' + when].concat(names).join(' · '))}</span>` +
-      `<span class="cn-ps">${names.length ? 'Tap to change keepers' : 'Tap to choose keepers'}</span></button>`;
+    return `<div class="cn-polesrow"><button type="button" class="cn-poles is-small" data-tap="tosmall">` +
+      `<span class="cn-pt">Switch to small poles ›</span><span class="cn-ps">${esc(['Now: big poles'].concat(names.length ? names : ['no keepers chosen']).join(' · '))}</span></button>` +
+      `<button type="button" class="cn-keeplink" data-tap="poles">${names.length ? 'Change keepers' : 'Choose keepers'}</button></div>`;
   }
+
   function controlsHtml(sess) {
     const st = Clock.status(sess);
     if (st === 'ended') return primaryHtml(sess);
@@ -642,6 +652,7 @@
       // the poles button sits right under the clock buttons: the 2nd tap of a double-tapped Kick off / + Stoppage
       // (within their 0.7 s guard) must not open the poles sheet
       UI.on(el, 'poles', b => { if (Date.now() >= ctlBusyUntil) once(() => App.action('setup.bigPoles', { sid: sid() }))(b); });
+      UI.on(el, 'tosmall', b => { if (Date.now() >= ctlBusyUntil) once(() => App.action('setup.smallPoles', { sid: sid() }))(b); });
       UI.on(el, 'ftcheck', once(() => App.go('ref.ftcheck', { sid: sid() })));
       UI.on(el, 'ctl', b => { if (!afterBar()) clockAction(sid(), b.dataset.act, b); });
       UI.on(el, 'halftime', b => { if (!b.classList.contains('is-done') && !afterBar()) halfTime(sid(), b); });
@@ -786,8 +797,7 @@
     const sess = Store.session(sid);
     if (!sess) return { sess: null, list: [] };
     const list = Scoring.sessEvents(sess);
-    const p = polesPseudo(sess);
-    if (p) list.push(p);
+    polesPseudo(sess).forEach(x => list.push(x));
     // newest minute first; same minute → newest log first; events with no minute last
     list.sort((a, b) => ((b.min ?? -1) - (a.min ?? -1)) || ((b.stoppageMin ?? 0) - (a.stoppageMin ?? 0)) || (ts(b) - ts(a)));
     return { sess, list };

@@ -1115,8 +1115,9 @@
         `${UI.rows(noMin.slice(0, 4).map(e => evRow(s, e)), { cls: 'fx-feed mt-3' })}</div>`);
     }
     if (!line) {
-      const f = Scoring.formatOf(s);
-      if (f.start === 'small') line = f.switchedAt != null ? `Big poles from ${f.switchedAt}'` : 'Small poles';
+      // the night's poles, from Scoring ("Big poles from 46'", "Big poles 0'–60' · small from 60'"); big all night says nothing
+      const pt = Scoring.polesText(s);
+      if (pt && pt !== 'Big poles') line = pt;
     }
     Object.keys(open).forEach(k => { if (!open[k]) delete open[k]; });
     return { flags, line, count: flags.length, open: Object.keys(open).length ? open : null };

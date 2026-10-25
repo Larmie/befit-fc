@@ -27,6 +27,7 @@
      'setup.addArrival'   ({ sid })   "Who's arrived?": usually-here rows not on yet + search; one tap on a side
                           adds them at once (Save.run: Saving… → Undo 5 s), the sheet stays open for the next.
      'setup.teamsTonight' ({ sid })   one team per tab, full-width rows, a quiet "→ Red" per row, "Moved 27'" tag.
+     'setup.smallPoles'   ({ sid })   big → small (keepers leave): a confirm sheet, then format.switches/{key} = { poles:'small', at }
      'setup.bigPoles'     ({ sid })   one keeper per side (known keepers on that side first, then "Other ›" = tonight's
                           players on that side; "+ Someone not here yet") → format.switchedAt (first big-poles minute),
                           format.keepers = { team: pid }, those players' position 'GK'. Score untouched.
@@ -140,7 +141,8 @@
   function joinPos(sess, pid, team, roster, wanted) {
     const pos = POSITIONS.includes(wanted) ? wanted : defPos(pid);
     if (pos !== 'GK') return pos;
-    return Scoring.formatOf(sess).everBig && !keeperOn(roster, team) ? 'GK' : 'MID';
+    const f = Scoring.formatOf(sess);   // a keeper slot only while big poles are ON (not after a switch back to small)
+    return f.everBig && f.bigNow !== false && !keeperOn(roster, team) ? 'GK' : 'MID';
   }
 
   // 9 outfield per side: the 10th needs a second tap within 4 s.
@@ -698,7 +700,7 @@
     const f = Scoring.formatOf(sess);
     const wasKeeper = cur.entry.position === 'GK';
     const toHasKeeper = !!keeperOn(roster, to);
-    const pos = wasKeeper && (toHasKeeper || !f.everBig) ? 'MID' : (cur.entry.position || 'MID');
+    const pos = wasKeeper && (toHasKeeper || !f.everBig || f.bigNow === false) ? 'MID' : (cur.entry.position || 'MID');
     if (!okToAdd(to, sideCounts(roster, to).out, pos === 'GK', 'mv' + pid + to)) return null;
     const min = nowMinute(sess);
     const entry = Object.assign({}, cur.entry, { position: pos });
@@ -714,13 +716,41 @@
     });
   }
 
+  // ---------------------------------------------------------------- setup.smallPoles (big → small, Reuben 25 Oct)
+  // "Small poles from 60' · keepers stop counting from 60' · score carries over". Writes one change,
+  // format.switches/{key} = { poles:'small', at }, with Undo. Keepers stay on the sheet (as GK) for the minutes
+  // they kept on big poles; from the switch they play outfield (Scoring.playsAsNow → MID).
+  App.registerAction('setup.smallPoles', args => {
+    const sid = activeSid(args && args.sid);
+    const sess0 = sid && Store.session(sid);
+    if (!sess0) { UI.toast('No game on'); return null; }
+    const f0 = Scoring.formatOf(sess0);
+    if (!f0.everBig || f0.bigNow === false) { UI.toast('Already on small poles'); return null; }
+    const at = switchMinute(sess0);
+    if (at == null) { UI.toast('Kick off first'); return null; }
+    const score = matchTeams(sess0).map(t => Scoring.teamGoals(sess0, t)).join('–');
+    const h = UI.sheet.open({
+      title: `Small poles from ${at}'`, sub: `Keepers stop counting from ${at}' · score carries over: ${score}`, cls: 'sh-setup sh-setup-small',
+      body: `<div class="su-note">Saves, goals conceded and clean sheets count only while big poles were on. From ${at}' the keepers play outfield.</div>`,
+      footer: UI.btn('Switch to small poles', { kind: 'w', big: true, tap: 'tosmall' }), cancel: 'Cancel',
+    });
+    UI.on(h.el, 'tosmall', b => {
+      const sess = Store.session(sid);
+      if (!sess) return;
+      saveUpdates({ [`sessions/${sid}/format/switches/${Store.newKey()}`]: { poles: 'small', at } },
+        { label: `Small poles from ${at}'`, button: b, group: h.el, onSaved: () => h.close() });
+    });
+    return h;
+  });
+
   // ---------------------------------------------------------------- setup.bigPoles
   App.registerAction('setup.bigPoles', args => {
     const sid = activeSid(args && args.sid);
     const sess0 = sid && Store.session(sid);
     if (!sess0) { UI.toast('No game on'); return null; }
     const f0 = Scoring.formatOf(sess0);
-    const alreadyBig = f0.everBig;
+    const alreadyBig = f0.everBig && f0.bigNow !== false;   // big poles on now: this sheet just changes keepers
+    const backToBig = f0.everBig && !alreadyBig;            // back on small after big: switch to big poles again
     const at = alreadyBig ? null : switchMinute(sess0);
     const roster0 = rosterOf(sess0);
     const teams = matchTeams(sess0);
@@ -734,8 +764,8 @@
       }
     });
     const score = teams.map(t => Scoring.teamGoals(sess0, t)).join('–');
-    const title = alreadyBig ? 'Keepers' : at != null ? `Big poles from ${at}'` : 'Big poles';
-    const sub = alreadyBig ? 'One keeper per side' : at != null ? `Score carries over: ${score} · keepers count from ${at}'` : 'Keepers count from kick-off';
+    const title = alreadyBig ? 'Keepers' : at != null ? `Big poles from ${at}'` : 'Big poles';   // (also when going back to big)
+    const sub = alreadyBig ? 'One keeper per side' : backToBig && at != null ? `Back to big poles · keepers count again from ${at}'` : at != null ? `Score carries over: ${score} · keepers count from ${at}'` : 'Keepers count from kick-off';
     const h = UI.sheet.open({
       title, sub, cls: 'sh-setup sh-setup-poles', body: '', cancel: 'Cancel',
       footer: `<div data-r="go"></div>`,
@@ -773,7 +803,8 @@
       const roster = rosterOf(sess);
       const min = nowMinute(sess);
       const updates = {};
-      if (!f.everBig) {
+      if (f.everBig && f.bigNow === false) updates[`sessions/${sid}/format/switches/${Store.newKey()}`] = { poles: 'big', at: at == null ? 0 : at };
+      else if (!f.everBig) {
         if (at == null) updates[`sessions/${sid}/format/start`] = 'big';
         else updates[`sessions/${sid}/format/switchedAt`] = at;
       }

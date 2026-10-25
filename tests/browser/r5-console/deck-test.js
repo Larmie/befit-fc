@@ -393,10 +393,11 @@ async function main() {
   check('switch writes format.switchedAt + format.keepers; he is GK on the team sheet', f9.switchedAt === swm && f9.keepers.green === mid && f9.keepers.red === gkOf('red')[0] && (await p.evaluate((sid, id) => Store.session(sid).teams.green.players[id].position, SID, mid)) === 'GK', f9);
   check(`after the switch, ${nm9(mid)} scores as GK`, (await p.evaluate((sid, id) => [Scoring.playsAs(Store.session(sid), id), Scoring.matchPoints(Store.session(sid), id).pos].join(), SID, mid)) === 'GK,GK');
   await h.barGone();
-  check(`status card: "Big poles since ${swm}' · ${nm9(mid)} · ${nm9(gkOf('red')[0])}" / "Tap to change keepers"`, (await h.text('.cn-poles .cn-pt')) === `Big poles since ${swm}' · ${nm9(mid)} · ${nm9(gkOf('red')[0])}` && (await h.text('.cn-poles .cn-ps')) === 'Tap to change keepers' && !!(await p.$('.cn-poles.is-big')), await h.text('.cn-poles'));
+  // 25 Oct (b): on big poles the slot is the way back: "Switch to small poles ›", "Change keepers" beside it
+  check(`big poles now: "Switch to small poles ›" / "Now: big poles · ${nm9(mid)} · ${nm9(gkOf('red')[0])}", "Change keepers" beside it`, (await h.text('.cn-poles .cn-pt')) === 'Switch to small poles ›' && (await h.text('.cn-poles .cn-ps')) === `Now: big poles · ${nm9(mid)} · ${nm9(gkOf('red')[0])}` && (await h.text('.cn-keeplink')) === 'Change keepers', await h.text('.cn-polesrow'));
   await h.shot('poles-after-switch-390-dark.png');
-  await h.tap('.cn-poles', 500);
-  check('the status card opens the keepers sheet ("Keepers")', (await h.text('.sh-setup-poles .sheet-title')) === 'Keepers');
+  await h.tap('.cn-keeplink', 500);
+  check('"Change keepers" opens the keepers sheet ("Keepers")', (await h.text('.sh-setup-poles .sheet-title')) === 'Keepers');
   await h.esc();
   check('no console errors', s.errors.length === 0, s.errors);
   await s.close();
@@ -407,7 +408,49 @@ async function main() {
   s = await H.open({ width: 390, referee: 'referee', route: '#/ref.console', data: d10 });
   h = helpers(s); p = h.p; await s.freeze(); await sleep(900);
   const kk = d10.sessions[SID].format.keepers;
-  check('started on big poles: "Big poles from kick-off · <keepers>"', (await h.text('.cn-poles .cn-pt')) === `Big poles from kick-off · ${nm9(kk.green)} · ${nm9(kk.red)}`, await h.text('.cn-poles .cn-pt'));
+  check('started on big poles: "Switch to small poles ›" / "Now: big poles · <keepers>"', (await h.text('.cn-poles .cn-pt')) === 'Switch to small poles ›' && (await h.text('.cn-poles .cn-ps')) === `Now: big poles · ${nm9(kk.green)} · ${nm9(kk.red)}`, await h.text('.cn-polesrow'));
+  const pbig = await p.evaluate(() => { const b = document.querySelector('.cn-poles'); const r = b.getBoundingClientRect(); return { h: Math.round(r.height), bottom: r.bottom, vh: innerHeight }; });
+  check('…56 px or more, visible without scrolling at 390', pbig.h >= 56 && pbig.bottom <= pbig.vh, pbig);
+  await h.shot('poles-big-390-dark.png');
+  // ---- big → small at 60': keepers stop counting, score carries over (Reuben, 25 Oct)
+  await h.adv(50); await sleep(1100);   // 10' → 60'
+  const kg = kk.green;
+  await p.evaluate((sid, id) => Store.update(`sessions/${sid}/events`, { sv1: { type: 'save', playerId: id, min: 30, timestamp: 1 }, sv2: { type: 'save', playerId: id, min: 40, timestamp: 2 }, sv3: { type: 'save', playerId: id, min: 50, timestamp: 3 }, sv4: { type: 'save', playerId: id, min: 55, timestamp: 4 } }), SID, kg);
+  await sleep(300);
+  await h.tap('.cn-poles[data-tap="tosmall"]', 500);
+  check('confirm sheet: "Small poles from 60\'" · "Keepers stop counting from 60\' · score carries over: 0–0"', (await h.text('.sh-setup-small .sheet-title')) === "Small poles from 60'" && (await h.text('.sh-setup-small .sh-s')) === "Keepers stop counting from 60' · score carries over: 0–0" && !!(await p.$('.sh-setup-small [data-tap="tosmall"]')) && !!(await p.$('.sh-setup-small [data-tap="sheet-cancel"]')));
+  await h.shot('poles-confirm-small-390-dark.png');
+  const wSm = await h.evWrites();
+  await h.rapid('.sh-setup-small [data-tap="tosmall"]', 2); await sleep(800);
+  const fsm = await p.evaluate(sid => Store.session(sid).format, SID);
+  const sw = Object.values(fsm.switches || {});
+  check('Switch to small poles (double tapped) → one change: format.switches = [{ poles: small, at: 60 }], keepers kept', sw.length === 1 && sw[0].poles === 'small' && sw[0].at === 60 && fsm.keepers.green === kg && (await h.sheets()) === 0, fsm);
+  check('Undo bar "Small poles from 60\'"', /Small poles from 60'/.test(await p.evaluate(() => document.querySelector('#app-undo .undo').innerText)));
+  check('after the switch: "Switch to big poles ›" / "Small poles since 60\' · keepers counted 0\'–60\'"', (await h.text('.cn-poles .cn-pt')) === 'Switch to big poles ›' && (await h.text('.cn-poles .cn-ps')) === "Small poles since 60' · keepers counted 0'–60'", await h.text('.cn-poles'));
+  check('the Save tiles disappear (small poles now)', !(await p.$('.cn-save')));
+  await h.shot('poles-after-small-390-dark.png');
+  await h.barGone();
+  // the keeper plays outfield now: on Block, scores his block as a MID; a save after 60' would not count
+  await h.tap('.cn-act[data-kind="block"][data-team="green"]');
+  check(`${nm9(kg)} (keeper 0'–60') is on Block · Green now, as MID`, (await h.text(`.sheet [data-tap="pick"][data-pid="${kg}"] .tally`)) === 'MID');
+  await h.tap(`.sheet [data-tap="pick"][data-pid="${kg}"]`, 700);
+  await p.evaluate((sid, id) => Store.update(`sessions/${sid}/events`, { sv5: { type: 'save', playerId: id, min: 65, timestamp: 5 }, g1: { type: 'goal', team: 'red', scorerId: Object.keys(Store.session(sid).teams.red.players).find(k => Store.session(sid).teams.red.players[k].position !== 'GK'), min: 66, timestamp: 6 } }), SID, kg);
+  await sleep(300);
+  const m60 = await p.evaluate((sid, id) => { const m = Scoring.matchPoints(Store.session(sid), id); return { pos: m.pos, saves: m.tally.saves, conceded: m.tally.conceded, cs: m.cleanSheet, lines: m.breakdown.map(b => b.label + ' ' + b.pts) }; }, SID, kg);
+  check(`${nm9(kg)}: 4 saves 0'–60' count, the 65' save and the 66' goal against don't; clean sheet 0'–60'`, m60.pos === 'GK' && m60.saves === 4 && m60.conceded === 0 && m60.cs === true && m60.lines.includes("4 saves 0'–60' (big poles) 1") && m60.lines.includes("Clean sheet 0'–60' (big poles) 8"), m60);
+  check('the score carries over (0–1 after the 66\' goal)', (await p.$$eval('.cn-score .sb-half .hn', a => a.map(x => x.textContent).join('-'))) === '0-1');
+  await h.barGone();
+  // any number of switches: back to big at 70'
+  await h.adv(10); await sleep(1100);
+  await h.tap('.cn-poles[data-tap="poles"]', 500);
+  check('back to big: the sheet reads "Big poles from 70\'"', (await h.text('.sh-setup-poles .sheet-title')) === "Big poles from 70'" && (await h.text('.sh-setup-poles [data-tap="switch"]')) === 'Switch to big poles');
+  await h.tap('.sh-setup-poles [data-tap="switch"]', 900);
+  const fb = await p.evaluate(sid => Scoring.formatOf(Store.session(sid)), SID);
+  check('big again from 70\': periods big 0–60, small 60–70, big from 70', JSON.stringify(fb.periods) === JSON.stringify([{ big: true, from: 0, to: 60 }, { big: false, from: 60, to: 70 }, { big: true, from: 70, to: null }]), fb.periods);
+  check('Save tiles are back, the slot reads "Switch to small poles ›" again', !!(await p.$('.cn-save')) && (await h.text('.cn-poles .cn-pt')) === 'Switch to small poles ›');
+  await h.barGone();   // the Undo bar sits over Latest
+  await h.tap('.cn-all', 500);
+  check('All events lists both changes: "60\' Small poles" and "70\' Big poles"', await p.evaluate(() => { const t = [...document.querySelectorAll('[data-evlist] .cn-evr')].map(x => x.innerText.replace(/\s+/g, ' ')); return t.some(x => /^60' Small poles/.test(x)) && t.some(x => /^70' Big poles/.test(x)); }), await p.evaluate(() => [location.hash, [...document.querySelectorAll('[data-evlist] .cn-evr')].map(x => x.innerText.replace(/s+/g, ' ')).slice(0, 6)]));
   check('no console errors', s.errors.length === 0, s.errors);
   await s.close();
   // the lineup on big poles: a side with no known keeper tonight → "Other ›" is the main choice

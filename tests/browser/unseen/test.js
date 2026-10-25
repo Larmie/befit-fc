@@ -89,6 +89,24 @@ async function bigpoles() {
   await done(s, 'bigpoles');
 }
 
+// ------------------------------------------------------------------ 2b. big poles → small poles (25 Oct): saves only while big poles were on
+async function backtosmall() {
+  console.log('\n# Big from kick-off, back to small at 60\': saves after 60\' are not counted on page 2');
+  const d = H.snapshot(); const x = d.sessions[L19];
+  x.format = { start: 'big', keepers: { green: TOBY, red: MIKE }, switches: { zz1: { poles: 'small', at: 60 } } };
+  const s = await H.open({ width: 390, theme: 'dark', route: '#/tables.teams', viewer: 'guest', data: d });
+  const e = await s.page.evaluate(sid => { const x = Store.session(sid); const n = (pid, f) => Object.values(x.events).filter(ev => ev.type === 'save' && ev.playerId === pid && f(ev.min)).length;
+    return { mikeBefore: n('seed_p047', m => m < 60), mikeAfter: n('seed_p047', m => m >= 60), tobyBefore: n('seed_p039', m => m < 60), tobyAfter: n('seed_p039', m => m >= 60),
+      mike: Scoring.matchPoints(x, 'seed_p047').tally.saves, toby: Scoring.matchPoints(x, 'seed_p039').tally.saves }; }, L19);
+  check(`Scoring counts saves before 60' only (Mike ${e.mike} = ${e.mikeBefore}, not +${e.mikeAfter}; Toby ${e.toby} = ${e.tobyBefore}, not +${e.tobyAfter})`,
+    e.mike === e.mikeBefore && e.toby === e.tobyBefore && e.mikeAfter + e.tobyAfter > 0, e);
+  const r = await READ(s.page, L19, 2);
+  const R = rows(r.texts);
+  check(`page 2 Saves row = Scoring: "${R.SAVES}"`, !R.SAVES || ([['Mike', e.mike], ['Toby', e.toby]].every(([nm, v]) => !v || R.SAVES.includes(`${nm} ${v}`))), [R.SAVES, e]);
+  check('everything fits', inBounds(r), [r.minL, r.maxR]);
+  await done(s, 'backtosmall');
+}
+
 // ------------------------------------------------------------------ 3. no defensive actions: fallback
 async function fallback() {
   console.log('\n# No blocks or clearances: hero falls back to the top assister, then the keeper with most saves');
@@ -291,7 +309,7 @@ async function shots() {
 
 (async () => {
   const want = process.argv[2];
-  const ALL = { real, bigpoles, fallback, blue, longest, sheet, entry, shots };
+  const ALL = { real, bigpoles, backtosmall, fallback, blue, longest, sheet, entry, shots };
   for (const [k, fn] of Object.entries(ALL)) { if (want && want !== k) continue; try { await fn(); } catch (e) { fail++; console.log('  FAIL ' + k + ' threw: ' + e.message.split('\n')[0]); } }
   console.log(`\n${pass} ok, ${fail} FAIL`);
   process.exitCode = fail ? 1 : 0;

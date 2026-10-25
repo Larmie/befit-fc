@@ -55,11 +55,9 @@
   const backBtn = label => `<button type="button" class="hd-btn" data-shell="back">‹ ${esc(label)}</button>`;
   const isLive = sess => !!sess && sess.status === 'active';
 
+  // one line for the night's poles, from Scoring (handles switches back to small: "Big poles 0'–60' · small from 60'")
   function polesText(sess) {
-    const f = Scoring.formatOf(sess);
-    if (f.legacy) return '';
-    if (f.start === 'big') return 'Big poles';
-    return f.switchedAt != null ? `Big poles from ${f.switchedAt}'` : 'Small poles';
+    return Scoring.polesText ? Scoring.polesText(sess) : '';
   }
 
   // "Red lost 4–7" from a playerHistory row (for – against, from their side)

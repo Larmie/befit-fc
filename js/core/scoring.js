@@ -20,6 +20,15 @@
      - start 'small', never switched → no saves, no conceded, no clean sheets.
    Goals always count for the score and the scorer.
 
+   NEW back-to-small rule (Reuben, 25 Oct): big poles can also switch back to small (the keepers leave), any
+   number of times. format.switches = { key: { poles:'small'|'big', at:<minute> } } lists every change after the
+   start and the first switchedAt; formatOf(sess).periods = [{ big, from, to }]. Keepers' saves, penalty saves,
+   goals conceded and clean sheets count ONLY in big-poles periods (a clean sheet = nothing conceded while big
+   poles were on). In small-poles periods a keeper plays outfield: his goals score as a MID's (5, not 10) and his
+   blocks and clearances earn the MID defence bonus. This also applies to the minutes BEFORE a small → big switch
+   (no real match had a format when this was decided, so no stored points change). Classic ignores format and
+   scores a GK-listed keeper as GK all night.
+
    NEW small-poles keeper rule (decided 20–21 Oct, round 5): on small poles there are no
    keepers, so a GK-position player plays AND scores as a MID (goal 5, defence bonus for
    blocks and clearances, no saves / conceded / clean sheet). Exactly:
@@ -39,8 +48,10 @@
      playsAs(sess, pid, db)           → the position a player scores as tonight (the small-poles keeper rule above)
      teamGoals(sess, team)            → goals for a team (events for live, stored for post/history)
      result(sess)                     → { teams:[{team,goals}], winner|null, draw }
-     formatOf(sess)                   → { start, switchedAt, bigFrom, everBig, keepers, legacy }
-     isBigPolesEvent(sess, ev)
+     formatOf(sess)                   → { start, switchedAt, bigFrom, everBig, keepers, legacy, periods, bigNow, anySmall, simple }
+     isBigPolesEvent(sess, ev)        → was minute ev.min on big poles?
+     polesText(sess)                  → '' · 'Small poles' · 'Big poles' · "Big poles from 46'" · "Big poles 0'–60' · small from 60'"
+     playsAsNow(sess, pid, db)        → playsAs, but a keeper plays MID once the night is back on small poles
      cleanSheet(sess, team)           → bool, under the rule above
      storedFields(sess)               → { goals, cleanSheets } to write at publish / after edits
      matchPoints(sess, pid, db)       → { pid,name,pos,team,total,breakdown:[{key,label,count,pts}],tally,cleanSheet } | null
@@ -149,24 +160,74 @@
   }
 
   // ---------------------------------------------------------------- poles
+  // The night as a list of periods: [{ big, from, to }] (to = null for the last one). Built from
+  //   start ('small' | 'big', missing = big), switchedAt (the first small → big, round 4) and, round 6b (25 Oct),
+  //   switches = { key: { poles: 'small'|'big', at: <minute> } }: every later change, in minute order (key breaks ties).
+  // A switch to the poles already on is ignored. An event belongs to the period its minute falls in (the switch
+  // minute already counts as the new poles); an event with no minute counts as the poles at the end of the night.
+  const finite = v => v !== null && v !== '' && v !== undefined && Number.isFinite(Number(v));
   function formatOf(sess) {
     const f = sess && sess.format;
-    if (!f || f.start !== 'small') {
-      return { start: 'big', switchedAt: null, bigFrom: 0, everBig: true, keepers: (f && f.keepers) || {}, legacy: !f };
-    }
-    const sw = Number.isFinite(Number(f.switchedAt)) && f.switchedAt !== null && f.switchedAt !== '' ? Number(f.switchedAt) : null;
-    return { start: 'small', switchedAt: sw, bigFrom: sw, everBig: sw != null, keepers: f.keepers || {}, legacy: false };
+    const legacy = !f;
+    const start = f && f.start === 'small' ? 'small' : 'big';
+    const sw = start === 'small' && finite(f.switchedAt) ? Number(f.switchedAt) : null;
+    const marks = [{ big: start === 'big', at: 0 }];
+    if (sw != null) marks.push({ big: true, at: sw });
+    const extra = f && f.switches && typeof f.switches === 'object' ? Object.entries(f.switches) : [];
+    extra.filter(([, x]) => x && (x.poles === 'small' || x.poles === 'big') && finite(x.at))
+      .sort((a, b) => Number(a[1].at) - Number(b[1].at) || String(a[0]).localeCompare(String(b[0])))
+      .forEach(([, x]) => {
+        const last = marks[marks.length - 1], big = x.poles === 'big', at = Math.max(Number(x.at), last.at);
+        if (big !== last.big) marks.push({ big, at });
+      });
+    const periods = marks.map((m, i) => ({ big: m.big, from: m.at, to: i + 1 < marks.length ? marks[i + 1].at : null }))
+      .filter(p => p.to == null || p.to > p.from);
+    const bigs = periods.filter(p => p.big);
+    return {
+      start, switchedAt: sw, bigFrom: bigs.length ? bigs[0].from : null, everBig: bigs.length > 0,
+      keepers: (f && f.keepers) || {}, legacy, periods,
+      bigNow: periods[periods.length - 1].big,
+      anySmall: periods.some(p => !p.big),
+      // round 4 shapes read exactly as before: big all night, or one switch small → big
+      simple: periods.length === 1 || (periods.length === 2 && !periods[0].big),
+    };
   }
-
-  function isBigPolesEvent(sess, ev) {
-    const f = formatOf(sess);
+  // is minute `min` on big poles? (no minute = the poles at the end)
+  function bigAt(f, min) {
     if (!f.everBig) return false;
-    if (!f.bigFrom) return true;
-    if (!ev || ev.min == null) return true;
-    return Number(ev.min) >= f.bigFrom;
+    if (min == null || min === '' || !Number.isFinite(Number(min))) return f.bigNow;
+    let big = f.periods[0].big;
+    for (const p of f.periods) if (Number(min) >= p.from) big = p.big;
+    return big;
+  }
+  function isBigPolesEvent(sess, ev) {
+    return bigAt(formatOf(sess), ev ? ev.min : null);
+  }
+  // "0'–60'", "from 46'", "20'–60', from 75'": the big-poles periods
+  function bigRanges(f) {
+    return f.periods.filter(p => p.big).map(p => (p.to == null ? `from ${p.from}'` : `${p.from}'–${p.to}'`)).join(', ');
+  }
+  // The suffix keeper lines carry: '' (big all night), " from 46'" (one switch to big, as round 4),
+  // else " 0'–60' (big poles)" (any night that went back to small).
+  function bigSuffix(f) {
+    if (f.legacy || !f.everBig) return '';
+    if (f.simple) return f.switchedAt != null ? ` from ${f.switchedAt}'` : '';
+    return ` ${bigRanges(f)} (big poles)`;
+  }
+  // One line for the night: '' (old match), 'Big poles', 'Small poles', "Big poles from 46'",
+  // "Big poles 0'–60' · small from 60'", "Big poles 20'–60', from 75'".
+  function polesText(sess) {
+    const f = formatOf(sess);
+    if (f.legacy) return '';
+    if (!f.everBig) return 'Small poles';
+    if (f.simple) return f.switchedAt != null ? `Big poles from ${f.switchedAt}'` : 'Big poles';
+    const last = f.periods[f.periods.length - 1];
+    return `Big poles ${bigRanges(f)}` + (last.big ? '' : ` · small from ${last.from}'`);
   }
 
-  // The small-poles keeper rule (see the header). sp = { pid, pos, team } from sessPlayers.
+  // The keeper rule (see the header). sp = { pid, pos, team } from sessPlayers. This is the position he SCORES as
+  // for the night: a keeper (GK on big poles) is 'GK'; his goals and defending in small-poles periods still count as
+  // a MID's (matchPoints splits them).
   function effectivePos(sess, sp) {
     if (!sp || sp.pos !== 'GK') return sp ? sp.pos : null;
     const f = formatOf(sess);
@@ -179,6 +240,12 @@
   function playsAs(sess, pid, db) {
     const sp = sessPlayers(sess, db).find(p => p.pid === pid);
     return sp ? effectivePos(sess, sp) : null;
+  }
+  // Where he plays right now (the console's lists): a keeper is GK only while big poles are on; after a switch
+  // back to small he plays outfield (MID) and logs blocks and clearances like anyone.
+  function playsAsNow(sess, pid, db) {
+    const pos = playsAs(sess, pid, db);
+    return pos === 'GK' && !formatOf(sess).bigNow ? 'MID' : pos;
   }
 
   const concedes = (ev, team) =>
@@ -251,14 +318,30 @@
     const rules = SCORE[sp.pos];
     if (!rules) return null;
     const f = formatOf(sess);
-    const from = f.switchedAt != null ? ` from ${f.switchedAt}'` : '';
+    const from = bigSuffix(f);
     const t = tallyFor(sess, pid, sp);
+    // A keeper on a night that also had small poles (before a switch to big, or after a switch back): his goals
+    // score as GK only when scored in a big-poles period, otherwise as a MID's; his blocks and clearances in
+    // small-poles periods earn the MID defence bonus. Old shapes (big all night, legacy) are untouched.
+    const mixed = sp.pos === 'GK' && !f.legacy && f.anySmall && modeOf(sess) === 'live';
+    const split = { gBig: 0, gSmall: 0, blocks: 0, clearances: 0 };
+    if (mixed) {
+      for (const e of sessEvents(sess)) {
+        const big = bigAt(f, e.min);
+        if (e.type === 'goal' && e.scorerId === pid) { if (big) split.gBig++; else split.gSmall++; }
+        if (!big && e.type === 'block' && e.playerId === pid) split.blocks++;
+        if (!big && e.type === 'clearance' && e.playerId === pid) split.clearances++;
+      }
+    }
     const breakdown = [];
     let total = 0;
     const add = (key, label, count, pts) => { if (pts !== 0) { breakdown.push({ key, label, count, pts }); total += pts; } };
 
     add('app', 'Played', 1, rules.app);
-    if (t.goals)   add('goals',   plural(t.goals, 'goal'),       t.goals,   t.goals * rules.goal);
+    if (mixed) {
+      if (split.gBig)   add('goals',    plural(split.gBig, 'goal') + ' in goal (big poles)', split.gBig,   split.gBig * rules.goal);
+      if (split.gSmall) add('goalsOut', plural(split.gSmall, 'goal') + ' outfield',        split.gSmall, split.gSmall * SCORE.MID.goal);
+    } else if (t.goals) add('goals', plural(t.goals, 'goal'), t.goals, t.goals * rules.goal);
     if (t.ogs)     add('ogs',     plural(t.ogs, 'own goal'),     t.ogs,     t.ogs * OWN_GOAL);
     if (t.assists) add('assists', plural(t.assists, 'assist'),   t.assists, t.assists * rules.assist);
     if (sp.pos === 'GK') {
@@ -268,6 +351,12 @@
     }
     if (t.yellow) add('yellow', plural(t.yellow, 'yellow card'), t.yellow, t.yellow * rules.yellow);
     if (t.red)    add('red',    plural(t.red, 'red card'),       t.red,    t.red * rules.red);
+    if (mixed && (split.blocks || split.clearances)) {
+      const parts = [];
+      if (split.blocks) parts.push(plural(split.blocks, 'block'));
+      if (split.clearances) parts.push(plural(split.clearances, 'clearance'));
+      add('defBonus', `Defence bonus · ${parts.join(', ')}`, split.blocks + split.clearances, defActionPoints('MID', split.blocks, split.clearances));
+    }
     if (sp.pos === 'DEF') {
       if (t.blocks)     add('blocks',     plural(t.blocks, 'block'),         t.blocks,     t.blocks * (rules.block || 0));
       if (t.clearances) add('clearances', plural(t.clearances, 'clearance'), t.clearances, t.clearances * (rules.clearance || 0));
@@ -531,7 +620,7 @@
   const Scoring = {
     SCORE, OWN_GOAL, TEAM_ORDER, DOUBLE_TAP_MS,
     defActionPoints, sessPlayers, sessEvents, teamsOf, orderTeams, playsAs, effectivePos, teamGoals, result, outcomeFor,
-    formatOf, isBigPolesEvent, cleanSheet, storedFields,
+    formatOf, isBigPolesEvent, cleanSheet, storedFields, polesText, playsAsNow,
     matchPoints, matchBreakdown, scorers, livePoints, minuteText,
     compute, seasonStats, seasonTable, lastGame, completedSessions, playerHistory,
     teamStandings, teamForm, streak, leaders, checks, previewChange,
