@@ -28,6 +28,7 @@ module.exports = [
   // ---- front door, shell, sign-in
   { name: 'e2e', file: 'phase1/e2e.js', areas: ['ui', 'welcome', 'auth', 'store', 'offline'] },
   { name: 'r5', file: 'r5-foundations/r5-test.js', areas: ['ui', 'welcome', 'auth', 'teams', 'console'] },
+  { name: 'way-back', file: 'r5-foundations/way-back.js', areas: ['ui', 'welcome', 'auth'] },
   { name: 'practice', file: 'practice/test.js', areas: ['practice', 'welcome', 'auth', 'store', 'config'],
     note: 'reads the live database once (GET only; any other request is aborted)' },
   // ---- player side
