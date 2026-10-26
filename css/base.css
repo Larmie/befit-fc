@@ -155,5 +155,5 @@ body.nav-hidden { --float-bottom: calc(12px + var(--safe-b)); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Practice mode banner (js/core/practice.js) */
-.practice-bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: center; height: 28px; background: var(--warnfill); color: #1A0E00; font-size: 12px; font-weight: 600; text-decoration: none; }
+.practice-bar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: center; height: 28px; background: var(--practice); color: var(--on-practice); font-size: 12px; font-weight: 650; text-decoration: none; }
 html.practice .hd { top: 28px; }

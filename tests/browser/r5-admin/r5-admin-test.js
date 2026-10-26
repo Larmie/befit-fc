@@ -160,6 +160,25 @@ const text = (p, sel) => p.evaluate(s => (document.querySelector(s) || {}).textC
   check('Access: plain steps to change the referee password in the Firebase console', await p.evaluate(() => { const t = document.querySelector('.sh-admin-access').textContent; return t.includes('console.firebase.google.com') && t.includes('Authentication') && t.includes('roles') && document.querySelectorAll('.sh-admin-access li').length === 6; }));
   await s.shot(path.join(OUT, 'settings-access-390-dark.png'));
   await p.keyboard.press('Escape'); await sleep(200);
+  // ---- the practice password (round 7): Access › Practice password · Set ›
+  const accessRows = await p.evaluate(() => [...document.querySelectorAll('.adm-set-b .rows')].find(r => /Referee password/.test(r.innerText)).innerText.replace(/\s+/g, ' ').trim());
+  check('Access rows: Referee password · Practice password (Set ›, none yet) · Admins', /^Referee password.*How to change.*Practice password.*Set.*Admins/.test(accessRows), accessRows);
+  await click(p, '[data-tap="practicepw"]', 400);
+  const pps = await p.evaluate(() => { const sh = document.querySelector('.sh-admin-practicepw'); return sh && { title: sh.querySelector('.sheet-title').textContent, inputs: [...sh.querySelectorAll('input')].map(i => i.type + ':' + i.placeholder), save: !!sh.querySelector('[data-tap="pp-save"]'), cancel: /Cancel/.test(sh.innerText) }; });
+  check('Practice password sheet: the new password twice, Save, Cancel', pps && pps.title === 'Practice password' && pps.inputs.join('|') === 'password:New practice password|password:Type it again' && pps.save && pps.cancel, pps);
+  await s.shot(path.join(OUT, 'settings-practice-password-390-dark.png'));
+  const ppType = async (a, b) => { for (const [sel, v] of [['[data-pp="1"]', a], ['[data-pp="2"]', b]]) { await p.$eval(sel, i => { i.value = ''; }); if (v) { await p.focus(sel); await p.keyboard.type(v, { delay: 5 }); } } };
+  w0 = await nW(p);
+  await ppType('goal2026', 'goal2027'); await click(p, '[data-tap="pp-save"]', 400);
+  check('two different passwords → "The two don\'t match", nothing written', (await p.$eval('.sh-admin-practicepw [data-err]', e => e.textContent)) === "The two don't match" && (await writesSince(p, w0)).length === 0);
+  await ppType('abc', 'abc'); await click(p, '[data-tap="pp-save"]', 400);
+  check('fewer than 4 characters → "Use at least 4 characters", nothing written', (await p.$eval('.sh-admin-practicepw [data-err]', e => e.textContent)) === 'Use at least 4 characters' && (await writesSince(p, w0)).length === 0);
+  await ppType('goal2026', 'goal2026'); await click(p, '[data-tap="pp-save"]', 900);
+  w = await writesSince(p, w0);
+  const rec = w[0] && w[0]['settings/practice'];
+  check('Save → ONE write to settings/practice = { hash (64 hex), salt (32 hex), updatedAt }, never the password', w.length === 1 && Object.keys(w[0]).join() === 'settings/practice' && rec && /^[0-9a-f]{64}$/.test(rec.hash) && /^[0-9a-f]{32}$/.test(rec.salt) && typeof rec.updatedAt === 'number' && !JSON.stringify(w).includes('goal2026'), w);
+  check('… and the gate would accept "goal2026" and refuse "goal2027"', await p.evaluate(async r => (await PracticePw.verify('goal2026', r)) && !(await PracticePw.verify('goal2027', r)), rec));
+  check('the sheet closes and the row now says "Change ›"', await p.evaluate(() => !document.querySelector('.sh-admin-practicepw') && /Practice password\s*Change/.test([...document.querySelectorAll('.adm-set-b .r')].find(r => /Practice password/.test(r.innerText)).innerText.replace(/\s+/g, ' ')) && PracticePw.isSet(Store.state.settings)));
   await click(p, '[data-tap="appearance"]', 400);
   check('Appearance opens the shared Appearance sheet', await p.evaluate(() => !!document.querySelector('.sheet') && document.querySelector('.sheet').textContent.includes('Referee console')));
   await p.keyboard.press('Escape'); await sleep(200);

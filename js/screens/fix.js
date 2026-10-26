@@ -1218,7 +1218,7 @@
   App.registerScreen('ref.ftcheck', {
     tab: 'match', layout: 'phone', console: true,
     // the title gives way while the sync chip is long ("On phone · 2 waiting"), so the two never overlap at 390 px
-    header: () => { const i = Store.status(); return { center: i.pending || i.status !== 'online' ? '' : '<span class="hd-title">Full time</span>', right: UI.syncChip(i) }; },
+    header: () => { const i = Store.status(); return { center: i.pending || i.status !== 'online' ? '' : `<span class="hd-title">${document.documentElement.classList.contains('practice') ? 'Practice result · not saved' : 'Full time'}</span>`, right: UI.syncChip(i) }; },
     mount(el, ctx) {
       const sid = ctx.params.sid;
       // the page follows the outbox: "Publish · sends when signal returns" ↔ "Publish & share", Waiting → Published

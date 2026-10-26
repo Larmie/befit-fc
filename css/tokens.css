@@ -52,6 +52,10 @@
   --edge: inset 0 1px 0 rgba(255,255,255,.06);                                 /* every card, row group, tile */
   --attn: color-mix(in srgb, var(--warn) 10%, var(--s1));                     /* sync waiting, stoppage nudge, money owed */
   --cred: #E5484D;        /* red card shape */
+
+  /* practice mode (the incognito look): used ONLY for practice, never on data, chips or numbers */
+  --practice: #A47CFF;
+  --on-practice: #1A0B33;
 }
 
 [data-theme="light"] {
@@ -94,6 +98,36 @@
   --edge: 0 0 0 1px var(--line);
   --attn: color-mix(in srgb, #FF9F43 14%, #fff);
   --cred: #D93B41;
+
+  --practice: #6D4AE0;
+  --on-practice: #FFFFFF;
+}
+
+/* ---- Practice mode: the incognito look (html.practice is set by js/core/practice.js) ------------------------
+   Only the surfaces change, and the ink and team colours stay as they are. The rules name the two theme attributes
+   too, because any element with its own data-theme (the always-dark front door, the console, sheets) re-declares
+   the tokens. The texture, the frame and the violet bar are in css/welcome.css under "Practice mode". */
+html.practice,
+html.practice [data-theme="dark"] {
+  --bg: #110E18;
+  --s1: #1A1625;
+  --s2: #241E31;
+  --s3: #30293F;
+  --line: #2A2437;
+  --sheet: #1A1625;
+  --navref: #0E0B14;
+  --hl: #211B2E;
+}
+html.practice[data-theme="light"],
+html.practice [data-theme="light"] {
+  --bg: #F1EEFA;
+  --s1: #FFFFFF;
+  --s2: #E9E4F7;
+  --s3: #DCD4F2;
+  --line: #E2DBF3;
+  --sheet: #FFFFFF;
+  --navref: #FFFFFF;
+  --hl: #ECE7F8;
 }
 
 :root {

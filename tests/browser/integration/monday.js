@@ -48,29 +48,32 @@ async function signIn(page, who) {
 
 (async () => {
   // =========================================================================== 1 · front door → a player → Home
-  note('1 · Front door: Find your name → Emmanuel → Home');
+  note('1 · Front door: My stats → Find your name → Emmanuel → Me');
   const w = await H.open({ width: 390, theme: 'dark', viewer: 'none', now: NOW });
   const wp = w.page;
   check('first open shows the front door (welcome)', await screenOf(wp) === 'welcome');
-  check('front door: no list until typing; 3 options Just browsing · I’m the referee · I’m the admin', (await wp.$$('[data-fd-res] [data-tap="pick"]')).length === 0 &&
-    (await wp.$$eval('[data-fd-opts] [data-tap]', a => a.map(x => x.dataset.tap).join())) === 'browse,referee,admin');
+  check('front door: no list of names; 4 doors My stats · Browse as guest · Referee · Admin', (await wp.$$('#app-screen [data-tap="pick"]')).length === 0 &&
+    (await wp.$$eval('.fd-doors [data-tap]', a => a.map(x => x.dataset.tap).join())) === 'stats,browse,referee,admin');
+  await wp.click('[data-tap="stats"]'); await sleep(250);
+  check('My stats → Find your name: still no list until typing', (await wp.$$('[data-fd-res] [data-tap="pick"]')).length === 0 && !!(await wp.$('[data-search="who"]')));
   await wp.type('[data-search="who"]', 'emm'); await sleep(250);
   await wp.click(`[data-tap="pick"][data-pid="${EMM}"]`); await sleep(500);
-  check('picking Emmanuel opens player.home; header name chip "Emmanuel ▾"', await screenOf(wp) === 'player.home' && (await txt(wp, '#app-header')).includes('Emmanuel'));
+  check('picking Emmanuel opens player.me (stats + match history); header name chip "Emmanuel ▾"', await screenOf(wp) === 'player.me' && (await txt(wp, '#app-header')).includes('Emmanuel'));
   check('player tabs: Home · Match · Tables · Me', (await navLabels(wp)).join(' · ') === 'Home · Match · Tables · Me', await navLabels(wp));
   const before = await wp.evaluate(pid => { const rows = Scoring.seasonTable(); const r = rows.find(x => x.pid === pid); return { pts: r.pts, rank: r.rank, last: rows.lastGame && rows.lastGame.date }; }, EMM);
   check(`before tonight: Emmanuel ${before.pts} pts (#${before.rank}), last game ${before.last}`, before.pts === 484 && before.last === '2026-10-19', before);
-  check('player Home: one glowing hero', await wp.evaluate(() => document.querySelectorAll('#app-screen .hero').length === 1));
+  await wp.evaluate(() => App.goTab('home')); await sleep(400);
+  check('player Home: one glowing hero', await screenOf(wp) === 'player.home' && await wp.evaluate(() => document.querySelectorAll('#app-screen .hero').length === 1));
   await w.shot(path.join(SHOTS, '01-player-home.png'));
   check('player phone: no console errors', !w.errors.length, w.errors);
   await w.close();
 
   // =========================================================================== 2 · guest browsing
-  note('2 · Guest: Just browsing → Home · Match · Tables (no Me)');
+  note('2 · Guest: Browse as guest → Home · Match · Tables (no Me)');
   const g = await H.open({ width: 390, theme: 'light', viewer: 'none', now: NOW });
   const gp = g.page;
   await gp.click('[data-tap="browse"]'); await sleep(500);
-  check('Just browsing → guest.home, header "Browsing ▾"', await screenOf(gp) === 'guest.home' && /Browsing/.test(await txt(gp, '#app-header')));
+  check('Browse as guest → guest.home, header "Browsing ▾"', await screenOf(gp) === 'guest.home' && /Browsing/.test(await txt(gp, '#app-header')));
   check('guest tabs: Home · Match · Tables (no Me)', (await navLabels(gp)).join(' · ') === 'Home · Match · Tables', await navLabels(gp));
   const gHome = await gp.evaluate(() => document.getElementById('app-screen').innerText.replace(/\s+/g, ' '));
   check('guest Home: last game 6–4 (19 Oct) in the score block, one hero', await gp.evaluate(() => [...document.querySelectorAll('#app-screen .sb .sb-half .hn')].slice(0, 2).map(e => e.textContent).join('–') === '6–4' && document.querySelectorAll('#app-screen .hero').length === 1), gHome.slice(0, 160));

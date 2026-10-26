@@ -51,9 +51,23 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     const p = s.page;
     check('1.1 first open shows the front door', await screenId(p) === 'welcome');
     check('1.2 no list of names before typing', await p.evaluate(() => document.querySelectorAll('#app-screen [data-tap="pick"]').length === 0));
-    check('1.3 three options: Just browsing · I’m the referee · I’m the admin', await p.evaluate(() => [...document.querySelectorAll('.fd-opt .nm')].map(x => x.textContent).join(' · ')) === 'Just browsing · I’m the referee · I’m the admin');
-    check('1.4 branded hero with last game score block (Green 6 – 4 Red, FT 19 Oct) and next game Mon 26 Oct',
-      await p.evaluate(() => { const b = document.querySelector('.fd-brand'); return !!b && /6/.test(b.querySelector('.sb-half.t-green').innerText) && /4/.test(b.querySelector('.sb-half.t-red').innerText) && /FT/.test(b.innerText) && /Next game · Mon 26 Oct/.test(b.innerText); }));
+    const doors = await p.evaluate(() => [...document.querySelectorAll('#app-screen .fd-door')].map(d => ({ name: d.querySelector('.tx b').textContent, sub: d.querySelector('.tx .sub').textContent, tap: d.dataset.tap, h: Math.round(d.getBoundingClientRect().height), cls: d.className })));
+    check('1.3 four doors in one list: My stats · Browse as guest · Referee · Admin (no Staff heading)', doors.map(d => d.name).join(' · ') === 'My stats · Browse as guest · Referee · Admin' && doors.map(d => d.tap).join() === 'stats,browse,referee,admin' &&
+      await p.evaluate(() => document.querySelectorAll('#app-screen .fd-doors').length === 1 && !/staff/i.test(document.getElementById('app-screen').innerText)), doors);
+    check('1.3b the door words are the designed ones', doors.map(d => d.sub).join(' | ') === 'Your points and every match you played | Scores, tables, the season | Tonight’s match | Run the club', doors.map(d => d.sub));
+    check('1.3c door heights step down 84 → 70 → 58 → 58, My stats is the lit one', doors.map(d => d.h).join() === '84,70,58,58' && /is-primary/.test(doors[0].cls) && doors.slice(2).every(d => /is-staff/.test(d.cls)), doors.map(d => d.h));
+    check('1.3d no header, no bottom nav on the front door', await p.evaluate(() => document.getElementById('app-header').hidden && document.getElementById('app-nav').hidden));
+    check('1.3e the lockup, BE FIT CLUB and the slogan are there, and the footer holds one link (practice pill)', await p.evaluate(() => {
+      const s = document.getElementById('app-screen'); const foot = s.querySelectorAll('.fd-foot a, .fd-foot button');
+      return !!s.querySelector('svg.fd-lk') && /BE FIT CLUB/.test(s.querySelector('.fd-wm').innerText) && /BE FIT OR BE FINISHED/.test(s.querySelector('.fd-slogan').innerText) &&
+        foot.length === 1 && /Try practice mode/.test(foot[0].innerText) && /nothing is saved/.test(foot[0].innerText) && foot[0].getAttribute('href').endsWith('?practice') && !/Appearance/i.test(s.innerText); }));
+    check('1.4 Tonight strip: next game Mon 26 Oct and the last score as two mini squares (Green 6, Red 4)',
+      await p.evaluate(() => { const t = document.querySelector('.fd-tonight'); const sq = [...t.querySelectorAll('.ms i')]; return !!t && /Next game/i.test(t.innerText) && /Mon 26 Oct/.test(t.innerText) && sq.length === 2 && sq[0].textContent === '6' && sq[0].classList.contains('t-green') && sq[1].textContent === '4' && sq[1].classList.contains('t-red'); }));
+    check('1.4b every door has its own picture on the right, behind the words', await p.evaluate(() => [...document.querySelectorAll('#app-screen .fd-door')].every(d => { const a = d.querySelector('.fd-art svg'); return a && getComputedStyle(d.querySelector('.fd-art')).position === 'absolute' && /mask|linear-gradient/.test(getComputedStyle(d.querySelector('.fd-art')).maskImage || getComputedStyle(d.querySelector('.fd-art')).webkitMaskImage || ''); })));
+    // "My stats" → the Find your name state on the same screen
+    await tap(p, '#app-screen [data-tap="stats"]');
+    check('1.4c My stats → Find your name on the same screen: "‹ Menu", the heading, the hint, no list yet', await p.evaluate(() => { const s = document.getElementById('app-screen'); return s.querySelector('section').dataset.screen === 'welcome' && /‹ Menu/.test(s.querySelector('.fd-back').innerText) && s.querySelector('.fd-sub h2').innerText === 'Find your name' && /Your name stays on this phone\./.test(s.querySelector('.fd-hint').innerText) && !s.querySelector('[data-tap="pick"]') && !s.querySelector('.fd-door'); }));
+    check('1.4d the search box has the cursor already (auto-focus)', await p.evaluate(() => document.activeElement && document.activeElement.dataset.search === 'who'));
     // search box fix: no outline on the inner input, no browser clear button, one ink2 ring on the box
     await p.focus('[data-search="who"]');
     const sb = await p.evaluate(() => { const i = document.querySelector('[data-search="who"]'); const cs = getComputedStyle(i); const x = getComputedStyle(i, '::-webkit-search-cancel-button'); return { outline: cs.outlineStyle, cancel: x.display, appearance: x.webkitAppearance || x.appearance, ring: getComputedStyle(i.closest('.inp')).boxShadow }; });
@@ -61,13 +75,13 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check('1.6 search box: browser clear button hidden', sb.cancel === 'none' || sb.appearance === 'none', sb);
     check('1.7 search box: focus shows as one 1.5 px ring on the box', /1\.5px/.test(sb.ring), sb);
     await p.keyboard.type('Da', { delay: 30 }); await sleep(300);
-    const res = await p.evaluate(() => ({ names: [...document.querySelectorAll('#app-screen [data-tap="pick"] .nm')].map(x => x.textContent), label: document.querySelector('[data-fd-res] .lbl')?.innerText, brandHidden: document.querySelector('[data-fd-brand]').hidden, optsHidden: document.querySelector('[data-fd-opts]').hidden, chips: document.querySelectorAll('[data-fd-res] .tc').length }));
+    const res = await p.evaluate(() => ({ names: [...document.querySelectorAll('#app-screen [data-tap="pick"] .nm')].map(x => x.textContent), label: document.querySelector('[data-fd-res] .lbl')?.innerText, brandHidden: !document.querySelector('.fd-title'), optsHidden: !document.querySelector('.fd-doors'), chips: document.querySelectorAll('[data-fd-res] .tc').length }));
     check('1.8 typing "Da" shows 4 matches, each with a team chip', res.names.length === 4 && /4 MATCHES/i.test(res.label) && res.chips === 4, res);
     check('1.9 the 4 are Daniel fair guy, Danny red dark short, David O, David S', res.names.join('|') === 'Daniel fair guy|Danny red dark short|David O|David S', res.names);
-    check('1.10 while typing, the hero and the options step aside', res.brandHidden && res.optsHidden, res);
+    check('1.10 in Find your name the logo and the doors step aside', res.brandHidden && res.optsHidden, res);
     await s.shot(path.join(H.out(__dirname, 'shots'), 'test-door-typing.png'));
     await tap(p, '#app-screen [data-tap="pick"]');
-    check('1.11 picking a name opens Home (not Live)', await screenId(p) === 'player.home');
+    check('1.11 picking a name opens Me (stats + match history), not Home', await screenId(p) === 'player.me');
     check('1.12 player tabs: Home · Match · Tables · Me', await navLabels(p) === 'Home · Match · Tables · Me', await navLabels(p));
     check('1.13 header name chip shows "Daniel fair guy"', (await pillText(p)) === 'Daniel fair guy', await pillText(p));
     check('1.14 the name chip is team-tinted (pill.me with a team class)', await p.evaluate(() => !!document.querySelector('#app-header .pill.me.t-red')));
@@ -78,6 +92,20 @@ function liveData() {   // the 19 Oct match frozen at 30', running
       ['My page', 'Share card', 'Appearance', 'Back to menu', 'Referee or admin sign-in'].every(x => t.includes(x)) && !/Switch/.test(t), t);
     await tapText(p, 'Back to menu');
     check('1.16 "Back to menu" goes to the front door (and the phone still remembers him)', await screenId(p) === 'welcome' && await p.evaluate(() => !!App.viewer()));
+    const ret = await p.evaluate(() => ({ doors: [...document.querySelectorAll('#app-screen .fd-door')].map(d => ({ kk: (d.querySelector('.kk') || {}).textContent || '', name: d.querySelector('.tx b').textContent, sub: d.querySelector('.tx .sub').textContent, h: Math.round(d.getBoundingClientRect().height), cls: d.className, bars: d.querySelectorAll('.fd-art rect').length })),
+      notyou: (document.querySelector('.fd-notyou') || {}).textContent }));
+    check('1.16b a phone that remembers a name shows "Continue as Daniel fair guy" first, then Browse as guest · Referee · Admin',
+      ret.doors.map(d => d.name).join(' · ') === 'Daniel fair guy · Browse as guest · Referee · Admin' && /continue as/i.test(ret.doors[0].kk) && /is-continue/.test(ret.doors[0].cls) && /t-red/.test(ret.doors[0].cls), ret);
+    check('1.16c … its line reads rank · pts · move (e.g. "5th · 280 pts"), its picture is his real last games as bars, heights 92 → 70 → 58 → 58',
+      /^\d+(st|nd|rd|th) · \d+ pts( · [▲▼]\d+)?$/.test(ret.doors[0].sub) && ret.doors[0].bars >= 1 && ret.doors[0].bars <= 5 && ret.doors.map(d => d.h).join() === '92,70,58,58', ret);
+    check('1.16d … and "Not Daniel? Find your name ›" sits under it', ret.notyou === 'Not Daniel? Find your name ›', ret.notyou);
+    await tap(p, '#app-screen [data-tap="continue"]');
+    check('1.16e Continue as opens Me', await screenId(p) === 'player.me');
+    await p.evaluate(() => App.go('welcome')); await sleep(300);
+    await tap(p, '#app-screen [data-tap="find"]');
+    check('1.16f "Not Daniel? Find your name ›" opens the find state', await p.evaluate(() => !!document.querySelector('#app-screen .fd-sub [data-search="who"]')));
+    await tap(p, '#app-screen [data-tap="menu"]');
+    check('1.16g "‹ Menu" goes back to the doors', await p.evaluate(() => document.querySelectorAll('#app-screen .fd-door').length === 4));
     console.log(s.errors.length ? 'errors: ' + s.errors.join(' | ') : '');
     check('1.17 no console errors', !s.errors.length, s.errors);
     await s.close();
@@ -87,7 +115,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     const s = await H.open({ viewer: 'none', width: 390 });
     const p = s.page;
     await tap(p, '#app-screen [data-tap="browse"]');
-    check('2.1 Just browsing opens the guest Home', await screenId(p) === 'guest.home');
+    check('2.1 Browse as guest opens the guest Home', await screenId(p) === 'guest.home');
     check('2.2 guest tabs: Home · Match · Tables (no Me)', await navLabels(p) === 'Home · Match · Tables', await navLabels(p));
     check('2.3 header pill reads "Browsing"', await pillText(p) === 'Browsing');
     await tap(p, '#app-nav [data-tab="match"]'); check('2.4 Match tab → player.live (the Match screen)', await screenId(p) === 'player.live');
@@ -181,7 +209,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
   }
   // ------------------------------------------------------------ 6. Teams with Blue added (chips and score block colours)
   for (const theme of ['dark', 'light']) {
-    const s = await H.open({ viewer: 'none', width: 390, theme, data: blueData() });
+    const s = await H.open({ viewer: 'guest', width: 390, theme, data: blueData(), route: '#/guest.home' });
     const p = s.page;
     const r = await p.evaluate(() => {
       const probe = html => { const d = document.createElement('div'); d.innerHTML = html; document.body.appendChild(d); return d.firstElementChild; };
@@ -189,7 +217,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
       const tok = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
       const chip = probe(UI.teamChip('blue'));
       const sky = probe(UI.teamChip('sky'));
-      const brand = document.querySelector('.fd-brand');
+      const brand = document.querySelector('#app-screen .sb');
       const halves = [...brand.querySelectorAll('.sb-half')];
       const names = [...brand.querySelectorAll('.sb-nm')].map(x => x.innerText.trim());
       const num = halves[0].querySelector('.hn');
@@ -210,6 +238,28 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check(`6.9 [${theme}] UI.fmt.team + standings know Blue (1 W)`, r.fmt === 'Blue' && r.standings && r.standings.w === 1, r.standings);
     await s.shot(path.join(H.out(__dirname, 'shots'), `test-blue-door-${theme}.png`));
     check(`6.10 [${theme}] no console errors`, !s.errors.length, s.errors);
+    await s.close();
+  }
+  // ------------------------------------------------------------ 7. the front door is always dark; the live state; practice pill
+  {
+    const s = await H.open({ viewer: 'none', width: 390, theme: 'light' });
+    const p = s.page;
+    const dk = await p.evaluate(() => { const sc = document.querySelector('#app-screen section'); const cs = k => getComputedStyle(sc).getPropertyValue(k).trim().toLowerCase();
+      const sq = sc.querySelector('.fd-tonight .ms i'); return { app: document.documentElement.dataset.theme, screen: sc.dataset.theme, bg: cs('--bg'), ink: cs('--ink'), body: getComputedStyle(sc).backgroundColor, sq: getComputedStyle(sq).color, tc: getComputedStyle(sq).getPropertyValue('--tc').trim().toLowerCase(), green: cs('--green') }; });
+    check('7.1 the app is light but the front door is always dark (screen data-theme=dark, --bg #0b0d10, ink #f2f3f5)', dk.app === 'light' && dk.screen === 'dark' && dk.bg === '#0b0d10' && dk.ink === '#f2f3f5', dk);
+    check('7.2 … and the light theme does not darken the mini score numerals on it (Green 6 stays the bright dark-theme green)', dk.green === '#3dd68c' && dk.sq === 'rgb(61, 214, 140)', dk);
+    await s.shot(path.join(H.out(__dirname, 'shots'), 'test-door-light-app.png'));
+    check('7.3 first-time doors in light too: My stats is the lit one', await p.evaluate(() => !!document.querySelector('.fd-door.is-primary')));
+    check('7.4 no console errors', !s.errors.length, s.errors);
+    await s.close();
+  }
+  {
+    const s = await H.open({ viewer: 'none', width: 390, theme: 'dark', data: liveData(), now: NOW });
+    const p = s.page;
+    const lv = await p.evaluate(() => { const l = document.querySelector('.fd-live'); return l && { live: /LIVE/.test(l.innerText), block: !!l.querySelector('.sb .sb-half'), mid: l.querySelector('.sb-mid').innerText.replace(/\s+/g, ' '), strip: !!document.querySelector('.fd-tonight'), tap: l.querySelector('.sb').dataset.tap }; });
+    check('7.5 while a match is live the Tonight strip becomes the live score block with a LIVE dot and the minute', lv && lv.live && lv.block && /\d+'/.test(lv.mid) && !lv.strip && lv.tap === 'live', lv);
+    await tap(p, '#app-screen [data-tap="live"]');
+    check('7.6 tapping it opens Match', await screenId(p) === 'player.live');
     await s.close();
   }
   console.log(`\n${oks} ok, ${fails} FAIL`);

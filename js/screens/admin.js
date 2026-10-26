@@ -20,7 +20,8 @@
                             (each "Record ›") on top, then the entered days, "+ Other date". The referee: tonight only.
      'ref.moneyDay' {date}  tab money     The register for one date (admin), plus Hold to clear payment record.
      'admin.settings'       tab settings  Club (name, season, fee, quick amounts), Teams (+ Add a team), Match rules
-                            (read-only), Access (how to change the referee password), Appearance, Data (CSV, practice).
+                            (read-only), Access (how to change the referee password; the practice password: set / change),
+                            Appearance, Data (CSV, practice).
      'app.offline'          (not a page)  The status slot: viewers and the admin see "Offline · last updated 21:23";
                             the referee doesn't (the header sync chip says it); "Not sent" shows for everyone.
      ('ref.home' is retired: the shell sends it to admin.home or the referee's Match tab.)
@@ -34,6 +35,7 @@
      paymentDays/{date}                     { date, createdAt, updatedAt, payments: { pid: { amount, updatedAt, by } } }
      sessions/{sid}/payments (legacy)       read and merged by updatedAt, exactly as classic; cleared with the record.
      settings/club/{name|seasonLabel|fee|quickAmounts}     (Teams.club() reads them, with fallbacks)
+     settings/practice = { hash, salt, updatedAt }       the practice password, hash = SHA-256(salt + password) (js/core/practice.js)
      settings/teams/{id} = { name, colour, order, active } (Teams.writeFor). The first team write also writes the
                             teams on show (Green, Red) so they never vanish when `settings/teams` starts to exist.
    Payments only write the people whose amount changed (no zeros for people you didn't touch).
@@ -1353,6 +1355,31 @@
         `<ol class="adm-steps-ol">${steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` });
   }
 
+  // The practice password (round 7): stored as settings/practice = { hash, salt, updatedAt }, hash = SHA-256(salt + password),
+  // never the password itself. js/core/practice.js asks for it before ?practice starts. Empty = practice stays open.
+  function openPracticePwSheet() {
+    const Pw = window.PracticePw;
+    const h = UI.sheet.open({ title: 'Practice password', cls: 'sh-admin-practicepw', autofocus: false, cancel: true,
+      footer: UI.btn('Save', { tap: 'pp-save' }),
+      body: `<div class="sub mb-3">Only opens practice mode. It isn’t the referee or admin password.</div>` +
+        `<div class="stack"><label class="inp"><input type="password" autocomplete="new-password" data-pp="1" placeholder="New practice password" aria-label="New practice password"></label>` +
+        `<label class="inp"><input type="password" autocomplete="new-password" data-pp="2" placeholder="Type it again" aria-label="Type the new practice password again"></label></div>` +
+        `<div class="field-err" data-err></div>` });
+    const err = t => { h.el.querySelector('[data-err]').textContent = t; };
+    const save = async b => {
+      const a = h.el.querySelector('[data-pp="1"]').value, c = h.el.querySelector('[data-pp="2"]').value;
+      if (a !== c) { err("The two don't match"); return; }
+      if (a.length < Pw.MIN_LENGTH) { err(`Use at least ${Pw.MIN_LENGTH} characters`); return; }
+      err('');
+      let rec;
+      try { rec = Object.assign(await Pw.make(a), { updatedAt: Store.now() }); } catch (e) { err('This connection can’t keep a password safe. Open the https address'); return; }
+      saveSettings({ 'settings/practice': rec }, 'Practice password changed', b, h.el, () => { h.close(); App.rerender(); });
+    };
+    UI.on(h.el, 'pp-save', save);
+    h.el.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); save(h.el.querySelector('[data-tap="pp-save"]')); } });
+    return h;
+  }
+
   // ---- Data: export the season as CSV (the same numbers as Scoring)
   function seasonCsv(db) {
     const rows = Scoring.seasonTable(db);
@@ -1403,6 +1430,7 @@
     ]);
     const accessBlock = `<div class="lbl mt-6">Access</div>` + UI.rows([
       r('access', 'Referee password', 'How to change'),
+      UI.row({ tap: 'practicepw', cls: 'adm-prac', title: 'Practice password', right: `<span class="meta adm-val">${window.PracticePw.isSet(Store.state.settings) ? 'Change' : 'Set'}</span>`, chevron: true }),
       UI.row({ title: 'Admins', right: `<span class="meta adm-val">${esc(me)}</span>` }),
     ]);
     const lookBlock = `<div class="lbl mt-6">Appearance</div>` + UI.rows([
@@ -1424,6 +1452,9 @@
       UI.on(el, 'add-team', () => openTeamSheet(null));
       UI.on(el, 'points', openPointsSheet);
       UI.on(el, 'access', openAccessSheet);
+      UI.on(el, 'practicepw', openPracticePwSheet);
+      // the admin opens practice from here without the question (practice.js reads this 60-second stamp)
+      el.addEventListener('click', e => { if (e.target.closest('[data-practice]')) window.PracticePw.adminPass(); });
       UI.on(el, 'appearance', () => {
         const h = App.openAppearance();          // the shell's sheet; redraw the rows once it closes
         const layer = document.getElementById('app-layer');

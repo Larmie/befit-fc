@@ -312,6 +312,9 @@
   // Header sync chip (referee). Quiet when all sent; amber outline + dot while saves wait on the phone.
   function syncChip(info) {
     info = info || {};
+    if (document.documentElement.classList.contains('practice')) {   // practice saves nothing: say so where "All sent" sits
+      return `<button type="button" class="hd-syncbtn" data-shell="sync" data-sync aria-label="Practice · not saved"><span class="sync">Practice · not saved</span></button>`;
+    }
     const n = info.pending || 0;
     let text, wait = false;
     if (!n) { text = info.status === 'offline' ? 'No signal' : '✓ All sent'; wait = info.status === 'offline'; }
