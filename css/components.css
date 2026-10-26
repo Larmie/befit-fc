@@ -211,6 +211,8 @@ body.sheet-open .undo, body.sheet-open .toast { top: calc(12px + env(safe-area-i
 .savebar { height: 64px; justify-content: space-between; padding: 0 8px 0 16px; font-size: 13.5px; }
 .toast { height: var(--h-target); padding: 0 16px; font-size: 13.5px; font-weight: 550; justify-content: center; white-space: nowrap; pointer-events: none; left: 50%; right: auto; transform: translateX(-50%); max-width: calc(100vw - 24px); }
 .toast.err { background: var(--warnfill); color: var(--on-warn); }
+.toast .toast-act { pointer-events: auto; height: 100%; min-width: 44px; padding: 0 2px; margin-right: -4px; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.toast.has-act { gap: 6px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------------------------------------------------------------- hold to confirm (2 s) */
@@ -403,3 +405,7 @@ body[data-mode="referee"] .hd-pillbtn { min-height: var(--h-target); }
 .pill-who .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pill-who b { font-size: 18px; font-weight: 700; overflow-wrap: break-word; }
 .sh-shell-pill .r.quiet .nm { color: var(--ink2); font-weight: 500; }
+/* the last group of every pill sheet: full-width 48 px buttons (Back to menu · Sign out) */
+.sh-end { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-4); }
+.btn.sh-act { height: var(--h-target); }
+.btn.o.out { color: var(--red); }

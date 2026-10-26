@@ -4,11 +4,15 @@
    Round 5: FOUR ROLES, each with its own tabs and header pill.
      guest    (just browsing)        Home · Match · Tables                 header: "Browsing ▾" (outlined)
      player   (picked their name)    Home · Match · Tables · Me            header: name chip "Andrew ▾" (team tint)
-     referee  (shared login)         Match · Money tonight                 header: "Referee ▾" · date · sync chip
+     referee  (shared login)         Match · Money tonight                 header: mark · date · sync chip · "Referee ▾"
                                      The nav hides while a match is live (clock running, paused or in stoppage).
-     admin    (Reuben)               Home · Squad · Money · Settings       header: "Admin ▾" · page title
+     admin    (Reuben)               Home · Squad · Money · Settings       header: BE FIT · page title · "Admin ▾"
                                      The admin can also referee: "Admin ▾ › Referee console" switches to the
                                      referee tabs (role 'referee', still signed in as admin).
+   THE WAY BACK (every role): the header-left brand button (mark + BE FIT, data-shell="welcome") returns to the
+   menu; it is hidden on the referee side while a match is live. Every pill sheet ends with full-width buttons:
+   Back to menu (everyone; staff stay signed in) and Sign out (referee, admin). The laptop rail has the same two rows.
+   A guest or player who opens a staff-only screen gets the toast "Referee or admin only · Sign in ›" (App.staffOnly()).
    Phone: header + bottom nav. Laptop (>= 960 px): left rail, content max 1040 px; screens with
    layout:'phone' (the console) stay phone-width and centred.
 
@@ -239,7 +243,13 @@
     return r;
   }
 
-  function resolve(r) {
+  // Someone not signed in reached something for staff only: say so, with a way in (the menu's staff doors).
+  function staffOnly() {
+    if (Auth.isReferee()) return;
+    UI.toast('Referee or admin only', { action: { label: 'Sign in ›', fn: () => go('welcome') }, ms: 4500 });
+  }
+  let deniedKey = null;                 // so one blocked address toasts once, not on every redraw
+  function resolve(r, denied) {
     let { id, params } = r;
     // Round 4's 'ref.home' becomes the role's home once the admin builder's real admin.home exists.
     if (id === 'ref.home' && screens['admin.home'] && !screens['admin.home'].placeholder) id = Auth.isAdmin() && role() !== 'referee' ? 'admin.home' : homeFor('referee');
@@ -248,9 +258,9 @@
     const def = screens[id];
     if (!def) return { id, params, def: null };
     const acc = access(id, def);
-    if (acc === 'admin' && !Auth.isAdmin()) return resolve({ id: Auth.isReferee() ? homeFor('referee') : homeFor(viewerRole()), params: {} });
-    if (acc === 'referee' && !Auth.isReferee()) return resolve({ id: homeFor(viewerRole()), params: {} });
-    return { id, params, def };
+    if (acc === 'admin' && !Auth.isAdmin()) return resolve({ id: Auth.isReferee() ? homeFor('referee') : homeFor(viewerRole()), params: {} }, !Auth.isReferee());
+    if (acc === 'referee' && !Auth.isReferee()) return resolve({ id: homeFor(viewerRole()), params: {} }, true);
+    return { id, params, def, denied: !!denied };
   }
 
   // In-app history: our own stack of hashes, so Back knows whether there is a page to go back to.
@@ -334,6 +344,7 @@
       return;
     }
     const rl = roleFor(r.id, r.def);
+    if (r.denied) { const dk = location.hash; if (isNav && deniedKey !== dk) { deniedKey = dk; staffOnly(); } } else deniedKey = null;
     if (r.def.mode !== 'any') ls.set(K.mode, rl);
     if (r.id.startsWith('tables.')) lastTables = r.id;
     const key = r.id + '?' + JSON.stringify(r.params);
@@ -385,7 +396,11 @@
     if (parts === false) { hd.hidden = true; }
     else {
       hd.hidden = false;
-      parts = Object.assign(defaultHeader(rl, d), parts || {});
+      const own = parts || {};
+      parts = Object.assign(defaultHeader(rl, d), own);
+      // Staff: the brand button takes the left; the role pill moves to the right (after the screen's own right side).
+      // A screen that sets its own left (a back button) keeps it, and then has no pill, as before.
+      if ((rl === 'referee' || rl === 'admin') && own.left === undefined) parts.right = (parts.right || '') + pillButton(rl);
       hd.className = 'hd hd-' + rl;
       hd.innerHTML = `<div class="hd-l">${parts.left || ''}</div><div class="hd-c">${parts.center || ''}</div><div class="hd-r">${parts.right || ''}</div>`;
     }
@@ -399,8 +414,33 @@
     nav.className = 'nav' + (staff ? ' ref' : '') + ' n' + list.length;
     nav.innerHTML = list.map(t => link(t, 'nav-a')).join('');
     rail.className = 'rail' + (staff ? ' ref' : '');
-    rail.innerHTML = `<span class="wm">BE FIT <em>CLUB</em></span>` + list.map(t => link(t, 'rail-a')).join('') +
-      `<span class="rail-sp"></span><div class="rail-foot">${pillButton(rl)}</div>`;
+    rail.innerHTML = brandBtn({ cls: 'rail-brand' }) + list.map(t => link(t, 'rail-a')).join('') +
+      `<span class="rail-sp"></span><div class="rail-foot">${pillButton(rl)}` +
+      `<button type="button" class="rail-a" data-shell="welcome">${UI.icon('back')}<span>Back to menu</span></button>` +
+      (staff ? `<button type="button" class="rail-a rail-out" data-shell="sign-out">${UI.icon('close')}<span>Sign out</span></button>` : '') +
+      `</div>`;
+  }
+
+  // The square mark (the approved "Goal Pulse", the #mk-g3 geometry) + "BE FIT". It is the way back to the menu.
+  // Each copy gets its own clip id so two on one page never share one.
+  let markN = 0;
+  function markSvg() {
+    const id = 'bfm' + (++markN), bx = 'cx="76" cy="54.5" r="9.5"';
+    const k = 'style="fill:var(--knock,#0B0D10)"';
+    return `<svg class="bb-mark" viewBox="0 0 100 100" aria-hidden="true" focusable="false" style="--knock:var(--bg)">` +
+      `<path d="M64 43.5V64M88 43.5V64M61.5 49H90.5" stroke="currentColor" stroke-width="1.6" opacity=".3" fill="none"/>` +
+      `<circle ${bx} fill="currentColor"/><clipPath id="${id}"><circle ${bx}/></clipPath><g clip-path="url(#${id})">` +
+      `<polygon points="76.00,51.08 79.25,53.44 78.01,57.27 73.99,57.27 72.75,53.44" ${k}/><polygon points="76.00,48.04 73.20,46.00 74.27,42.71 77.73,42.71 78.80,46.00" ${k}/>` +
+      `<polygon points="82.14,52.50 83.21,49.21 86.67,49.21 87.74,52.50 84.94,54.54" ${k}/><polygon points="79.80,59.73 83.26,59.73 84.33,63.02 81.53,65.05 78.73,63.02" ${k}/>` +
+      `<polygon points="72.20,59.73 73.27,63.02 70.47,65.05 67.67,63.02 68.74,59.73" ${k}/><polygon points="69.86,52.50 67.06,54.54 64.26,52.50 65.33,49.21 68.79,49.21" ${k}/></g>` +
+      `<path d="M76.00 51.08L76.00 47.85M79.25 53.44L82.32 52.45M78.01 57.27L79.91 59.88M73.99 57.27L72.09 59.88M72.75 53.44L69.68 52.45" style="stroke:var(--knock,#0B0D10)" stroke-width="0.76" stroke-linecap="round" fill="none"/>` +
+      `<path d="M6 64H22L28 55L35 73L43 30L50 64H58V40H94V64" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+  // opts.markOnly: the mark alone (referee header) · opts.cls: extra class (rail) · "CLUB" shows on laptops only (CSS)
+  function brandBtn(opts) {
+    opts = opts || {};
+    return `<button type="button" class="brandbtn${opts.cls ? ' ' + opts.cls : ''}" data-shell="welcome" aria-label="Back to menu">${markSvg()}` +
+      (opts.markOnly ? '' : `<span class="wmk">BE FIT<span class="wmk-club"> CLUB</span></span>`) + `</button>`;
   }
 
   // The header pill for a role: Browsing ▾ · name chip ▾ · Referee ▾ · Admin ▾
@@ -418,13 +458,14 @@
     if (rl === 'referee') {
       const s = Store.activeSession();
       const date = s ? UI.fmt.date(s.date) : UI.fmt.date(UI.fmt.iso(Store.now()));
-      return { left: pillButton(rl), center: `<span class="hd-title">${esc(date)}</span>`, right: UI.syncChip(Store.status()) };
+      // the brand button is the mark alone here, and is hidden while a match is live so it can't be tapped by accident
+      return { left: isLiveMatch() ? '' : brandBtn({ markOnly: true }), center: `<span class="hd-title">${esc(date)}</span>`, right: UI.syncChip(Store.status()) };
     }
     if (rl === 'admin') {
       const title = d && d.title ? d.title : UI.fmt.date(UI.fmt.iso(Store.now()));
-      return { left: pillButton(rl), center: `<span class="hd-title">${esc(title)}</span>`, right: '' };
+      return { left: brandBtn(), center: `<span class="hd-title">${esc(title)}</span>`, right: '' };
     }
-    return { left: `<span class="wm hd-mark">BE FIT <em>CLUB</em></span>`, center: '', right: pillButton(rl) };
+    return { left: brandBtn(), center: '', right: pillButton(rl) };
   }
 
   // ---------------------------------------------------------------- shell buttons
@@ -458,13 +499,20 @@
     return UI.rows([
       Auth.isAdmin() ? optRow('to-admin', 'Back to admin') : '',
       optRow('to-ref', 'Referee console'),
-      UI.row({ tap: 'signout', titleHtml: 'Sign out' }),
     ].filter(Boolean), { cls: 'mt-3' });
+  }
+  // The last group of every pill sheet: full-width 48 px buttons. Back to menu for everyone (staff stay signed in);
+  // Sign out (outlined, red text) for the referee and admin. `first` adds a leading button (Referee console / Admin home).
+  function sheetEnd(first) {
+    const b = (cls, tap, text) => `<button type="button" class="btn ${cls} sh-act" data-tap="${tap}">${text}</button>`;
+    return `<div class="sh-end">` + (first ? b('o', first.tap, esc(first.label)) : '') + b('g', 'menu', 'Back to menu') +
+      (Auth.isReferee() ? b('o out', 'signout', 'Sign out') : '') + `</div>`;
   }
   function wireStaff(h) {
     UI.on(h.el, 'to-admin', () => { h.close(); setRole('admin'); lastTab.admin = 'home'; go(homeFor('admin'), {}, { replace: true }); });
     UI.on(h.el, 'to-ref', () => { h.close(); setRole('referee'); go(homeFor('referee'), {}, { replace: true }); });
     UI.on(h.el, 'signout', () => { h.close(); signOut(); });
+    UI.on(h.el, 'menu', () => { h.close(); go('welcome'); });
     UI.on(h.el, 'as-ref', () => { h.close(); openSignIn({ as: 'referee' }); });
     UI.on(h.el, 'as-admin', () => { h.close(); openSignIn({ as: 'admin' }); });
     UI.on(h.el, 'appearance', () => { h.close(); openAppearance(); });
@@ -497,11 +545,8 @@
     if (rl === 'referee' || rl === 'admin') {
       const admin = Auth.isAdmin();
       const h = UI.sheet.open({ title: admin ? 'Admin' : 'Referee', cls: 'sh-shell-pill', body: UI.rows([
-        admin && rl === 'referee' ? optRow('to-admin', 'Admin home') : '',
-        admin && rl === 'admin' ? optRow('to-ref', 'Referee console') : '',
         optRow('pv', 'Player view'),
-        UI.row({ tap: 'signout', titleHtml: 'Sign out' }),
-      ].filter(Boolean)) });
+      ]) + sheetEnd(admin ? (rl === 'admin' ? { tap: 'to-ref', label: 'Referee console' } : { tap: 'to-admin', label: 'Admin home' }) : null) });
       wireStaff(h);
       UI.on(h.el, 'pv', () => { h.close(); toPlayerView(); });
       return h;
@@ -510,17 +555,14 @@
     if (v) {
       const row = (Scoring.seasonTable() || []).find(x => x.pid === viewer());
       const sub = [v.defaultPosition, UI.fmt.team(v.defaultTeam), row ? UI.fmt.ordinal(row.rank) : ''].filter(Boolean).join(' · ');
-      const first = String(v.name).split(' ')[0];
       const h = UI.sheet.open({ cls: 'sh-shell-pill', body:
         `<div class="pill-who">${UI.avatar(v.name, v.defaultTeam, { size: 44 })}<span class="grow"><b>${esc(v.name)}</b><span class="meta">${esc(sub)}</span></span></div>` +
         UI.rows([optRow('mypage', 'My page'), optRow('share', 'Share card'), optRow('appearance', 'Appearance')]) +
-        UI.rows([optRow('switch', `Not ${first}? Switch`, { cls: 'quiet' }),
-          Auth.isReferee() ? '' : optRow('signin', 'Referee or admin sign-in', { cls: 'quiet' })].filter(Boolean), { cls: 'mt-3' }) +
-        staffRows() });
+        (Auth.isReferee() ? '' : UI.rows([optRow('signin', 'Referee or admin sign-in', { cls: 'quiet' })], { cls: 'mt-3' })) +
+        staffRows() + sheetEnd() });
       wireStaff(h);
       UI.on(h.el, 'mypage', () => { h.close(); go('player.me'); });
       UI.on(h.el, 'share', () => { h.close(); action('player.shareCard', { pid: viewer() }); });
-      UI.on(h.el, 'switch', () => { h.close(); go('welcome'); });
       UI.on(h.el, 'signin', () => { h.close(); openStaffChooser(); });
       return h;
     }
@@ -529,10 +571,10 @@
     const h = UI.sheet.open({ title: 'You’re browsing', cls: 'sh-shell-pill', body:
       UI.search({ name: 'pill-find', placeholder: 'Find your name' }) + `<div class="mt-3" data-pill-res></div>` +
       `<div data-pill-opts>` + UI.rows([
-        Auth.isReferee() ? '' : optRow('as-ref', 'I’m the referee'),
-        Auth.isReferee() ? '' : optRow('as-admin', 'I’m the admin'),
+        Auth.isReferee() ? '' : optRow('as-ref', 'Referee'),
+        Auth.isReferee() ? '' : optRow('as-admin', 'Admin'),
         optRow('appearance', 'Appearance', { right: `<span class="meta">${esc(tl)}</span>` }),
-      ].filter(Boolean), { cls: 'mt-3' }) + staffRows() + `</div>` });
+      ].filter(Boolean), { cls: 'mt-3' }) + staffRows() + sheetEnd() + `</div>` });
     wireStaff(h);
     UI.on(h.el, 'pick', b => { h.close(); pickViewer(b.dataset.pid); });
     h.el.addEventListener('input', e => {
@@ -543,7 +585,7 @@
     return h;
   }
   function openStaffChooser() {
-    const h = UI.sheet.open({ title: 'Sign in', cls: 'sh-shell-pill', body: UI.rows([optRow('as-ref', 'I’m the referee', { meta: 'Run tonight’s game' }), optRow('as-admin', 'I’m the admin', { meta: 'Squad, money, settings' })]) });
+    const h = UI.sheet.open({ title: 'Sign in', cls: 'sh-shell-pill', body: UI.rows([optRow('as-ref', 'Referee', { meta: 'Run tonight’s game' }), optRow('as-admin', 'Admin', { meta: 'Squad, money, settings' })]) });
     wireStaff(h);
     return h;
   }
@@ -686,7 +728,7 @@
   window.App = {
     registerScreen, registerAction, action, screens, actions,
     go, back, goTab, tabs, current: () => ({ id: route.id || (cur && cur.id), params: route.params }),
-    role, setRole, mode, setMode, viewer, viewerState, setViewer, isLiveMatch,
+    role, setRole, mode, setMode, viewer, viewerState, setViewer, isLiveMatch, staffOnly,
     openSignIn, signOut, openAppearance, openPill, openSheet: o => UI.sheet.open(o),
     findPeople, theme, rerender: () => scheduleRender(false), start,
     PLACEHOLDERS: Object.freeze(Object.assign({}, PLACEHOLDERS)), ROLES,
