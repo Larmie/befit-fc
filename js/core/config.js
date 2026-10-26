@@ -39,6 +39,9 @@ window.BF_CONFIG = Object.freeze({
     cache: 'befit_cache_v1',                 // last data seen, for "Can't connect"
     outbox: 'befit_outbox_v1',               // saves not yet confirmed by the database, oldest first (store.js)
     lastSeen: 'befit_admin_last_seen',       // admin card "New since you last looked"
+    splashDay: 'befit_splash_day',           // 'YYYY-MM-DD' of the last full splash (front door, round 7)
+    live: 'befit_live',                      // active session id while a match is live (Store writes it; the splash reads it)
+    practiceOk: 'befit_practice_ok',         // sessionStorage '1' once the practice password was right this visit
   }),
 });
 
