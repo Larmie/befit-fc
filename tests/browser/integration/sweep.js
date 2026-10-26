@@ -74,7 +74,8 @@ function adminData() {   // two name-only new people + a published result, so th
 const GROUPS = {
   player: { opts: { viewer: 'seed_p002', data: snap }, states: [
     { id: 'welcome', route: '#/welcome' },
-    { id: 'welcome-typing', route: '#/welcome', eval: "(() => { const i = document.querySelector('[data-search=\"who\"]'); i.value = 'Da'; i.dispatchEvent(new Event('input', { bubbles: true })); })()", noExplore: true },
+    { id: 'welcome-find', route: '#/welcome', eval: "(() => { const m = document.querySelector('#app-screen [data-tap=\"menu\"]'); if (m) m.click(); document.querySelector('#app-screen [data-tap=\"find\"]').click(); })()", noExplore: true },
+    { id: 'welcome-typing', route: '#/welcome', eval: "(() => { const m = document.querySelector('#app-screen [data-tap=\"menu\"]'); if (m) m.click(); document.querySelector('#app-screen [data-tap=\"find\"]').click(); const i = document.querySelector('[data-search=\"who\"]'); i.value = 'Da'; i.dispatchEvent(new Event('input', { bubbles: true })); })()", noExplore: true },
     { id: 'player-home', route: '#/player.home' },
     { id: 'tables-teams', route: '#/tables.teams' },
     { id: 'tables-players', route: '#/tables.players' },
@@ -102,6 +103,7 @@ const GROUPS = {
   ] },
   guest: { opts: { viewer: 'guest', data: snap }, states: [
     { id: 'guest-home', route: '#/guest.home' },
+    { id: 'welcome-first', route: '#/welcome' },   // nobody remembered on this phone: My stats · Browse as guest · Referee · Admin
     { id: 'pill-guest', route: '#/guest.home', eval: 'App.openPill()', noExplore: true },
     { id: 'guest-match', route: '#/player.live' },
     { id: 'guest-match-12oct', route: '#/player.match?sid=' + M12 },

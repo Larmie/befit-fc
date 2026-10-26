@@ -83,6 +83,9 @@
   const OPEN_MS = 500;       // deck tiles that open a sheet: a second tap within 0.5 s does nothing
   const ESCALATE_MS = 4 * 60000;   // the same stoppage running this long → "Still in stoppage?"
   const HOLD_MS = 1500;      // Adjust clock and End game: 1.5 s hold with a fill
+  // Practice mode (html.practice, set by js/core/practice.js): the clock’s small label and “End practice” (the violet is in css/welcome.css)
+  const practice = () => document.documentElement.classList.contains('practice');
+  const centreOf = sess => { const c = UI.scoreCentre(sess, { clock: true }); if (practice() && c.state === 'live') c.sub = 'Practice'; return c; };
 
   // ---------------------------------------------------------------- data helpers
   const nameOf = pid => { const p = Store.player(pid); return p ? p.name : 'Unknown'; };
@@ -543,7 +546,7 @@
       `<span class="fill"></span><span class="hl">Adjust clock</span></button>`;
     return primaryHtml(sess) + polesHtml(sess, f) +
       `<div class="cn-grid n5">${ht}${adjust}${ctlTile('+ Player', 'player')}${ctlTile('Teams tonight', 'teams')}${ctlTile('Edit events', 'events')}</div>` +
-      `<div class="cn-endw">${UI.hold('Hold to end the game', { name: 'end', ms: HOLD_MS, warn: true, doneText: 'Ending…' })}</div>`;
+      `<div class="cn-endw">${UI.hold(practice() ? 'Hold to end practice' : 'Hold to end the game', { name: 'end', ms: HOLD_MS, warn: true, doneText: 'Ending…' })}</div>`;
   }
 
   function renderConsole(el) {
@@ -569,7 +572,7 @@
     const evTeams = Scoring.sessEvents(sess).map(e => ({ type: e.type, team: evTeam(sess, e) }));
     const cnt = (t, types) => evTeams.filter(x => x.team === t && types.includes(x.type)).length;
 
-    let html = `<div class="cn-score">${UI.scoreFor(sess, { size: 'console', clock: true, hero: true })}` +
+    let html = `<div class="cn-score">${UI.scoreFor(sess, { size: 'console', clock: true, hero: true, centre: centreOf(sess) })}` +
       (st === 'stoppage' ? `<div class="cn-line is-stop" data-line>${esc(lineText(sess))}</div>` : '') + `</div>`;
     if (!ended) {
       // ROUND 6 · team-first: one column per team, top to bottom Goal 88 · Save 56 (big poles) · Block | Clear 60 ·
@@ -612,7 +615,7 @@
     const sess = Store.activeSession();
     if (!sess) return;
     if (sigOf(sess) !== el._sig) { if (!holding(el)) renderConsole(el); return; }
-    const c = UI.scoreCentre(sess, { clock: true });
+    const c = centreOf(sess);
     const mid = el.querySelector('.cn-score .sb-mid');
     if (mid) {
       const b = mid.querySelector('b'), sm = mid.querySelector('small');
@@ -675,7 +678,7 @@
         const hb = e.target.closest && e.target.closest('.hold');
         if (!hb || hb.classList.contains('done') || !el.contains(hb)) return;
         if (hb.dataset.hold === 'adjust' && hb.classList.contains('is-off')) { UI.toast('Kick off first'); return; }
-        UI.toast(hb.dataset.hold === 'adjust' ? 'Hold to adjust the clock' : 'Hold for 1.5 s to end the game');
+        UI.toast(hb.dataset.hold === 'adjust' ? 'Hold to adjust the clock' : practice() ? 'Hold for 1.5 s to end practice' : 'Hold for 1.5 s to end the game');
       });
       UI.onHold(el, 'adjust', hb => {
         const reset = () => { hb.classList.remove('done'); const hl = hb.querySelector('.hl'); if (hl) hl.textContent = 'Adjust clock'; };

@@ -19,17 +19,19 @@ async function phoneFlow(themeName) {
   check(`[${t}] Firebase never loaded`, await p.evaluate(() => !document.querySelector('script[src*="firebase"]') && Store.status().source === 'test'));
   await s.shot(path.join(OUT, `welcome-${t}.png`));
 
-  // Round 5 front door: no names until you type, then pick → player Home (updated from round 4: list + Live)
+  // Round 7 front door: My stats → Find your name, no names until you type, then pick → Me (stats + match history)
   check(`[${t}] no names listed before typing`, await p.evaluate(() => !document.querySelector('#app-screen [data-tap="pick"]')));
+  await tap(p, '#app-screen [data-tap="stats"]');
+  check(`[${t}] My stats opens Find your name, still no names`, await p.evaluate(() => !!document.querySelector('[data-search="who"]') && !document.querySelector('#app-screen [data-tap="pick"]')));
   await p.type('[data-search="who"]', 'emm');
   await sleep(200);
   const hits = await p.$$eval('[data-fd-res] [data-tap="pick"] .nm', els => els.map(e => e.textContent));
   check(`[${t}] search "emm" filters`, hits.length >= 1 && hits.every(h => /emm/i.test(h)), hits.length + ' hits');
   check(`[${t}] search keeps focus`, await p.evaluate(() => document.activeElement && document.activeElement.dataset.search === 'who'));
 
-  // pick Emmanuel → Home
+  // pick Emmanuel → Me
   await tap(p, '[data-tap="pick"][data-pid="seed_p002"]');
-  check(`[${t}] picking a name opens Home`, await screenId(p) === 'player.home');
+  check(`[${t}] picking a name opens Me`, await screenId(p) === 'player.me');
   check(`[${t}] viewer remembered`, await p.evaluate(() => JSON.parse(localStorage.getItem('befit_viewer')).pid === 'seed_p002'));
   check(`[${t}] header shows the viewer`, (await p.$eval('#app-header', e => e.textContent)).includes('Emmanuel'));
   await s.shot(path.join(OUT, `player-live-${t}.png`));
@@ -191,6 +193,16 @@ async function laptop(themeName) {
   check(`[${t}] content max 1040 (+gutters)`, w <= 1040 + 48 + 1, Math.round(w) + ' px');
   await p.evaluate(() => App.go('welcome')); await sleep(300);
   await s.shot(path.join(OUT, `welcome-${t}.png`));
+  const fd = await p.evaluate(() => {
+    const s = document.querySelector('#app-screen section'), l = s.querySelector('.fd-l'), r = s.querySelector('.fd-r');
+    const lk = s.querySelector('.fd-lk').getBoundingClientRect(), dr = s.querySelector('.fd-doors').getBoundingClientRect(), lr = l.getBoundingClientRect(), rr = r.getBoundingClientRect();
+    return { section: s.dataset.theme, app: document.documentElement.dataset.theme, bg: getComputedStyle(s).getPropertyValue('--bg').trim().toLowerCase(), cols: lr.right <= rr.left + 1 && Math.abs(lr.top - rr.top) < 2,
+      lk: Math.round(lk.width) + '×' + Math.round(lk.height), doors: Math.round(dr.width), block: !!l.querySelector('.sb') && /6/.test((l.querySelector('.sb-half.t-green') || {}).innerText || '') && /4/.test((l.querySelector('.sb-half.t-red') || {}).innerText || ''),
+      noHeader: document.getElementById('app-header').hidden && getComputedStyle(document.getElementById('app-rail')).display === 'none', name: getComputedStyle(s.querySelector('.fd-wm')).fontSize };
+  });
+  check(`[${t}] front door on a laptop: two columns, lockup 320×160, name 44 px, doors ≤ 440 wide, last game as the joined score block on the left, no header or rail`,
+    fd.cols && fd.lk === '320×160' && fd.name === '44px' && fd.doors <= 440 && fd.block && fd.noHeader, fd);
+  check(`[${t}] front door is always dark (screen data-theme=dark, --bg #0b0d10) even when the app is ${themeName}`, fd.section === 'dark' && fd.bg === '#0b0d10' && fd.app === themeName, fd);
   await p.evaluate(() => Auth.signIn('ref@befit.club', 'befit2024')); await sleep(400);
   await p.evaluate(() => { App.setMode('referee'); App.goTab('match'); }); await sleep(300);
   await s.shot(path.join(OUT, `ref-home-${t}.png`));

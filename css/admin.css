@@ -180,6 +180,10 @@
 .sh-admin-access .mb-3 { margin-bottom: var(--sp-3); }
 .sh-admin-access .adm-steps-ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.45; }
 .sh-admin-access .adm-steps-ol li { overflow-wrap: anywhere; }
+/* practice password (round 7): the Access row is tinted violet, the sheet is two boxes and Save */
+.scr-admin-settings .r.adm-prac { background: color-mix(in srgb, var(--practice) 9%, var(--s1)); }
+.sh-admin-practicepw .mb-3 { margin-bottom: var(--sp-3); }
+.sh-admin-practicepw .field-err { min-height: 18px; }
 
 /* ---------------------------------------------------------------- Can't connect */
 #app-status .adm-offline { min-height: var(--h-target); padding: 4px 4px 4px 14px; }
