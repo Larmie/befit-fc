@@ -8,12 +8,14 @@
 // Never touches the database or sign-in traffic (firebaseio.com, firebasedatabase.app, identitytoolkit,
 // securetoken): those always go straight to the network.
 // Bump CACHE when the list of files changes; old caches are deleted on activate.
-const CACHE = 'befit-fc-v5';                 // v5: round 5 (homes, tables, console deck, full time, admin, settings)
+const CACHE = 'befit-fc-v6';                 // v6: front door (brand icons, splash); v5: round 5 (homes, tables, console deck, full time, admin, settings)
 const EXT = 'befit-ext-v1';                  // Firebase SDK + Google Fonts (versioned addresses)
 const SDK_FALLBACK = '10.12.0';              // only if js/core/config.js can't be read at install
 const SDK_FILES = ['firebase-app.js', 'firebase-database.js', 'firebase-auth.js'];
 const SHELL = [
   '/', '/classic.html', '/manifest.json', '/icon.svg',
+  '/icons/mark.svg', '/icons/lockup.svg', '/icons/favicon.svg', '/icons/favicon-32.png', '/icons/apple-touch-icon.png',
+  '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/mono-512.png',
   '/css/tokens.css', '/css/base.css', '/css/components.css', '/css/welcome.css', '/css/player.css', '/css/tables.css',
   '/css/setup.css', '/css/console.css', '/css/fix.css', '/css/admin.css',
   '/js/core/config.js', '/js/core/practice.js', '/js/core/store.js', '/js/core/teams.js', '/js/core/scoring.js', '/js/core/pay.js', '/js/core/clock.js',

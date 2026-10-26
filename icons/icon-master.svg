@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100">
+  <!-- Master for every PNG (tests/tools/icons.js). Full-bleed square, no rounded corners: the phone rounds them.
+       #bg = night + green glow bottom-left + red glow bottom-right + floodlight from the top. #mark = the Goal Pulse in #F2F3F5. -->
+  <defs>
+    <radialGradient id="ig-top" cx="50%" cy="-5%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".17"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ig-g" cx="0%" cy="100%" r="75%"><stop offset="0" stop-color="#3DD68C" stop-opacity=".34"/><stop offset="1" stop-color="#3DD68C" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ig-r" cx="100%" cy="100%" r="75%"><stop offset="0" stop-color="#F2555A" stop-opacity=".30"/><stop offset="1" stop-color="#F2555A" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g id="bg">
+    <rect width="100" height="100" fill="#0B0D10"/>
+    <rect width="100" height="100" fill="url(#ig-g)"/>
+    <rect width="100" height="100" fill="url(#ig-r)"/>
+    <rect width="100" height="100" fill="url(#ig-top)"/>
+  </g>
+  <g id="mark" color="#F2F3F5" style="--knock:#0B0D10">
+    <path d="M64 43.5V64M88 43.5V64M61.5 49H90.5" stroke="currentColor" stroke-width="1.6" opacity=".3"/>
+    <circle cx="76" cy="54.5" r="9.5" fill="currentColor"/><clipPath id="cb1"><circle cx="76" cy="54.5" r="9.5"/></clipPath><g clip-path="url(#cb1)"><polygon points="76.00,51.08 79.25,53.44 78.01,57.27 73.99,57.27 72.75,53.44" style="fill:var(--knock,#0B0D10)"/><polygon points="76.00,48.04 73.20,46.00 74.27,42.71 77.73,42.71 78.80,46.00" style="fill:var(--knock,#0B0D10)"/><polygon points="82.14,52.50 83.21,49.21 86.67,49.21 87.74,52.50 84.94,54.54" style="fill:var(--knock,#0B0D10)"/><polygon points="79.80,59.73 83.26,59.73 84.33,63.02 81.53,65.05 78.73,63.02" style="fill:var(--knock,#0B0D10)"/><polygon points="72.20,59.73 73.27,63.02 70.47,65.05 67.67,63.02 68.74,59.73" style="fill:var(--knock,#0B0D10)"/><polygon points="69.86,52.50 67.06,54.54 64.26,52.50 65.33,49.21 68.79,49.21" style="fill:var(--knock,#0B0D10)"/></g><path d="M76.00 51.08L76.00 47.85M79.25 53.44L82.32 52.45M78.01 57.27L79.91 59.88M73.99 57.27L72.09 59.88M72.75 53.44L69.68 52.45" style="stroke:var(--knock,#0B0D10)" stroke-width="0.76" stroke-linecap="round"/>
+    <path d="M6 64H22L28 55L35 73L43 30L50 64H58V40H94V64" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

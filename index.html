@@ -9,14 +9,29 @@
   <meta name="theme-color" content="#0B0D10">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="BE Fit Club">
-  <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icon.svg">
+  <meta name="apple-mobile-web-app-title" content="BE Fit">
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 
   <!-- Type: Geist for words and hero numerals (700), Geist Mono for minutes and columns -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+
+  <!-- Splash (front door): always dark, drawn from inline SVG so it paints on the first frame and works offline. Rules: the script right after #splash in <body>. -->
+  <style id="splash-css">
+    .spl { position: fixed; inset: 0; z-index: 100; background: #0B0D10; display: grid; place-items: center; overflow: hidden; transition: opacity .28s ease; }
+    .spl::before, .spl::after { content: ''; position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+    .spl::before { background: radial-gradient(95% 45% at 50% -4%, rgba(255,255,255,.13), transparent 70%); }
+    .spl::after { background: radial-gradient(75% 38% at -5% 102%, rgba(61,214,140,.22), transparent 70%), radial-gradient(75% 38% at 105% 102%, rgba(242,85,90,.20), transparent 70%); }
+    .spl.run::before { animation: spl-lit .4s forwards; }
+    .spl.run::after { animation: spl-lit .6s 1.9s forwards; }
+    .spl.static::before, .spl.static::after { opacity: 1; }
+    .spl svg { position: relative; z-index: 1; display: block; width: 100%; max-width: 420px; height: auto; }
+    .spl.out { opacity: 0; pointer-events: none; }
+    @keyframes spl-lit { to { opacity: 1; } }
+  </style>
 
   <!-- Styles: tokens → base → shared components → one file per screen area -->
   <link rel="stylesheet" href="css/tokens.css">
@@ -55,6 +70,169 @@
   <script defer src="js/screens/admin.js"></script>
 </head>
 <body>
+  <div id="splash" class="spl" aria-hidden="true">
+<svg class="spl-full" viewBox="0 0 360 300" focusable="false">
+<defs><linearGradient id="tailg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="142" y2="0"><stop offset="0" stop-color="#F2F3F5" stop-opacity="0"/><stop offset=".7" stop-color="#F2F3F5" stop-opacity="1"/></linearGradient></defs>
+<!-- the ground the runner draws (fades out: the mark starts at the boot) -->
+<path d="M-10 150H119.2" pathLength="1" fill="none" stroke="url(#tailg)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 1" stroke-dashoffset="1">
+<animate attributeName="stroke-dashoffset" values="1;1;0;0" keyTimes="0;.0333;.45;1" dur="3s" fill="freeze"/>
+<animate attributeName="opacity" values="1;1;0;0" keyTimes="0;.62;.70;1" dur="3s" fill="freeze"/>
+</path>
+<!-- the beat -->
+<path d="M119.2 150H148L160.8 132.4L175.2 167.6L191.2 86L205.6 150H224.8" pathLength="1" fill="none" stroke="#F2F3F5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 1" stroke-dashoffset="1">
+<animate attributeName="stroke-dashoffset" values="1;0" begin="1.5s" dur=".36s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines=".4 0 .6 1"/>
+<animate attributeName="stroke-width" values="4;4;11.2;11.2" keyTimes="0;.62;.70;1" dur="3s" fill="freeze"/>
+</path>
+<!-- the net -->
+<path d="M240.8 118.8V150M256.8 118.8V150M285.6 118.8V150M301.6 118.8V150M230.4 127.6H312M230.4 138.8H312" stroke="#F2F3F5" stroke-width="2" opacity="0">
+<animate attributeName="opacity" values="0;0;.2;.2;.32;.32" keyTimes="0;.2;.3;.6333;.7;1" dur="3s" fill="freeze"/>
+</path>
+<!-- the striker's boot stays behind where the runner shot -->
+<g opacity="0">
+<animate attributeName="opacity" values="0;0;1;1" keyTimes="0;.6;.6833;1" dur="3s" fill="freeze"/>
+<g transform="translate(26.4 113.2) scale(1.6)" fill="#F2F3F5"><path d="M2 26.5C0.5 20 0.5 10 3 3H17C18 8 20.5 11 26 12L46 16C53 17.5 57 20.5 56 24C55.6 25.8 54.3 26.5 52 26.5Z"/><path d="M6 26.5h5v3h-5zM17 26.5h5v3h-5zM36 26.5h5v3h-5zM46 26.5h5v3h-5z"/><path d="M20 9.5l3 4M26 11.5l2.5 3.5M32 12.8l2 3.4" stroke="#0B0D10" stroke-width="1.7" stroke-linecap="round" fill="none"/></g>
+</g>
+<!-- defender: tracks back in front of goal, slides in, misses, sits up and turns to watch -->
+<g fill="none" stroke="#F2F3F5" stroke-linecap="round" stroke-linejoin="round" opacity=".5">
+<animateTransform attributeName="transform" type="translate" values="205 57;205 57;172 57;160 57;160 57" keyTimes="0;.0667;.4;.4833;1" dur="3s" fill="freeze"/>
+<animateTransform attributeName="transform" type="scale" additive="sum" values="-.95 .95;.95 .95" keyTimes="0;.5733" calcMode="discrete" dur="3s" fill="freeze"/>
+<animate attributeName="opacity" values=".5;.5;0;0" keyTimes="0;.5933;.65;1" dur="3s" fill="freeze"/>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur=".4s" end="1.2s" repeatCount="indefinite"/>
+<polyline stroke-width="10" opacity=".55" points="0,54 -8,72 -12,94"><animate attributeName="points" values="0,54 -8,72 -12,94;0,54 -8,72 -12,94;0,54 -4,73 -6,94;0,54 -8,72 -12,94;0,54 -4,73 -6,94;0,54 -8,72 -12,94;0,58 -10,74 -18,94;0,82 12,90 6,95;0,82 12,90 6,95;0,84 12,78 22,93;0,84 12,78 22,93" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/></polyline>
+<polyline stroke-width="10" opacity=".55" points="4,33 -6,42 -14,46"><animate attributeName="points" values="4,33 -6,42 -14,46;4,33 -6,42 -14,46;4,33 -6,40 -14,42;4,33 -6,42 -14,46;4,33 -6,40 -14,42;4,33 -6,42 -14,46;8,40 -4,44 -14,42;-16,72 -26,84 -30,94;-16,72 -26,84 -30,94;-2,66 -12,78 -16,92;-2,66 -12,78 -16,92" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/></polyline>
+<polyline stroke-width="14" points="6,30 0,54"><animate attributeName="points" values="6,30 0,54;6,30 0,54;5,30 0,54;6,30 0,54;5,30 0,54;6,30 0,54;10,36 0,58;-18,70 0,82;-18,70 0,82;-2,62 0,84;-2,62 0,84" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/></polyline>
+<circle cx="8" cy="12" r="9.5" fill="#F2F3F5" stroke="none"><animate attributeName="cx" values="8;8;7;8;7;8;16;-31;-31;-3;-3" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/><animate attributeName="cy" values="12;12;12;12;12;12;19;60;60;44;44" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/></circle>
+<polyline stroke-width="10" points="0,54 10,72 8,94"><animate attributeName="points" values="0,54 10,72 8,94;0,54 10,72 8,94;0,54 6,73 2,94;0,54 10,72 8,94;0,54 6,73 2,94;0,54 10,72 8,94;0,58 16,72 30,90;0,82 20,88 40,92;0,82 20,88 40,92;0,84 18,88 34,92;0,84 18,88 34,92" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/></polyline>
+<polyline stroke-width="10" points="4,33 14,42 22,46"><animate attributeName="points" values="4,33 14,42 22,46;4,33 14,42 22,46;4,33 14,40 22,42;4,33 14,42 22,46;4,33 14,40 22,42;4,33 14,42 22,46;8,40 18,46 26,52;-16,72 -8,62 0,58;-16,72 -8,62 0,58;-2,66 8,72 14,68;-2,66 8,72 14,68" keyTimes="0;.0667;.1333;.2;.2667;.3333;.4;.4733;.5333;.5733;1" dur="3s" fill="freeze"/></polyline>
+</g>
+</g>
+<!-- runner -->
+<g fill="none" stroke="#F2F3F5" stroke-linecap="round" stroke-linejoin="round">
+<animateTransform attributeName="transform" type="translate" values="-30 53;-30 53;78 53;78 53" keyTimes="0;.0333;.4333;1" dur="3s" fill="freeze"/>
+<animate attributeName="opacity" values="1;1;0;0" keyTimes="0;.5933;.65;1" dur="3s" fill="freeze"/>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 -2;0 1;0 -2;0 1;0 -2" dur=".325s" end="1.3s" repeatCount="indefinite"/>
+<!-- far leg + far arm (dimmer, behind) -->
+<polyline stroke-width="10" opacity=".55" points="0,50 -7,69 -22,78">
+<animate attributeName="points" values="0,50 -7,69 -22,78;0,50 10,65 2,80;0,50 13,67 12,93;0,50 4,71 -1,93;0,50 -7,69 -22,78" dur=".325s" end="1.3s" repeatCount="indefinite"/>
+<animate attributeName="points" values="0,50 -7,69 -22,78;0,50 5,71 5,93;0,50 5,71 5,93;0,50 5,71 5,93;0,50 5,71 5,93" keyTimes="0;.3;.5;.8;1" begin="1.3s" dur=".4s" fill="freeze"/>
+</polyline>
+<polyline stroke-width="10" opacity=".55" points="3,26 11,36 19,29">
+<animate attributeName="points" values="3,26 11,36 19,29;3,26 1,38 8,43;3,26 -8,35 -7,45;3,26 1,38 8,43;3,26 11,36 19,29" dur=".325s" end="1.3s" repeatCount="indefinite"/>
+<animate attributeName="points" values="3,26 11,36 19,29;3,26 -8,32 -16,29;3,26 13,31 22,25;3,26 14,29 24,22;3,26 14,29 24,22" keyTimes="0;.3;.5;.8;1" begin="1.3s" dur=".4s" fill="freeze"/>
+</polyline>
+<!-- torso + head -->
+<polyline stroke-width="14" points="5,27 0,50">
+<animate attributeName="points" values="5,27 0,50;4,27 0,50;3,27 0,50;1,27 0,50;1,27 0,50" keyTimes="0;.3;.5;.8;1" begin="1.3s" dur=".4s" fill="freeze"/>
+</polyline>
+<circle cx="6" cy="8" r="9.5" fill="#F2F3F5" stroke="none">
+<animate attributeName="cx" values="6;5;4;2;2" keyTimes="0;.3;.5;.8;1" begin="1.3s" dur=".4s" fill="freeze"/>
+</circle>
+<!-- near leg (the kicking leg) + near arm -->
+<polyline stroke-width="10" points="0,50 13,67 12,93">
+<animate attributeName="points" values="0,50 13,67 12,93;0,50 4,71 -1,93;0,50 -7,69 -22,78;0,50 10,65 2,80;0,50 13,67 12,93" dur=".325s" end="1.3s" repeatCount="indefinite"/>
+<animate attributeName="points" values="0,50 13,67 12,93;0,50 -6,68 -20,62;0,50 12,69 27,84;0,50 17,58 33,50;0,50 17,58 33,50" keyTimes="0;.3;.5;.8;1" begin="1.3s" dur=".4s" fill="freeze"/>
+</polyline>
+<polyline stroke-width="10" points="3,26 -8,35 -7,45">
+<animate attributeName="points" values="3,26 -8,35 -7,45;3,26 1,38 8,43;3,26 11,36 19,29;3,26 1,38 8,43;3,26 -8,35 -7,45" dur=".325s" end="1.3s" repeatCount="indefinite"/>
+<animate attributeName="points" values="3,26 -8,35 -7,45;3,26 12,32 20,26;3,26 -6,33 -15,30;3,26 -9,30 -18,24;3,26 -9,30 -18,24" keyTimes="0;.3;.5;.8;1" begin="1.3s" dur=".4s" fill="freeze"/>
+</polyline>
+</g>
+</g>
+<!-- ball while dribbling -->
+<g>
+<animateTransform attributeName="transform" type="translate" values="0 141;0 141;18 138;40 141;54 138;68 141;86 138;108 141;112 141;112 141" keyTimes="0;.0333;.1;.1833;.2333;.2833;.35;.4333;.4733;1" dur="3s" fill="freeze"/>
+<set attributeName="opacity" to="0" begin="1.5s" fill="freeze"/>
+<circle r="7" fill="#F2F3F5"/>
+<polygon points="0,-2.8 2.7,-.9 1.7,2.3 -1.7,2.3 -2.7,-.9" fill="#0B0D10"><animateTransform attributeName="transform" type="rotate" values="0;900" dur="1.5s" fill="freeze"/></polygon>
+</g>
+<!-- the chip: over the sliding defender and the beat, into the net -->
+<g opacity="0">
+<set attributeName="opacity" to="1" begin="1.5s" fill="freeze"/>
+<animateMotion path="M112 141C140 -60 215 10 271.2 133.2" begin="1.5s" dur=".4s" fill="freeze"/>
+<circle r="7" fill="#F2F3F5"><animate attributeName="r" values="7;16.8" begin="1.5s" dur=".4s" fill="freeze"/></circle>
+<g><animateTransform attributeName="transform" type="scale" values="1;2.29" begin="1.5s" dur=".4s" fill="freeze"/>
+<polygon points="0,-2.8 2.7,-.9 1.7,2.3 -1.7,2.3 -2.7,-.9" fill="#0B0D10"><animateTransform attributeName="transform" type="rotate" values="0;360" begin="1.5s" dur=".4s" fill="freeze"/></polygon></g>
+</g>
+<g opacity="0"><animate attributeName="opacity" values="0;1" begin="1.9s" dur=".15s" fill="freeze"/><clipPath id="spl-cb"><circle cx="271.2" cy="133.2" r="16.8"/></clipPath><g clip-path="url(#spl-cb)"><polygon points="271.20,127.15 276.95,131.33 274.75,138.09 267.65,138.09 265.45,131.33" fill="#0B0D10"/><polygon points="271.20,121.78 266.25,118.18 268.14,112.36 274.26,112.36 276.15,118.18" fill="#0B0D10"/><polygon points="282.07,129.67 283.96,123.85 290.08,123.85 291.97,129.67 287.02,133.27" fill="#0B0D10"/><polygon points="277.92,142.45 284.04,142.45 285.93,148.27 280.98,151.87 276.03,148.27" fill="#0B0D10"/><polygon points="264.48,142.45 266.37,148.27 261.42,151.87 256.47,148.27 258.36,142.45" fill="#0B0D10"/><polygon points="260.33,129.67 255.38,133.27 250.43,129.67 252.32,123.85 258.44,123.85" fill="#0B0D10"/></g><path d="M271.20 127.15L271.20 121.44M276.95 131.33L282.38 129.57M274.75 138.09L278.11 142.71M267.65 138.09L264.29 142.71M265.45 131.33L260.02 129.57" stroke="#0B0D10" stroke-width="1.34" stroke-linecap="round"/></g>
+<!-- the goal frame -->
+<path d="M224.8 150V113.2H317.6V150" pathLength="1" fill="none" stroke="#F2F3F5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 1" stroke-dashoffset="1" opacity=".75">
+<animate attributeName="stroke-dashoffset" values="1;1;0;0" keyTimes="0;.1333;.3;1" dur="3s" fill="freeze"/>
+<animate attributeName="stroke-width" values="4;4;11.2;11.2" keyTimes="0;.62;.70;1" dur="3s" fill="freeze"/>
+<animate attributeName="opacity" values=".75;.75;1;1" keyTimes="0;.62;.70;1" dur="3s" fill="freeze"/>
+</path>
+<circle cx="271.2" cy="133.2" r="16.8" fill="none" stroke="#F2F3F5" stroke-width="2" opacity="0">
+<animate attributeName="r" values="16.8;44" begin="1.9s" dur=".5s" fill="freeze"/>
+<animate attributeName="opacity" values="0;.55;0" keyTimes="0;.15;1" begin="1.9s" dur=".5s" fill="freeze"/>
+</circle>
+<g opacity="0">
+<animate attributeName="opacity" values="0;1" begin="2s" dur=".35s" fill="freeze"/>
+<animateTransform attributeName="transform" type="translate" values="0 8;0 0" begin="2s" dur=".35s" fill="freeze" calcMode="spline" keySplines=".2 .7 .2 1" keyTimes="0;1"/>
+<path d="M83.6 236L83.6 217.5L91.1 217.5Q94.6 217.5 96.4 218.8Q98.3 220 98.3 222.6Q98.3 223.7 97.9 224.5Q97.4 225.4 96.5 225.9Q95.7 226.3 94.4 226.5L94.4 226.5Q96.7 226.6 97.9 227.8Q99.1 229 99.1 230.9Q99.1 233.5 97.2 234.8Q95.4 236 91.9 236ZM88.1 232.4L91.6 232.4Q92.9 232.4 93.7 231.9Q94.6 231.4 94.6 230.3Q94.6 229.2 93.7 228.7Q92.9 228.2 91.6 228.2L88.1 228.2ZM88.1 225.1L90.9 225.1Q92.2 225.1 93 224.6Q93.8 224.1 93.8 223.1Q93.8 222 93 221.6Q92.2 221.1 90.9 221.1L88.1 221.1ZM106 236L106 217.5L119.2 217.5L119.2 221.2L110.5 221.2L110.5 224.9L118.9 224.9L118.9 228.6L110.5 228.6L110.5 232.3L119.5 232.3L119.5 236ZM136.9 236L136.9 217.5L150 217.5L150 221.2L138.8 221.2L141.4 218.6L141.4 227.1L138.8 225.1L149.5 225.1L149.5 228.8L138.8 228.8L141.4 226.9L141.4 236ZM156.6 236L156.6 217.5L161.1 217.5L161.1 236ZM171.9 236L171.9 221.2L166.5 221.2L166.5 217.5L182 217.5L182 221.2L176.5 221.2L176.5 236Z" fill="#F2F3F5"/><path d="M206.5 236.4Q204 236.4 202 235.3Q200.1 234.1 199 232Q197.9 229.8 197.9 226.8Q197.9 223.9 198.9 221.7Q200 219.5 202 218.3Q204 217.1 206.6 217.1Q210.2 217.1 212.2 218.9Q214.2 220.7 214.8 224L210.7 224.1Q210.4 222.4 209.4 221.4Q208.3 220.5 206.6 220.5Q205.1 220.5 204.1 221.2Q203 222 202.5 223.4Q201.9 224.9 201.9 226.8Q201.9 228.8 202.5 230.2Q203.1 231.6 204.1 232.3Q205.1 233.1 206.6 233.1Q208.4 233.1 209.5 232Q210.5 231 210.8 229.1L214.9 229.3Q214.5 231.5 213.5 233.1Q212.4 234.7 210.7 235.6Q208.9 236.4 206.5 236.4ZM221.9 236L221.9 217.5L225.9 217.5L225.9 234.9L223.7 232.7L234.4 232.7L234.4 236ZM247.6 236.4Q245.2 236.4 243.5 235.6Q241.8 234.7 240.9 233.1Q240 231.5 240 229.3L240 217.5L243.9 217.5L243.9 229.3Q243.9 231.1 244.9 232.1Q245.8 233.1 247.6 233.1Q249.3 233.1 250.3 232.1Q251.2 231.1 251.2 229.3L251.2 217.5L255.2 217.5L255.2 229.3Q255.2 231.5 254.2 233.1Q253.3 234.7 251.6 235.6Q249.9 236.4 247.6 236.4ZM263.4 236L263.4 217.5L270.6 217.5Q274 217.5 275.8 218.8Q277.7 220 277.7 222.6Q277.7 223.7 277.2 224.6Q276.7 225.4 275.8 225.9Q274.9 226.4 273.7 226.5L273.7 226.4Q276 226.6 277.2 227.8Q278.4 229 278.4 230.9Q278.4 233.5 276.6 234.7Q274.8 236 271.5 236ZM267.4 232.8L271.3 232.8Q272.7 232.8 273.6 232.2Q274.5 231.6 274.5 230.4Q274.5 229.3 273.6 228.7Q272.7 228 271.3 228L267.4 228ZM267.4 225.2L270.5 225.2Q271.9 225.2 272.8 224.6Q273.7 224 273.7 223Q273.7 221.8 272.8 221.3Q272 220.8 270.5 220.8L267.4 220.8Z" fill="#8A929D"/>
+</g>
+<g opacity="0">
+<animate attributeName="opacity" values="0;1" begin="2.15s" dur=".35s" fill="freeze"/>
+<path d="M83.7 263L83.7 254.5L86.9 254.5Q88.4 254.5 89.2 255Q90 255.6 90 256.8Q90 257.3 89.8 257.7Q89.6 258.1 89.2 258.4Q88.8 258.6 88.2 258.6L88.1 258.6Q89.2 258.6 89.8 259.2Q90.4 259.7 90.4 260.7Q90.4 261.8 89.6 262.4Q88.8 263 87.3 263ZM85.2 261.7L87.2 261.7Q88 261.7 88.4 261.4Q88.8 261.1 88.8 260.5Q88.8 259.9 88.4 259.6Q88 259.3 87.2 259.3L85.2 259.3ZM85.2 258.1L86.8 258.1Q87.6 258.1 88 257.8Q88.5 257.5 88.5 256.9Q88.5 256.4 88 256.1Q87.6 255.8 86.8 255.8L85.2 255.8ZM95 263L95 254.5L100.7 254.5L100.7 255.8L96.5 255.8L96.5 258.1L100.6 258.1L100.6 259.4L96.5 259.4L96.5 261.6L100.8 261.6L100.8 263ZM111.6 263L111.6 254.5L117.3 254.5L117.3 255.8L112.3 255.8L113.2 255L113.2 258.9L112.3 258.2L117.1 258.2L117.1 259.5L112.3 259.5L113.2 258.8L113.2 263ZM121.8 263L121.8 254.5L123.3 254.5L123.3 263ZM129.7 263L129.7 255.8L127.1 255.8L127.1 254.5L133.9 254.5L133.9 255.8L131.3 255.8L131.3 263ZM147.8 263.2Q146.5 263.2 145.6 262.7Q144.7 262.1 144.2 261.1Q143.7 260.1 143.7 258.8Q143.7 257.4 144.2 256.4Q144.7 255.4 145.6 254.8Q146.5 254.3 147.8 254.3Q149.1 254.3 150 254.8Q150.9 255.4 151.4 256.4Q151.9 257.4 151.9 258.8Q151.9 260.1 151.4 261.1Q150.9 262.1 150 262.7Q149.1 263.2 147.8 263.2ZM147.8 261.8Q148.6 261.8 149.1 261.5Q149.7 261.1 150 260.4Q150.3 259.7 150.3 258.8Q150.3 257.8 150 257.1Q149.7 256.4 149.1 256Q148.6 255.6 147.8 255.6Q147 255.6 146.5 256Q145.9 256.4 145.6 257.1Q145.4 257.8 145.4 258.8Q145.4 259.7 145.6 260.4Q145.9 261.1 146.5 261.5Q147 261.8 147.8 261.8ZM156.7 263L156.7 254.5L160.3 254.5Q161.2 254.5 161.9 254.8Q162.5 255.1 162.9 255.7Q163.3 256.3 163.3 257Q163.3 257.6 163 258.1Q162.8 258.5 162.3 258.8Q161.9 259.1 161.4 259.2L161.3 259Q162.2 259 162.6 259.4Q163.1 259.8 163.1 260.5L163.3 263L161.8 263L161.6 260.8Q161.5 260.3 161.3 260Q161 259.8 160.3 259.8L158.3 259.8L158.3 263ZM158.3 258.4L160.2 258.4Q160.9 258.4 161.3 258.1Q161.7 257.7 161.7 257.1Q161.7 256.5 161.3 256.2Q160.9 255.8 160.1 255.8L158.3 255.8ZM174.2 263L174.2 254.5L177.4 254.5Q178.9 254.5 179.7 255Q180.6 255.6 180.6 256.8Q180.6 257.3 180.3 257.7Q180.1 258.1 179.7 258.4Q179.3 258.6 178.7 258.6L178.6 258.6Q179.7 258.6 180.3 259.2Q180.9 259.7 180.9 260.7Q180.9 261.8 180.1 262.4Q179.3 263 177.8 263ZM175.7 261.7L177.7 261.7Q178.5 261.7 178.9 261.4Q179.3 261.1 179.3 260.5Q179.3 259.9 178.9 259.6Q178.5 259.3 177.7 259.3L175.7 259.3ZM175.7 258.1L177.3 258.1Q178.1 258.1 178.5 257.8Q179 257.5 179 256.9Q179 256.4 178.5 256.1Q178.1 255.8 177.3 255.8L175.7 255.8ZM185.5 263L185.5 254.5L191.2 254.5L191.2 255.8L187.1 255.8L187.1 258.1L191.1 258.1L191.1 259.4L187.1 259.4L187.1 261.6L191.3 261.6L191.3 263ZM202.1 263L202.1 254.5L207.8 254.5L207.8 255.8L202.8 255.8L203.7 255L203.7 258.9L202.8 258.2L207.6 258.2L207.6 259.5L202.8 259.5L203.7 258.8L203.7 263ZM212.3 263L212.3 254.5L213.8 254.5L213.8 263ZM218.7 263L218.7 254.5L220.5 254.5L224.2 260.9L224.2 254.5L225.8 254.5L225.8 263L223.9 263L220.3 256.8L220.3 263ZM230.6 263L230.6 254.5L232.2 254.5L232.2 263ZM240.4 263.2Q239.3 263.2 238.5 262.8Q237.8 262.5 237.3 261.8Q236.9 261.1 236.8 260.2L238.4 260.1Q238.5 260.7 238.7 261.1Q239 261.5 239.4 261.7Q239.8 261.9 240.4 261.9Q240.9 261.9 241.2 261.7Q241.6 261.6 241.8 261.4Q242 261.1 242 260.7Q242 260.4 241.8 260.2Q241.7 259.9 241.2 259.7Q240.8 259.5 239.9 259.3Q238.8 259 238.2 258.7Q237.6 258.4 237.3 258Q237 257.5 237 256.8Q237 256.1 237.4 255.5Q237.7 254.9 238.4 254.6Q239.1 254.3 240.1 254.3Q241.1 254.3 241.8 254.7Q242.5 255 242.9 255.7Q243.3 256.3 243.4 257.1L241.8 257.2Q241.8 256.7 241.6 256.4Q241.3 256 241 255.8Q240.6 255.6 240 255.6Q239.4 255.6 239 255.9Q238.6 256.2 238.6 256.8Q238.6 257.1 238.8 257.3Q238.9 257.6 239.3 257.7Q239.8 257.9 240.5 258.1Q241.7 258.3 242.3 258.7Q243 259 243.3 259.5Q243.6 260 243.6 260.7Q243.6 261.4 243.2 262Q242.8 262.6 242.1 262.9Q241.3 263.2 240.4 263.2ZM248.5 263L248.5 254.5L250.1 254.5L250.1 258.6L249.3 258L254.4 258L253.7 258.6L253.7 254.5L255.2 254.5L255.2 263L253.7 263L253.7 258.9L254.4 259.4L249.3 259.4L250.1 258.9L250.1 263ZM260.1 263L260.1 254.5L265.8 254.5L265.8 255.8L261.6 255.8L261.6 258.1L265.7 258.1L265.7 259.4L261.6 259.4L261.6 261.6L265.9 261.6L265.9 263ZM270.6 263L270.6 254.5L273.4 254.5Q275.4 254.5 276.5 255.6Q277.6 256.7 277.6 258.8Q277.6 260.8 276.5 261.9Q275.5 263 273.5 263ZM272.1 261.6L273.4 261.6Q274.7 261.6 275.4 260.9Q276 260.2 276 258.8Q276 257.3 275.4 256.6Q274.7 255.8 273.4 255.8L272.1 255.8Z" fill="#8A929D"/>
+</g>
+</svg>
+<svg class="spl-short" viewBox="0 0 360 300" focusable="false">
+<g transform="translate(26.4 113.2) scale(1.6)" fill="#F2F3F5"><path d="M2 26.5C0.5 20 0.5 10 3 3H17C18 8 20.5 11 26 12L46 16C53 17.5 57 20.5 56 24C55.6 25.8 54.3 26.5 52 26.5Z"/><path d="M6 26.5h5v3h-5zM17 26.5h5v3h-5zM36 26.5h5v3h-5zM46 26.5h5v3h-5z"/><path d="M20 9.5l3 4M26 11.5l2.5 3.5M32 12.8l2 3.4" stroke="#0B0D10" stroke-width="1.7" stroke-linecap="round" fill="none"/></g>
+<path d="M240.8 118.8V150M256.8 118.8V150M285.6 118.8V150M301.6 118.8V150M230.4 127.6H312M230.4 138.8H312" stroke="#F2F3F5" stroke-width="2" opacity=".32"/>
+<path d="M119.2 150H148L160.8 132.4L175.2 167.6L191.2 86L205.6 150H224.8" pathLength="1" fill="none" stroke="#F2F3F5" stroke-width="11.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 1" stroke-dashoffset="1">
+<animate attributeName="stroke-dashoffset" values="1;0" dur=".3s" fill="freeze" calcMode="spline" keySplines=".4 0 .6 1" keyTimes="0;1"/>
+</path>
+<circle cx="271.2" cy="133.2" r="0" fill="#F2F3F5"><animate attributeName="r" values="0;18.6;16.8" keyTimes="0;.6;1" begin=".22s" dur=".22s" fill="freeze"/></circle>
+<g opacity="0"><animate attributeName="opacity" values="0;1" begin=".36s" dur=".08s" fill="freeze"/><clipPath id="spl-cb"><circle cx="271.2" cy="133.2" r="16.8"/></clipPath><g clip-path="url(#spl-cb)"><polygon points="271.20,127.15 276.95,131.33 274.75,138.09 267.65,138.09 265.45,131.33" fill="#0B0D10"/><polygon points="271.20,121.78 266.25,118.18 268.14,112.36 274.26,112.36 276.15,118.18" fill="#0B0D10"/><polygon points="282.07,129.67 283.96,123.85 290.08,123.85 291.97,129.67 287.02,133.27" fill="#0B0D10"/><polygon points="277.92,142.45 284.04,142.45 285.93,148.27 280.98,151.87 276.03,148.27" fill="#0B0D10"/><polygon points="264.48,142.45 266.37,148.27 261.42,151.87 256.47,148.27 258.36,142.45" fill="#0B0D10"/><polygon points="260.33,129.67 255.38,133.27 250.43,129.67 252.32,123.85 258.44,123.85" fill="#0B0D10"/></g><path d="M271.20 127.15L271.20 121.44M276.95 131.33L282.38 129.57M274.75 138.09L278.11 142.71M267.65 138.09L264.29 142.71M265.45 131.33L260.02 129.57" stroke="#0B0D10" stroke-width="1.34" stroke-linecap="round"/></g>
+<path d="M224.8 150V113.2H317.6V150" fill="none" stroke="#F2F3F5" stroke-width="11.2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="271.2" cy="133.2" r="16.8" fill="none" stroke="#F2F3F5" stroke-width="2" opacity="0">
+<animate attributeName="r" values="16.8;40" begin=".4s" dur=".3s" fill="freeze"/><animate attributeName="opacity" values="0;.5;0" keyTimes="0;.2;1" begin=".4s" dur=".3s" fill="freeze"/>
+</circle>
+<path d="M83.6 236L83.6 217.5L91.1 217.5Q94.6 217.5 96.4 218.8Q98.3 220 98.3 222.6Q98.3 223.7 97.9 224.5Q97.4 225.4 96.5 225.9Q95.7 226.3 94.4 226.5L94.4 226.5Q96.7 226.6 97.9 227.8Q99.1 229 99.1 230.9Q99.1 233.5 97.2 234.8Q95.4 236 91.9 236ZM88.1 232.4L91.6 232.4Q92.9 232.4 93.7 231.9Q94.6 231.4 94.6 230.3Q94.6 229.2 93.7 228.7Q92.9 228.2 91.6 228.2L88.1 228.2ZM88.1 225.1L90.9 225.1Q92.2 225.1 93 224.6Q93.8 224.1 93.8 223.1Q93.8 222 93 221.6Q92.2 221.1 90.9 221.1L88.1 221.1ZM106 236L106 217.5L119.2 217.5L119.2 221.2L110.5 221.2L110.5 224.9L118.9 224.9L118.9 228.6L110.5 228.6L110.5 232.3L119.5 232.3L119.5 236ZM136.9 236L136.9 217.5L150 217.5L150 221.2L138.8 221.2L141.4 218.6L141.4 227.1L138.8 225.1L149.5 225.1L149.5 228.8L138.8 228.8L141.4 226.9L141.4 236ZM156.6 236L156.6 217.5L161.1 217.5L161.1 236ZM171.9 236L171.9 221.2L166.5 221.2L166.5 217.5L182 217.5L182 221.2L176.5 221.2L176.5 236Z" fill="#F2F3F5"/><path d="M206.5 236.4Q204 236.4 202 235.3Q200.1 234.1 199 232Q197.9 229.8 197.9 226.8Q197.9 223.9 198.9 221.7Q200 219.5 202 218.3Q204 217.1 206.6 217.1Q210.2 217.1 212.2 218.9Q214.2 220.7 214.8 224L210.7 224.1Q210.4 222.4 209.4 221.4Q208.3 220.5 206.6 220.5Q205.1 220.5 204.1 221.2Q203 222 202.5 223.4Q201.9 224.9 201.9 226.8Q201.9 228.8 202.5 230.2Q203.1 231.6 204.1 232.3Q205.1 233.1 206.6 233.1Q208.4 233.1 209.5 232Q210.5 231 210.8 229.1L214.9 229.3Q214.5 231.5 213.5 233.1Q212.4 234.7 210.7 235.6Q208.9 236.4 206.5 236.4ZM221.9 236L221.9 217.5L225.9 217.5L225.9 234.9L223.7 232.7L234.4 232.7L234.4 236ZM247.6 236.4Q245.2 236.4 243.5 235.6Q241.8 234.7 240.9 233.1Q240 231.5 240 229.3L240 217.5L243.9 217.5L243.9 229.3Q243.9 231.1 244.9 232.1Q245.8 233.1 247.6 233.1Q249.3 233.1 250.3 232.1Q251.2 231.1 251.2 229.3L251.2 217.5L255.2 217.5L255.2 229.3Q255.2 231.5 254.2 233.1Q253.3 234.7 251.6 235.6Q249.9 236.4 247.6 236.4ZM263.4 236L263.4 217.5L270.6 217.5Q274 217.5 275.8 218.8Q277.7 220 277.7 222.6Q277.7 223.7 277.2 224.6Q276.7 225.4 275.8 225.9Q274.9 226.4 273.7 226.5L273.7 226.4Q276 226.6 277.2 227.8Q278.4 229 278.4 230.9Q278.4 233.5 276.6 234.7Q274.8 236 271.5 236ZM267.4 232.8L271.3 232.8Q272.7 232.8 273.6 232.2Q274.5 231.6 274.5 230.4Q274.5 229.3 273.6 228.7Q272.7 228 271.3 228L267.4 228ZM267.4 225.2L270.5 225.2Q271.9 225.2 272.8 224.6Q273.7 224 273.7 223Q273.7 221.8 272.8 221.3Q272 220.8 270.5 220.8L267.4 220.8Z" fill="#8A929D"/>
+<path d="M83.7 263L83.7 254.5L86.9 254.5Q88.4 254.5 89.2 255Q90 255.6 90 256.8Q90 257.3 89.8 257.7Q89.6 258.1 89.2 258.4Q88.8 258.6 88.2 258.6L88.1 258.6Q89.2 258.6 89.8 259.2Q90.4 259.7 90.4 260.7Q90.4 261.8 89.6 262.4Q88.8 263 87.3 263ZM85.2 261.7L87.2 261.7Q88 261.7 88.4 261.4Q88.8 261.1 88.8 260.5Q88.8 259.9 88.4 259.6Q88 259.3 87.2 259.3L85.2 259.3ZM85.2 258.1L86.8 258.1Q87.6 258.1 88 257.8Q88.5 257.5 88.5 256.9Q88.5 256.4 88 256.1Q87.6 255.8 86.8 255.8L85.2 255.8ZM95 263L95 254.5L100.7 254.5L100.7 255.8L96.5 255.8L96.5 258.1L100.6 258.1L100.6 259.4L96.5 259.4L96.5 261.6L100.8 261.6L100.8 263ZM111.6 263L111.6 254.5L117.3 254.5L117.3 255.8L112.3 255.8L113.2 255L113.2 258.9L112.3 258.2L117.1 258.2L117.1 259.5L112.3 259.5L113.2 258.8L113.2 263ZM121.8 263L121.8 254.5L123.3 254.5L123.3 263ZM129.7 263L129.7 255.8L127.1 255.8L127.1 254.5L133.9 254.5L133.9 255.8L131.3 255.8L131.3 263ZM147.8 263.2Q146.5 263.2 145.6 262.7Q144.7 262.1 144.2 261.1Q143.7 260.1 143.7 258.8Q143.7 257.4 144.2 256.4Q144.7 255.4 145.6 254.8Q146.5 254.3 147.8 254.3Q149.1 254.3 150 254.8Q150.9 255.4 151.4 256.4Q151.9 257.4 151.9 258.8Q151.9 260.1 151.4 261.1Q150.9 262.1 150 262.7Q149.1 263.2 147.8 263.2ZM147.8 261.8Q148.6 261.8 149.1 261.5Q149.7 261.1 150 260.4Q150.3 259.7 150.3 258.8Q150.3 257.8 150 257.1Q149.7 256.4 149.1 256Q148.6 255.6 147.8 255.6Q147 255.6 146.5 256Q145.9 256.4 145.6 257.1Q145.4 257.8 145.4 258.8Q145.4 259.7 145.6 260.4Q145.9 261.1 146.5 261.5Q147 261.8 147.8 261.8ZM156.7 263L156.7 254.5L160.3 254.5Q161.2 254.5 161.9 254.8Q162.5 255.1 162.9 255.7Q163.3 256.3 163.3 257Q163.3 257.6 163 258.1Q162.8 258.5 162.3 258.8Q161.9 259.1 161.4 259.2L161.3 259Q162.2 259 162.6 259.4Q163.1 259.8 163.1 260.5L163.3 263L161.8 263L161.6 260.8Q161.5 260.3 161.3 260Q161 259.8 160.3 259.8L158.3 259.8L158.3 263ZM158.3 258.4L160.2 258.4Q160.9 258.4 161.3 258.1Q161.7 257.7 161.7 257.1Q161.7 256.5 161.3 256.2Q160.9 255.8 160.1 255.8L158.3 255.8ZM174.2 263L174.2 254.5L177.4 254.5Q178.9 254.5 179.7 255Q180.6 255.6 180.6 256.8Q180.6 257.3 180.3 257.7Q180.1 258.1 179.7 258.4Q179.3 258.6 178.7 258.6L178.6 258.6Q179.7 258.6 180.3 259.2Q180.9 259.7 180.9 260.7Q180.9 261.8 180.1 262.4Q179.3 263 177.8 263ZM175.7 261.7L177.7 261.7Q178.5 261.7 178.9 261.4Q179.3 261.1 179.3 260.5Q179.3 259.9 178.9 259.6Q178.5 259.3 177.7 259.3L175.7 259.3ZM175.7 258.1L177.3 258.1Q178.1 258.1 178.5 257.8Q179 257.5 179 256.9Q179 256.4 178.5 256.1Q178.1 255.8 177.3 255.8L175.7 255.8ZM185.5 263L185.5 254.5L191.2 254.5L191.2 255.8L187.1 255.8L187.1 258.1L191.1 258.1L191.1 259.4L187.1 259.4L187.1 261.6L191.3 261.6L191.3 263ZM202.1 263L202.1 254.5L207.8 254.5L207.8 255.8L202.8 255.8L203.7 255L203.7 258.9L202.8 258.2L207.6 258.2L207.6 259.5L202.8 259.5L203.7 258.8L203.7 263ZM212.3 263L212.3 254.5L213.8 254.5L213.8 263ZM218.7 263L218.7 254.5L220.5 254.5L224.2 260.9L224.2 254.5L225.8 254.5L225.8 263L223.9 263L220.3 256.8L220.3 263ZM230.6 263L230.6 254.5L232.2 254.5L232.2 263ZM240.4 263.2Q239.3 263.2 238.5 262.8Q237.8 262.5 237.3 261.8Q236.9 261.1 236.8 260.2L238.4 260.1Q238.5 260.7 238.7 261.1Q239 261.5 239.4 261.7Q239.8 261.9 240.4 261.9Q240.9 261.9 241.2 261.7Q241.6 261.6 241.8 261.4Q242 261.1 242 260.7Q242 260.4 241.8 260.2Q241.7 259.9 241.2 259.7Q240.8 259.5 239.9 259.3Q238.8 259 238.2 258.7Q237.6 258.4 237.3 258Q237 257.5 237 256.8Q237 256.1 237.4 255.5Q237.7 254.9 238.4 254.6Q239.1 254.3 240.1 254.3Q241.1 254.3 241.8 254.7Q242.5 255 242.9 255.7Q243.3 256.3 243.4 257.1L241.8 257.2Q241.8 256.7 241.6 256.4Q241.3 256 241 255.8Q240.6 255.6 240 255.6Q239.4 255.6 239 255.9Q238.6 256.2 238.6 256.8Q238.6 257.1 238.8 257.3Q238.9 257.6 239.3 257.7Q239.8 257.9 240.5 258.1Q241.7 258.3 242.3 258.7Q243 259 243.3 259.5Q243.6 260 243.6 260.7Q243.6 261.4 243.2 262Q242.8 262.6 242.1 262.9Q241.3 263.2 240.4 263.2ZM248.5 263L248.5 254.5L250.1 254.5L250.1 258.6L249.3 258L254.4 258L253.7 258.6L253.7 254.5L255.2 254.5L255.2 263L253.7 263L253.7 258.9L254.4 259.4L249.3 259.4L250.1 258.9L250.1 263ZM260.1 263L260.1 254.5L265.8 254.5L265.8 255.8L261.6 255.8L261.6 258.1L265.7 258.1L265.7 259.4L261.6 259.4L261.6 261.6L265.9 261.6L265.9 263ZM270.6 263L270.6 254.5L273.4 254.5Q275.4 254.5 276.5 255.6Q277.6 256.7 277.6 258.8Q277.6 260.8 276.5 261.9Q275.5 263 273.5 263ZM272.1 261.6L273.4 261.6Q274.7 261.6 275.4 260.9Q276 260.2 276 258.8Q276 257.3 275.4 256.6Q274.7 255.8 273.4 255.8L272.1 255.8Z" fill="#8A929D"/>
+</svg>
+  </div>
+  <span id="splash-sr" class="sr-only">Loading BE Fit Club</span>
+<script>
+/* Splash rules (front door). None: tests, a #/ link, or a match is live on this phone. Full: first open of the day.
+   Short: every other open. Reduced motion: the last frame, still. Ends at max(2.4 s, data ready) capped at 3.0 s (short and still: 0.6 s). Tap = skip. */
+(function () {
+  var el = document.getElementById('splash'), sr = document.getElementById('splash-sr');
+  if (!el) return;
+  function drop() { if (el.parentNode) el.parentNode.removeChild(el); if (sr && sr.parentNode) sr.parentNode.removeChild(sr); }
+  var K = (window.BF_CONFIG && window.BF_CONFIG.keys) || {};
+  function get(k) { try { return k ? localStorage.getItem(k) : null; } catch (e) { return null; } }
+  function put(k, v) { try { if (k) localStorage.setItem(k, v); } catch (e) { /* private mode: fine */ } }
+  if (window.__BEFIT_TEST__ || /^#\//.test(location.hash) || get(K.live)) { drop(); return; }
+  var d = new Date(), p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  var today = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+  var full = get(K.splashDay) !== today;
+  if (full) put(K.splashDay, today);
+  var still = false;
+  try { still = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { /* ignore */ }
+  var useFull = full && !still;
+  var keep = el.querySelector(useFull ? '.spl-full' : '.spl-short'), gone = el.querySelector(useFull ? '.spl-short' : '.spl-full');
+  if (gone) gone.parentNode.removeChild(gone);
+  try {
+    if (keep && keep.setCurrentTime) { if (still) { keep.pauseAnimations(); keep.setCurrentTime(0.7); } else keep.setCurrentTime(0); }
+  } catch (e) { /* ignore */ }
+  el.className = 'spl ' + (useFull ? 'run' : 'static');
+  var t0 = Date.now(), over = false, timer = null;
+  function end() {
+    if (over) return;
+    over = true; clearTimeout(timer);
+    el.classList.add('out');
+    setTimeout(drop, 300);
+  }
+  function ready() { try { return !!(window.Store && window.Store.hasData && window.Store.hasData()); } catch (e) { return false; } }
+  function check() {
+    if (over) return;
+    if (ready() || Date.now() - t0 >= 3000) end(); else timer = setTimeout(check, 100);
+  }
+  if (useFull) timer = setTimeout(check, 2400); else timer = setTimeout(end, 600);
+  el.addEventListener('pointerdown', end);
+}());
+</script>
   <div class="app" id="app">
     <nav class="rail" id="app-rail" aria-label="Sections"></nav>
     <div class="app-main">

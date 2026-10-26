@@ -125,8 +125,20 @@
   }
 
   // ---------------------------------------------------------------- emit
+  // The splash reads one tiny key instead of the big saved copy: the live match's id, or nothing (not in test mode).
+  let liveSeen;
+  function rememberLive() {
+    if (TEST) return;
+    try {
+      const id = activeSessionId() || '';
+      if (id === liveSeen) return;
+      liveSeen = id;
+      if (id) localStorage.setItem(CFG.keys.live, id); else localStorage.removeItem(CFG.keys.live);
+    } catch (e) { /* private mode or full: the splash then just plays */ }
+  }
   function emitData(paths) {
     version++;
+    rememberLive();
     const info = { version, paths };
     dataListeners.forEach(fn => { try { fn(info); } catch (e) { console.error(e); } });
   }

@@ -5,7 +5,7 @@
 # (AGENTS.md, "Keep tests off the live site"). Add any new top-level app file or folder to APP below.
 set -euo pipefail
 cd "$(dirname "$0")"
-APP=(index.html classic.html sw.js manifest.json icon.svg Image.jpg _redirects css js)
+APP=(index.html classic.html sw.js manifest.json icon.svg icons Image.jpg _redirects css js)
 rm -rf dist
 mkdir dist
 for f in "${APP[@]}"; do cp -R "$f" dist/; done
