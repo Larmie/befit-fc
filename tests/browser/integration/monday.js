@@ -149,7 +149,7 @@ async function signIn(page, who) {
   check('kick-off: session for Mon 26 Oct, active, live, small poles, 13 players, clock running', sess && sess.date === NIGHT && sess.status === 'active' && sess.mode === 'live' && sess.format.start === 'small' &&
     Object.values(sess.teams).reduce((n, t) => n + Object.keys(t.players).length, 0) === 13 && sess.timer.status === 'running', { date: sess && sess.date, format: sess && sess.format });
   check('console open; bottom nav hidden while live', await screenId() === 'ref.console' && await p.evaluate(() => document.body.classList.contains('nav-hidden')));
-  check('header: "Referee ▾" · date · sync chip "✓ All sent" (no ⋯)', /^Referee/.test(await txt(p, '#app-header .hd-l')) && (await txt(p, '#app-header [data-sync]')) === '✓ All sent' && !(await p.$('#app-header [data-cn-more]')));
+  check('header: mark · date · sync chip "✓ All sent" · "Referee ▾" on the right (no ⋯); the brand button is hidden while the match is live', /Referee/.test(await txt(p, '#app-header .hd-r')) && (await p.evaluate(() => !!document.querySelector('#app-header .hd-l .brandbtn') === !App.isLiveMatch())) && (await txt(p, '#app-header [data-sync]')) === '✓ All sent' && !(await p.$('#app-header [data-cn-more]')));
   const G = Object.keys(sess.teams.green.players), R = Object.keys(sess.teams.red.players);
   const GO = G.filter(x => x !== EMM), RO = R.filter(x => x !== KW);
   // GK-position players on small poles score as MID (no keepers on small poles)

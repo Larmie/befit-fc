@@ -74,10 +74,10 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     // player pill sheet
     await tap(p, '#app-header [data-shell="pill"]');
     const t = await sheetText(p);
-    check('1.15 name chip menu: My page · Share card · Appearance · Not Daniel? Switch · Referee or admin sign-in',
-      ['My page', 'Share card', 'Appearance', 'Not Daniel? Switch', 'Referee or admin sign-in'].every(x => t.includes(x)), t);
-    await tapText(p, 'Not Daniel? Switch');
-    check('1.16 "Switch" goes back to the front door', await screenId(p) === 'welcome');
+    check('1.15 name chip menu: My page · Share card · Appearance · Referee or admin sign-in · Back to menu (no more "Not Daniel? Switch")',
+      ['My page', 'Share card', 'Appearance', 'Back to menu', 'Referee or admin sign-in'].every(x => t.includes(x)) && !/Switch/.test(t), t);
+    await tapText(p, 'Back to menu');
+    check('1.16 "Back to menu" goes to the front door (and the phone still remembers him)', await screenId(p) === 'welcome' && await p.evaluate(() => !!App.viewer()));
     console.log(s.errors.length ? 'errors: ' + s.errors.join(' | ') : '');
     check('1.17 no console errors', !s.errors.length, s.errors);
     await s.close();
@@ -96,7 +96,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check('2.6 Tables · Stats placeholder shows the stepped podium (Emmanuel #1 in the middle)', await p.evaluate(() => { const c = [...document.querySelectorAll('.pod .pcol')]; return c.length === 3 && c[1].classList.contains('first') && /Emmanuel/.test(c[1].innerText) && /484/.test(c[1].innerText); }));
     await tap(p, '#app-header [data-shell="pill"]');
     const t = await sheetText(p);
-    check('2.7 Browsing ▾ opens "You’re browsing": Find your name · I’m the referee · I’m the admin · Appearance', ['You’re browsing', 'I’m the referee', 'I’m the admin', 'Appearance'].every(x => t.includes(x)) && await p.evaluate(() => !!document.querySelector('.sheet [data-search="pill-find"]')), t);
+    check('2.7 Browsing ▾ opens "You’re browsing": Find your name · Referee · Admin · Appearance · Back to menu (no "I’m the …")', ['You’re browsing', 'Referee', 'Admin', 'Appearance', 'Back to menu'].every(x => t.includes(x)) && !/I’m the/.test(t) && await p.evaluate(() => !!document.querySelector('.sheet [data-search="pill-find"]')), t);
     await typeInto(p, '.sheet [data-search="pill-find"]', 'Emm');
     check('2.8 typing in the pill sheet finds Emmanuel', await p.evaluate(() => [...document.querySelectorAll('.sheet [data-tap="pick"] .nm')].map(x => x.textContent).includes('Emmanuel')));
     await tap(p, '.sheet [data-tap="pick"]');
@@ -128,7 +128,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     await p.evaluate(() => App.go('ref.money')); await sleep(250);
     await tap(p, '#app-header [data-shell="pill"]');
     const t = await sheetText(p);
-    check('3.10 Referee ▾ opens: Player view · Sign out', t.includes('Player view') && t.includes('Sign out') && !t.includes('Admin home'), t);
+    check('3.10 Referee ▾ opens: Player view · Back to menu · Sign out', t.includes('Player view') && t.includes('Back to menu') && t.includes('Sign out') && !t.includes('Admin home'), t);
     await tapText(p, 'Player view');
     check('3.11 Player view → guest tabs (no name picked yet)', await navLabels(p) === 'Home · Match · Tables', await navLabels(p));
     check('3.12 no console errors', !s.errors.length, s.errors);
@@ -150,7 +150,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     await tap(p, '#app-nav [data-tab="settings"]'); check('4.6 Settings tab → admin.settings (Teams listed from Settings data)', await screenId(p) === 'admin.settings' && /Green[\s\S]*Red/.test(await p.evaluate(() => document.querySelector('#app-screen').innerText)));
     await tap(p, '#app-header [data-shell="pill"]');
     const t = await sheetText(p);
-    check('4.7 Admin ▾ opens: Referee console · Player view · Sign out', ['Referee console', 'Player view', 'Sign out'].every(x => t.includes(x)), t);
+    check('4.7 Admin ▾ opens: Referee console · Player view · Back to menu · Sign out', ['Referee console', 'Player view', 'Back to menu', 'Sign out'].every(x => t.includes(x)), t);
     await tapText(p, 'Referee console');
     check('4.8 Referee console → the admin referees with Match · Money tonight', await navLabels(p) === 'Match · Money tonight' && await screenId(p) === 'ref.setup', [await navLabels(p), await screenId(p)]);
     await tap(p, '#app-header [data-shell="pill"]');

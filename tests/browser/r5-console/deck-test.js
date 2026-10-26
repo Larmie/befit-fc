@@ -52,7 +52,7 @@ async function main() {
   let s = await H.open({ width: 390, referee: 'referee', route: '#/ref.console', data: liveData({ format: { start: 'small' }, timer: running(44) }) });
   let h = helpers(s), p = h.p; await s.freeze(); await sleep(1100);
   check('nav hidden while the match is live (referee)', await p.evaluate(() => document.body.classList.contains('nav-hidden') && document.getElementById('app-nav').hidden));
-  check('header: Referee ▾ · date · sync chip "✓ All sent", no ⋯', (await h.text('#app-header .hd-l')).startsWith('Referee') && (await h.text('#app-header [data-sync]')) === '✓ All sent' && !(await p.$('#app-header [data-cn-more]')));
+  check('header: mark · date · sync chip "✓ All sent" · Referee ▾ on the right, no ⋯; brand button hidden while live', /Referee/.test(await h.text('#app-header .hd-r')) && (await p.evaluate(() => !!document.querySelector('#app-header .hd-l .brandbtn') === !App.isLiveMatch())) && (await h.text('#app-header [data-sync]')) === '✓ All sent' && !(await p.$('#app-header [data-cn-more]')));
   const w0 = await p.evaluate(() => Store.test.writes.length);
   await h.rapid('.cn-row1 [data-act="stoppage"]', 2); await sleep(500);
   let t = await h.timer();

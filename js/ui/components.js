@@ -81,7 +81,7 @@
      UI.undoBar.show({ text, sub?, onUndo, again:{label,run}, seconds:5 })   white bar, Undo with 5 → 0 count, shrinking line
      UI.undoBar.error({ title?, text, onRetry, onDismiss })              orange bar with Retry; stays until retried/dismissed
      UI.undoBar.saving(text) · UI.undoBar.note(text, ms=2000) · UI.undoBar.hide()
-     UI.toast(text, { err, ms:2400 })                                     one line, never two
+     UI.toast(text, { err, ms:2400, action:{label, fn} })                 one line, never two; the optional action is a tappable link at the end ("Sign in ›")
    ========================================================================== */
 (function () {
   'use strict';
@@ -492,9 +492,15 @@
     if (toastEl) toastEl.remove();
     clearTimeout(toastTimer);
     toastEl = document.createElement('div');
-    toastEl.className = 'toast' + (o.err ? ' err' : '');
+    toastEl.className = 'toast' + (o.err ? ' err' : '') + (o.action ? ' has-act' : '');
     toastEl.setAttribute('role', 'status');
     toastEl.textContent = String(text).split('\n')[0];
+    if (o.action) {
+      const a = document.createElement('button');
+      a.type = 'button'; a.className = 'toast-act'; a.dataset.toastAct = '1'; a.textContent = o.action.label;
+      a.addEventListener('click', () => { if (toastEl) { toastEl.remove(); toastEl = null; } clearTimeout(toastTimer); try { o.action.fn(); } catch (e) { console.error(e); } });
+      toastEl.append(' · ', a);
+    }
     (document.getElementById('app-toast') || document.body).appendChild(toastEl);
     toastTimer = setTimeout(() => { if (toastEl) { toastEl.remove(); toastEl = null; } }, o.ms || 2400);
   }
