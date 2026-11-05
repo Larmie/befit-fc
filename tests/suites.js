@@ -49,12 +49,14 @@ module.exports = [
   { name: 'outbox', file: 'offline/outbox-test.js', areas: ['store', 'offline', 'console'], uses: ['browser/console/data.js'] },
   { name: 'fulltime', file: 'r5-fulltime/ft-test.js', areas: ['fix', 'scoring', 'clock'], uses: ['browser/r5-fulltime/data.js', 'fixtures/19oct-stoppage-as-recorded.json'] },
   { name: 'fix', file: 'fix/fix-e2e.js', areas: ['fix', 'scoring'], uses: ['browser/r5-fulltime/data.js', 'fixtures/19oct-stoppage-as-recorded.json'] },
+  { name: 'fix-minutes', file: 'fix/minutes-test.js', areas: ['fix', 'clock'] },
   // ---- admin and money
   { name: 'r5-admin', file: 'r5-admin/r5-admin-test.js', areas: ['admin', 'pay', 'teams'] },
   { name: 'admin', file: 'admin/test.js', areas: ['admin', 'pay'] },
   { name: 'admin-card', file: 'admin/card-test.js', areas: ['admin'] },
   { name: 'admin-tonight', file: 'admin/tonight-test.js', areas: ['admin', 'pay'] },
   { name: 'admin-payrule', file: 'admin/payrule-test.js', areas: ['admin', 'pay'] },
+  { name: 'admin-payahead', file: 'admin/payahead-test.js', areas: ['admin', 'pay', 'player'] },
   { name: 'admin-share', file: 'admin-share/test.js', areas: ['admin', 'fix'], failIf: /SOME FAILED/ },
   { name: 'paycheck', file: 'integration/paycheck.js', areas: ['pay', 'admin', 'player'] },
   // ---- the whole Monday night, then classic.html on what the new app wrote

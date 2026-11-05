@@ -3,7 +3,7 @@
                                                               OWNER: Round 5 · admin builder
    ----------------------------------------------------------------------------
    SCREENS
-     'admin.home'           tab home      "Needs you" (money not entered, subs owed, names used twice, new players
+     'admin.home'           tab home      "Needs you" (money not entered, payments owed, names used twice, new players
                             to finish, results published since you last looked; seen-time per phone in
                             BF_CONFIG.keys.lastSeen), a live-match banner (joined score block), then every match
                             with the mini score (→ 'ref.edit'), and "Log a past game".
@@ -12,12 +12,16 @@
      'ref.squad' {f?}       tab squad     Search, filter chips (All · one per team · New · Owes · Twice), rows with avatar,
                             team chip, apps, points or an "owes ₵60" tag. Twice = the duplicate groups with Merge.
      'ref.player' {pid}     tab squad     Header card (hero), usual team as big swatches (every active team; + Add a team),
-                            position, Name, Subs, Merge with another player, Hold to delete.
+                            position, Name, Payment history, Pay ahead, Merge with another player, Hold to delete.
      'ref.money' {all?|view?} tab money   Admin: a "Tonight · All dates" switch on the page. Tonight = the register
                             (collected of expected, chips To collect / Paid / Everyone, tap a row → quick amounts
                             inline, then Cancel or Save). No match today: a card for the latest match day with no
                             money entered and "Record money ›" (→ its register). All dates = "Needs recording"
                             (each "Record ›") on top, then the entered days, "+ Other date". The referee: tonight only.
+                            Admin, every Money view: "Pay ahead" under the switch (also on a player's page): one
+                            sheet, who → weeks (1 to 12, default 3) → ₵ a week (the club fee) → the actual dates and
+                            the sum ("3 × ₵60 = ₵180") → Save writes every date at once, with Undo. Records are
+                            { amount, ahead: true, updatedAt, by } (js/core/pay.js: ahead-only dates aren't "entered").
      'ref.moneyDay' {date}  tab money     The register for one date (admin), plus Hold to clear payment record.
      'admin.settings'       tab settings  Club (name, season, fee, quick amounts), Teams (+ Add a team), Match rules
                             (read-only), Access (how to change the referee password; the practice password: set / change),
@@ -32,7 +36,7 @@
    DATA (all writes go through Store; nothing here talks to Firebase)
      players/{pid}                          { name, defaultPosition, defaultTeam, needsDetails?, createdBy?, createdAt? }
      sessions/{sid}                         post mode: { date, status:'completed', mode:'post', teams, playerStats, goals, cleanSheets }
-     paymentDays/{date}                     { date, createdAt, updatedAt, payments: { pid: { amount, updatedAt, by } } }
+     paymentDays/{date}                     { date, createdAt, updatedAt, payments: { pid: { amount, updatedAt, by, ahead? } } }
      sessions/{sid}/payments (legacy)       read and merged by updatedAt, exactly as classic; cleared with the record.
      settings/club/{name|seasonLabel|fee|quickAmounts}     (Teams.club() reads them, with fallbacks)
      settings/practice = { hash, salt, updatedAt }       the practice password, hash = SHA-256(salt + password) (js/core/practice.js)
@@ -86,7 +90,7 @@
     return ids;
   }
 
-  // ---------------------------------------------------------------- payments model: js/core/pay.js (shared with Me › Subs)
+  // ---------------------------------------------------------------- payments model: js/core/pay.js (shared with Me › Payment history)
   const { amountOf, recTime, isDate, sessionsOn, recordsFor, playedOn } = window.BF_PAY;
   const hasRecord = BF_PAY.hasRecord, daySummary = BF_PAY.day;
   const moneyOverview = BF_PAY.overview;
@@ -276,7 +280,7 @@
     const owers = Object.keys(owe).filter(pid => Store.player(pid));
     if (owers.length) {
       const nights = owers.reduce((s, pid) => s + owe[pid].length, 0);
-      out.push({ tap: 'need-owes', title: 'Subs owed', n: owers.length, kind: 'warn',
+      out.push({ tap: 'need-owes', title: 'Payments owed', n: owers.length, kind: 'warn',
         sub: `${plural(owers.length, 'player')} · ${fmt.money(nights * fee())} for ${plural(nights, 'night')}` });
     }
     const groups = dupGroups();
@@ -730,7 +734,8 @@
       <div class="lbl mt-6">Position</div>${UI.seg('ed-pos', POSITIONS.map(x => ({ value: x, label: x })), p.defaultPosition || 'MID', { ref: true })}
       <div class="mt-4">${UI.rows([
         UI.row({ tap: 'ed-name', title: 'Name', right: `<span class="meta adm-val">${esc(p.name)}</span>`, chevron: true }),
-        UI.row({ tap: 'ed-subs', title: 'Subs', right: subsSummary(pid), chevron: true }),
+        UI.row({ tap: 'ed-subs', title: 'Payment history', right: subsSummary(pid), chevron: true }),
+        UI.row({ tap: 'ed-ahead', title: 'Pay ahead', meta: 'Pay for the coming weeks in one go', chevron: true }),
         UI.row({ tap: 'ed-merge', title: 'Merge with another player', chevron: true }),
       ])}</div>
       <div class="mt-6">${st.apps ? `<div class="adm-delflag meta">${plural(st.apps, 'app')} · ${st.pts} pts leave the table</div>` : ''}
@@ -775,10 +780,12 @@
     const rowOf = d => {
       const st = BF_PAY.status(pid, d), amt = BF_PAY.amount(pid, d);
       const right = st === 'paid' ? `<span class="n">${esc(fmt.money(amt))}</span>` : st === 'not paid' ? `<span class="adm-owes">not paid</span>` : `<span class="meta">not entered</span>`;
-      return UI.row({ tap: 'day', data: { date: d }, title: fmt.date(d), meta: dates.includes(d) ? 'Played' : 'Paid · didn’t play', right, chevron: true });
+      // A paid date still to come reads "Paid ahead"; once it has passed, the usual words.
+      const meta = dates.includes(d) ? 'Played' : BF_PAY.upcoming(d) ? 'Paid ahead' : 'Paid · didn’t play';
+      return UI.row({ tap: 'day', data: { date: d }, title: fmt.date(d), meta, right, chevron: true });
     };
     const owed = owedDates(pid);
-    const h = UI.sheet.open({ title: `Subs · ${p.name}`, titleEnd: owed.length ? `${owed.length} not paid` : '', cls: 'sh-admin-subs', cancel: 'Close',
+    const h = UI.sheet.open({ title: `Payment history · ${p.name}`, titleEnd: owed.length ? `${owed.length} not paid` : '', cls: 'sh-admin-subs', cancel: 'Close',
       body: all.length ? UI.rows(all.slice(0, 40).map(rowOf)) : UI.empty('Nothing yet', '') });
     UI.on(h.el, 'day', b => { h.close(); App.go('ref.moneyDay', { date: b.dataset.date }); });
   }
@@ -802,6 +809,7 @@
       UI.on(el, 'ed-done', b => { const p = Store.player(pid); if (p) savePlayer(pid, { needsDetails: null }, `${p.name} · details done`, b); });
       UI.on(el, 'ed-name', () => openNameSheet(pid));
       UI.on(el, 'ed-subs', () => openSubsSheet(pid));
+      UI.on(el, 'ed-ahead', () => openPayAhead(pid));
       UI.on(el, 'profile', () => App.go('player.profile', { pid }));
       UI.on(el, 'squad', () => App.go('ref.squad', {}, { replace: true }));
       UI.on(el, 'ed-merge', () => { if (isAdmin()) openMergePicker(pid); });
@@ -850,6 +858,9 @@
       expected: playedRows.length * fee(),
       changes, delta: changes.reduce((s, r) => s + r.amount - r.saved, 0),
       hasRecord: hasRecord(date, db),
+      // anything saved at all (pay-ahead records alone don't make a date "entered", but can still be cleared)
+      anyRecord: hasRecord(date, db) || !!(db.paymentDays || {})[date],
+      ahead: !playedRows.length && rows.some(r => r.saved > 0) && BF_PAY.upcoming(date, db),
     };
   }
 
@@ -903,7 +914,7 @@
         `<div class="sub"><span class="n">${esc(fmt.money(m.total))}</span> · ${m.paid.length} paid</div></div></div>` + (lines.length ? UI.rows(lines, { cls: 'adm-donerows' }) : '') + `</div>`;
     }
     const pct = m.playedRows.length ? Math.round(100 * m.paidPlayed / m.playedRows.length) : 0;
-    const of = m.playedRows.length ? (m.tonight ? `of ${fmt.money(m.expected)}` : `of ${m.playedRows.length} who played`) : 'no match';
+    const of = m.playedRows.length ? (m.tonight ? `of ${fmt.money(m.expected)}` : `of ${m.playedRows.length} who played`) : m.ahead ? 'paid ahead' : 'no match';
     const chip = !m.playedRows.length || !m.notPaid.length ? ''
       : !m.hasRecord && !m.tonight ? `<span class="adm-chip">not entered</span>` : `<span class="adm-chip">${m.notPaid.length} to collect</span>`;
     const line = m.playedRows.length
@@ -932,7 +943,7 @@
       `<span class="adm-sb-b"><button type="button" class="ub ghost" data-tap="pay-cancel">Cancel</button><button type="button" class="ub" data-tap="pay-save">Save</button></span></div>`;
   }
   function clearBlock(m) {
-    if (!isAdmin() || !m.hasRecord || m.changes.length) return '';
+    if (!isAdmin() || !m.anyRecord || m.changes.length) return '';
     return `<div class="adm-clear"><div class="meta">${esc(fmt.money(m.total))} · ${plural(m.paid.length, 'person', 'people')} paid</div>` +
       UI.hold('Hold to clear payment record', { name: 'clear', warn: true, doneText: 'Clearing…' }) + `</div>`;
   }
@@ -1069,10 +1080,14 @@
     const need = unrecorded();
     const needSet = new Set(need.map(r => r.date));
     const needRow = r => UI.row({ tap: 'day', data: { date: r.date }, title: fmt.date(r.date), meta: `${r.played} played · not entered`, right: recordTag, cls: 'adm-needrec' });
+    // A day with no match but money on it: "1 person paid ahead" while it's still to come, "1 person paid · no match" after
+    // (pay-ahead records alone don't make a day "entered", so look at the money too).
+    const aheadDay = r => !r.isMatch && r.paid > 0;
     const row = r => UI.row({ tap: 'day', data: { date: r.date }, title: fmt.date(r.date),
-      meta: !r.entered ? (r.isMatch ? `${r.played} played` : 'No match') :
+      meta: aheadDay(r) ? `${plural(r.paid, 'person', 'people')} paid${BF_PAY.upcoming(r.date) ? ' ahead' : ' · no match'}` :
+        !r.entered ? (r.isMatch ? `${r.played} played` : 'No match') :
         r.isMatch ? `${r.paidPlayed} of ${r.played} paid${r.others ? ` · ${r.others} didn’t play` : ''}` : `${plural(r.paid, 'person', 'people')} paid · no match`,
-      right: r.active ? UI.pill('Tonight') : r.entered ? `<span class="n bk">${esc(fmt.money(r.total))}</span>` : `<span class="adm-chip">not entered</span>`, chevron: true });
+      right: r.active ? UI.pill('Tonight') : r.entered || aheadDay(r) ? `<span class="n bk">${esc(fmt.money(r.total))}</span>` : `<span class="adm-chip">not entered</span>`, chevron: true });
     const missing = ov.missing;
     const st = el._ml || (el._ml = { early: false });
     const entered = ov.rows.filter(r => r.entered).length;
@@ -1098,6 +1113,102 @@
       h.close(); App.go('ref.moneyDay', { date: d });
     });
   }
+  // ---- Pay ahead (5 Nov 2026, Reuben: "somebody has paid for like 3 weeks ahead... I didn't find them very easily")
+  // One sheet: who (skipped when opened from their page) → weeks → ₵ a week → the actual dates and the sum → Save.
+  // Dates start at the next game (UI.nextGame()), weekly; a date this person already has money on is skipped and
+  // the next week used (BF_PAY.aheadPlan), so "3 weeks" = 3 new paid dates. One Store.multi, with Undo.
+  const AHEAD_MAX = 12;
+  const aheadEntry = () => `<div class="adm-ahead">${UI.rows([UI.row({ tap: 'pay-ahead', title: 'Pay ahead', meta: 'Someone paying for the coming weeks', chevron: true })])}</div>`;
+  function aheadWrites(pid, dates, amount) {
+    const now = Store.now(), by = Auth.by(), u = {};
+    dates.forEach(d => {
+      const day = (Store.state.paymentDays || {})[d];
+      u[`paymentDays/${d}/payments/${pid}`] = { amount, ahead: true, updatedAt: now, by };
+      u[`paymentDays/${d}/date`] = d;
+      u[`paymentDays/${d}/updatedAt`] = now;
+      if (!day || !day.createdAt) u[`paymentDays/${d}/createdAt`] = now;
+    });
+    return u;
+  }
+  function openPayAhead(pid0) {
+    if (!isAdmin()) { UI.toast('Admin only'); return null; }
+    const st = { pid: pid0 && Store.player(pid0) ? pid0 : null, weeks: 3, amount: fee() };
+    const h = UI.sheet.open({ title: 'Pay ahead', cls: 'sh-admin-ahead', autofocus: false, cancel: true,
+      footer: `<span class="adm-ah-foot" data-part="ah-foot"></span>` });
+    const foot = html => { const f = h.el.querySelector('[data-part="ah-foot"]'); if (f) f.innerHTML = html; };
+    const plan = () => BF_PAY.aheadPlan(st.pid, UI.nextGame(), st.weeks);
+    const datesText = list => list.map((d, i) => (i ? fmt.short(d) : fmt.date(d))).join(' · ');
+
+    function pickWho() {
+      st.view = 'who';
+      h.setTitle('Pay ahead · who?');
+      const list = Object.entries(Store.players()).filter(([, p]) => p && p.name).map(([pid, p]) => ({ pid, name: String(p.name), team: p.defaultTeam })).sort(byName);
+      h.setBody(UI.search({ name: 'ah-q', placeholder: `Find a player` }) +
+        `<div class="mt-3">${UI.rows(list.map(p => UI.row({ tap: 'ah-pick', data: { pid: p.pid, q: p.name.toLowerCase() }, left: UI.avatar(p.name, p.team), title: p.name, chevron: true })), { cls: 'adm-ah-list' })}</div>`);
+      foot('');
+      const inp = h.body.querySelector('input');
+      if (inp) inp.addEventListener('input', () => {
+        const q = inp.value.trim().toLowerCase();
+        h.body.querySelectorAll('[data-tap="ah-pick"]').forEach(r => { r.hidden = !!q && !r.dataset.q.includes(q); });
+      });
+    }
+    // the part under the amount: the actual dates and the sum, redrawn as the weeks or the amount change
+    function summary() {
+      const p = plan(), n = p.dates.length, total = n * st.amount;
+      const skipped = p.skipped.length
+        ? `<div class="meta adm-ah-skip" data-ah-skipped="${p.skipped.length}">Skipped ${esc(p.skipped.map(fmt.short).join(', '))}: already paid, so the next week is used</div>` : '';
+      return `<div class="lbl mt-4">${esc(plural(n, 'date'))}</div>` +
+        `<div class="card adm-ah-sum"><div class="adm-ah-dates" data-ah-dates>${esc(datesText(p.dates))}</div>${skipped}` +
+        `<div class="adm-ah-total"><span class="n" data-ah-sum>${esc(`${n} × ${fmt.money(st.amount)}`)}</span><b class="n" data-ah-total>${esc(st.amount > 0 ? '= ' + fmt.money(total) : '')}</b></div></div>`;
+    }
+    function saveBtn() {
+      const n = plan().dates.length, ok = st.amount > 0 && n > 0;
+      return UI.btn(ok ? `Save ${plural(n, 'week')} · ${fmt.money(n * st.amount)}` : 'Type an amount', { tap: 'ah-save', big: true, attrs: ok ? '' : ' disabled' });
+    }
+    function main() {
+      st.view = 'main';
+      const p = Store.player(st.pid); if (!p) return pickWho();
+      h.setTitle('Pay ahead');
+      const whoRow = pid0 ? UI.row({ left: UI.avatar(p.name, p.defaultTeam), title: p.name })
+        : UI.row({ tap: 'ah-who', left: UI.avatar(p.name, p.defaultTeam), title: p.name, right: '<span class="meta">Change</span>', chevron: true });
+      const weeks = `<div class="r adm-ah-row"><span class="grow"><span class="nm">Weeks</span></span><span class="adm-ah-step">` +
+        `<button type="button" class="step" data-tap="ah-dn" aria-label="One week fewer"${st.weeks <= 1 ? ' disabled' : ''}>−</button>` +
+        `<span class="n adm-ah-n" data-ah-weeks>${st.weeks}</span>` +
+        `<button type="button" class="step" data-tap="ah-up" aria-label="One week more"${st.weeks >= AHEAD_MAX ? ' disabled' : ''}>+</button></span></div>`;
+      const amount = `<div class="r adm-ah-row"><span class="grow"><span class="nm">A week</span></span>` +
+        `<label class="inp adm-other adm-ah-amt"><span class="adm-cur">${esc(club().currency)}</span>` +
+        `<input type="text" inputmode="decimal" autocomplete="off" data-ah-amt aria-label="Amount a week" value="${esc(st.amount || '')}"></label></div>`;
+      h.setBody(UI.rows([whoRow]) + `<div class="mt-3">${UI.rows([weeks, amount])}</div><div data-part="ah-sum">${summary()}</div>`);
+      foot(saveBtn());
+      const inp = h.body.querySelector('[data-ah-amt]');
+      inp.addEventListener('input', () => {
+        st.amount = parseAmount(inp.value);
+        h.body.querySelector('[data-part="ah-sum"]').innerHTML = summary();
+        foot(saveBtn());
+      });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+    }
+
+    UI.on(h.el, 'ah-pick', b => { st.pid = b.dataset.pid; main(); });
+    UI.on(h.el, 'ah-who', pickWho);
+    UI.on(h.el, 'ah-dn', () => { st.weeks = Math.max(1, st.weeks - 1); main(); });
+    UI.on(h.el, 'ah-up', () => { st.weeks = Math.min(AHEAD_MAX, st.weeks + 1); main(); });
+    UI.on(h.el, 'ah-save', btn => {
+      const p = Store.player(st.pid), list = plan().dates, amount = st.amount;
+      if (!p || !list.length || !(amount > 0) || !isAdmin()) return;
+      const updates = aheadWrites(st.pid, list, amount);
+      const inverse = inverseOf(updates);
+      Save.run({
+        label: `${p.name} · paid ahead ${plural(list.length, 'week')} · ${fmt.money(list.length * amount)}`, sub: datesText(list),
+        button: btn, group: h.el, savingText: 'Saving…',
+        write: () => Store.multi(updates), undo: () => Store.multi(inverse),
+        onSaved: () => h.close(),
+      });
+    });
+    if (st.pid) main(); else pickWho();
+    return h;
+  }
+
   const showSeg = ctx => isAdmin() && ctx.role === 'admin';
   const moneySeg = v => UI.seg('money-view', [{ value: 'tonight', label: 'Tonight' }, { value: 'all', label: 'All dates' }], v, { ref: true });
   function wireMoneySeg(el) {
@@ -1119,6 +1230,7 @@
       UI.on(el, 'add-date', () => openAddDate());
       UI.on(el, 'record', b => App.go('ref.moneyDay', { date: b.dataset.date }));
       UI.on(el, 'more-days', () => App.go('ref.money', { all: 1 }, { replace: true }));
+      UI.on(el, 'pay-ahead', () => openPayAhead());
       mountRegister(el);
     },
     render(el, ctx) {
@@ -1130,13 +1242,13 @@
       if (need.length) {
         el._reg = null;
         el.classList.remove('adm-has-bar');
-        el.innerHTML = `${moneySeg('tonight')}<div class="adm-money adm-landing">${recordHtml(need)}</div>`;
+        el.innerHTML = `${moneySeg('tonight')}${aheadEntry()}<div class="adm-money adm-landing">${recordHtml(need)}</div>`;
         return;
       }
-      if (view === 'tonight') { regShell(el, tonightDate() || today(), seg ? moneySeg('tonight') : ''); return; }
+      if (view === 'tonight') { regShell(el, tonightDate() || today(), seg ? moneySeg('tonight') + aheadEntry() : ''); return; }
       el._reg = null;
       el.classList.remove('adm-has-bar');
-      el.innerHTML = `${moneySeg('all')}<div class="adm-money">${moneyListHtml(el)}</div>`;
+      el.innerHTML = `${moneySeg('all')}${aheadEntry()}<div class="adm-money">${moneyListHtml(el)}</div>`;
     },
     onData(el, ctx) { if (el._reg && el.querySelector('[data-part="top"]')) paintReg(el); else this.render(el, ctx); },
   });
@@ -1385,7 +1497,7 @@
     const rows = Scoring.seasonTable(db);
     const owe = owedMap(db);
     const q = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const head = ['Rank', 'Name', 'Usual team', 'Position', 'Apps', 'Points', 'Goals', 'Assists', 'Saves', 'Yellow cards', 'Red cards', 'Nights not paid', 'Subs owed'];
+    const head = ['Rank', 'Name', 'Usual team', 'Position', 'Apps', 'Points', 'Goals', 'Assists', 'Saves', 'Yellow cards', 'Red cards', 'Nights not paid', 'Payments owed'];
     const lines = rows.map(r => [r.rank, r.name, fmt.team(r.team), r.pos || '', r.apps, r.pts, r.g, r.a, r.sv, r.y, r.r,
       (owe[r.pid] || []).length, (owe[r.pid] || []).length * fee()].map(q).join(','));
     return [head.join(','), ...lines].join('\r\n') + '\r\n';

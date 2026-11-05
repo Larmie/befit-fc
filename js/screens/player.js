@@ -17,9 +17,9 @@
                                          then every past game with UI.miniScore.
      'player.match'  {sid}    tab match  Summary: score hero, Top points, team switch "Green · 64 player pts",
                                          tap a player = his points as a sum (UI.sum).
-     'player.me'              tab me     Me: 72 px hero, rank chip, How it adds up (i), Subs (with reasons),
+     'player.me'              tab me     Me: 72 px hero, rank chip, How it adds up (i), Payment history (with reasons),
                                          last 5 bars in team colour (W full · D half · L faint), every match.
-     'player.profile' {pid}   tab tables Anyone's page (Me without Subs).
+     'player.profile' {pid}   tab tables Anyone's page (Me without Payment history).
    ACTIONS
      'home.liveBreakdown' ({ sid, pid })  that player's points tonight as a sum, "Season page ›". Live points rows
                                           everywhere call this (never the profile).
@@ -442,7 +442,7 @@
   });
 
   // ======================================================================== profile (Me + anyone)
-  // Me › Subs uses the same payments rule as Money (js/core/pay.js), so both screens always agree.
+  // Me › Payment history uses the same payments rule as Money (js/core/pay.js), so both screens always agree.
   // Lists every date the player paid or owes, newest first; dates with no record ("not entered") are left out.
   function subsFor(pid) {
     const d = db();
@@ -451,8 +451,8 @@
       .map(x => ({ date: x.date, played: BF_PAY.playedOn(x.date, d).has(pid), amount: BF_PAY.amount(pid, x.date, d) }));
     return { dates: out, unpaid: out.filter(x => x.played && !x.amount) };
   }
-  // Why each line is there: "Played", or "Paid · didn't play"
-  const subsReason = x => (x.played ? 'Played' : x.amount ? 'Paid · didn\'t play' : 'Didn\'t play');
+  // Why each line is there: "Played", "Paid ahead" (a paid date still to come), or "Paid · didn't play" once it has passed
+  const subsReason = x => (x.played ? 'Played' : x.amount ? (BF_PAY.upcoming(x.date, db()) ? 'Paid ahead' : 'Paid · didn\'t play') : 'Didn\'t play');
 
   function statCells(st, pos) {
     const cells = pos === 'GK'
@@ -486,7 +486,7 @@
     })), { cls: 'pl-hist' });
   }
 
-  // o = { own: Me (Subs), ctx }
+  // o = { own: Me (Payment history), ctx }
   function profileHtml(pid, o) {
     const p = Store.player(pid);
     if (!p) return UI.empty('Player not found', '');
@@ -508,7 +508,7 @@
       const right = s.unpaid.length === 1 ? `<span class="pl-owe">${esc(fmt.short(s.unpaid[0].date))} not paid</span>`
         : s.unpaid.length > 1 ? `<span class="pl-owe">${s.unpaid.length} dates not paid</span>`
         : `<span class="pl-ok">${s.dates.length ? '✓ All paid' : 'Nothing due'}</span>`;
-      subs = `<button type="button" class="card pl-subs" data-tap="subs" data-pid="${esc(pid)}"><span class="grow">Subs</span>${right}<span class="chev">›</span></button>`;
+      subs = `<button type="button" class="card pl-subs" data-tap="subs" data-pid="${esc(pid)}"><span class="grow">Payment history</span>${right}<span class="chev">›</span></button>`;
     }
     const a = head + pts + subs + barsHtml(hist.slice(0, 5));
     const b = historyHtml(hist) || `<div class="pl-gap">${UI.empty('No games yet', '')}</div>`;
@@ -539,7 +539,7 @@
       right: x.amount ? `<span class="pl-paid">${esc(fmt.money(x.amount))}</span>` : `<span class="pl-owe">Not paid</span>`,
       chevron: ctx.isReferee,
     }))) : UI.empty('Nothing due', '');
-    const h = UI.sheet.open({ title: 'Subs', titleEnd: s.unpaid.length ? `<span class="pl-owe">${s.unpaid.length} not paid</span>` : '', cls: 'sh-player-subs', body, cancel: 'Close' });
+    const h = UI.sheet.open({ title: 'Payment history', titleEnd: s.unpaid.length ? `<span class="pl-owe">${s.unpaid.length} not paid</span>` : '', cls: 'sh-player-subs', body, cancel: 'Close' });
     UI.on(h.el, 'money-day', b => { h.close(); App.go('ref.moneyDay', { date: b.dataset.date }); });
   }
 

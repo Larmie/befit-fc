@@ -87,6 +87,23 @@
 
 /* ---------------------------------------------------------------- money */
 :is(.scr-ref-money, .scr-ref-moneyDay) > .seg { margin-bottom: var(--sp-4); }
+/* Pay ahead (5 Nov 2026): the entry under the switch, and its sheet */
+.scr-ref-money > .adm-ahead { margin-bottom: var(--sp-4); }
+.scr-ref-money > .adm-ahead .r { min-height: 60px; }
+.sh-admin-ahead .adm-ah-row { min-height: 60px; gap: 12px; }
+.sh-admin-ahead .adm-ah-step { display: flex; align-items: center; gap: 8px; flex: none; }
+.sh-admin-ahead .adm-ah-step .step:disabled { opacity: .35; }
+.sh-admin-ahead .adm-ah-n { min-width: 36px; text-align: center; font-size: 18px; font-weight: 600; }
+.sh-admin-ahead .adm-ah-amt { flex: none; width: 132px; background: var(--s1); }
+.sh-admin-ahead .adm-ah-amt input { font-family: var(--font); font-variant-numeric: tabular-nums; font-size: 16px; min-width: 0; }
+.sh-admin-ahead .adm-cur { color: var(--ink3); font-weight: 600; }
+.sh-admin-ahead .adm-ah-sum { padding: 14px 16px; }
+.sh-admin-ahead .adm-ah-dates { font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.sh-admin-ahead .adm-ah-skip { margin-top: 6px; overflow-wrap: anywhere; }
+.sh-admin-ahead .adm-ah-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink2); }
+.sh-admin-ahead .adm-ah-total b { font-size: 22px; font-weight: 700; color: var(--ink); }
+.sh-admin-ahead .adm-ah-foot { display: contents; }
+.sh-admin-ahead .adm-ah-list .r { min-height: 56px; }
 :is(.scr-ref-money, .scr-ref-moneyDay) .adm-hero { padding: 16px; }
 :is(.scr-ref-money, .scr-ref-moneyDay) .adm-hero > * { position: relative; z-index: 1; }
 :is(.scr-ref-money, .scr-ref-moneyDay) .adm-k { margin-bottom: 6px; }
@@ -103,6 +120,7 @@
   :is(.scr-ref-money, .scr-ref-moneyDay) .adm-reg-a { position: sticky; top: calc(var(--h-header) + var(--sp-6)); }
   :is(.scr-ref-money, .scr-ref-moneyDay) .adm-reg-b { margin-top: 0; }
   :is(.scr-ref-money, .scr-ref-moneyDay) > .seg { max-width: calc(40% - 10px); }
+  .scr-ref-money > .adm-ahead { max-width: calc(40% - 10px); }
   :is(.scr-ref-money, .scr-ref-moneyDay).is-ref .adm-money { max-width: 900px; }
 }
 /* everyone's paid */

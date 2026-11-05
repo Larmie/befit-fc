@@ -8,7 +8,7 @@ the end-of-task report). If anything here disagrees with it, `AGENTS.md` wins.
 
 ## What it is
 A mobile-first web app for a Monday night football group: live match logging by a referee, FPL-style points,
-the season tables, and subs (payments). Plain files, no build step, no frameworks.
+the season tables, and payments (each person's "Payment history"; the admin can record "Pay ahead"). Plain files, no build step, no frameworks.
 
 - **Live:** https://the-be-fit-club.pages.dev (Cloudflare Pages; every push to `main` deploys in about 40 s)
 - **Branch previews:** `https://<branch, slashes as dashes>.the-be-fit-club.pages.dev`

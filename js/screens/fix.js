@@ -29,7 +29,12 @@
                           hold to delete the match.
    ACTIONS
      'fix.eventSheet'  ({ sid, eid, preset? })  One Event sheet for every event row anywhere.
-     'fix.addMissed'   ({ sid, pid?, type? })   Add a missed event (4 + 3 type grid, Who, Minute "Not sure").
+     'fix.addMissed'   ({ sid, pid?, type? })   Add a missed event (4 + 3 type grid, Who, Minute "Not sure"; after you add one
+                                              at a minute on a finished game, the next add opens on Set at that minute,
+                                              kept in memory for this visit only).
+     MINUTE STEPPER     − 73' +  everywhere it shows: tap the minute to type it (number keyboard, 1 to 150 like the
+                                              stepper). A stoppage minute (46+12') can't be typed: − / + only, so it is never
+                                              re-stamped into plain minutes.
      'fix.playerSheet' ({ sid, pid })           One player's night: points maths, events, add missed, move all.
 
    EVERY CHANGE is built as the next session, previewed with Scoring.previewChange (points change shown
@@ -108,18 +113,34 @@
   }
   const addedAfter = (sess, ev) => (ev.timestamp || 0) > endOf(sess);
 
-  // A minute to start from when "Set" is tapped: the live minute, or the last one logged. Never the FT clock.
-  function startMinute(sess) {
+  // The minute last used in "Add a missed event" on a finished (not live) game, per match, this visit only
+  // (memory, never written; 5 Nov 2026): the next add opens with Set on at that minute.
+  const lastAddMin = {};
+  // A minute to start from when "Set" is tapped: the live minute, else the minute you last added at, else the
+  // last one logged live. Never the FT clock.
+  function startMinute(sess, sid) {
     if (Clock.canLog(sess)) return Clock.minute(sess) || 1;
+    if (sid && lastAddMin[sid] != null) return lastAddMin[sid];
     const mins = events(sess).filter(e => e.min != null && !addedAfter(sess, e)).map(e => Number(e.min));
     return mins.length ? Math.max(...mins) : 1;
   }
+  const MIN_LO = 1, MIN_HI = 150;   // stepMinute's limits; the typed minute uses the same
   function stepMinute(d, delta) {
     if (d.stoppageMin != null && d.stoppageBaseMin != null) {
       const s = Number(d.stoppageMin) + delta;
       if (s >= 1) d.stoppageMin = s;
       else { d.min = Number(d.stoppageBaseMin); delete d.stoppageMin; delete d.stoppageBaseMin; }
-    } else d.min = Math.min(150, Math.max(1, (Number(d.min) || 1) + delta));
+    } else d.min = Math.min(MIN_HI, Math.max(MIN_LO, (Number(d.min) || 1) + delta));
+  }
+  // A stoppage minute (46+12') is never re-stamped into a plain minute by typing (CLAUDE.md, Stoppage): those keep − / +.
+  const hasStoppage = d => d.stoppageMin != null || d.stoppageBaseMin != null;
+  // Typing a minute: digits only, 1 to 150 like stepMinute; anything else leaves the minute as it was.
+  function typedMinute(d, text) {
+    if (hasStoppage(d)) return false;
+    const n = parseInt(String(text || '').replace(/\D/g, ''), 10);
+    if (!Number.isFinite(n)) return false;
+    d.min = Math.min(MIN_HI, Math.max(MIN_LO, n));
+    return true;
   }
   function clearMinute(d) { delete d.min; delete d.stoppageMin; delete d.stoppageBaseMin; }
   function tidy(ev) { Object.keys(ev).forEach(k => { if (ev[k] == null || ev[k] === '') delete ev[k]; }); return ev; }
@@ -237,14 +258,52 @@
       `<span class="fx-k">${esc(k)}</span><span class="grow fx-v">${valueHtml}</span>${o.end || ''}${o.tap ? '<span class="chev">›</span>' : ''}</${tag}>`;
   };
   const changed = (from, to) => from === to ? esc(to) : `${esc(from)} → <b>${esc(to)}</b>`;
-  const stepper = (valueText) => `<span class="fx-step"><button type="button" class="step" data-tap="min-dn" aria-label="One minute earlier">−</button>` +
-    `<span class="n fx-minv" data-min>${esc(valueText)}</span><button type="button" class="step" data-tap="min-up" aria-label="One minute later">+</button></span>`;
+  // − minute +. A plain minute is a button too: tap it to type the minute (number keyboard); a stoppage minute
+  // (46+12') stays a label, so it can only be stepped (never re-stamped into plain minutes by typing).
+  const stepper = (valueText, canType) => `<span class="fx-step"><button type="button" class="step" data-tap="min-dn" aria-label="One minute earlier">−</button>` +
+    (canType ? `<button type="button" class="n fx-minv fx-mintap" data-min data-tap="min-type" aria-label="Minute ${esc(valueText)}: tap to type it">${esc(valueText)}</button>`
+      : `<span class="n fx-minv" data-min>${esc(valueText)}</span>`) +
+    `<button type="button" class="step" data-tap="min-up" aria-label="One minute later">+</button></span>`;
   function minuteRows(d, withChoice) {
     const set = d.min != null;
     let html = '';
     if (withChoice) html += field('Minute', '', { end: UI.seg('minmode', [{ value: 'none', label: 'Not sure' }, { value: 'set', label: 'Set' }], set ? 'set' : 'none') });
-    if (set) html += field(withChoice ? '' : 'Minute', '', { end: stepper(minText(d)) });
+    if (set) html += field(withChoice ? '' : 'Minute', '', { end: stepper(minText(d), !hasStoppage(d)) });
     return html;
+  }
+  // Tap the minute to type it (Add a missed event and the Event sheet). The value turns into a number box; Enter,
+  // tapping elsewhere, or tapping any button applies it. Buttons keep the box focused while pressed (no blur
+  // re-draw that would swallow the tap), and the typed minute is applied before that button's own handler runs.
+  function wireMinuteTyping(h, getD, redraw) {
+    let box = null;
+    const apply = () => { const b = box; if (!b) return null; box = null; typedMinute(getD(), b.value); return b; };
+    UI.on(h.el, 'min-type', btn => {
+      const d = getD();
+      if (hasStoppage(d)) return;
+      const inp = document.createElement('input');
+      Object.assign(inp, { type: 'text', inputMode: 'numeric', autocomplete: 'off', maxLength: 3, value: d.min != null ? String(d.min) : '' });
+      inp.className = 'n fx-minv fx-minin';
+      inp.setAttribute('pattern', '[0-9]*');
+      inp.setAttribute('enterkeyhint', 'done');
+      inp.setAttribute('aria-label', 'Minute, 1 to 150');
+      inp.dataset.minInput = '';
+      inp.addEventListener('input', () => { const v = inp.value.replace(/\D/g, '').slice(0, 3); if (v !== inp.value) inp.value = v; });
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); box = null; redraw(); }
+      });
+      inp.addEventListener('blur', () => { if (apply()) redraw(); });
+      btn.replaceWith(inp);
+      box = inp;
+      inp.focus(); inp.select();
+    });
+    h.el.addEventListener('mousedown', e => { if (box && e.target !== box && e.target.closest('button')) e.preventDefault(); }, true);
+    h.el.addEventListener('click', e => {
+      if (!box || e.target === box) return;
+      const b = apply();
+      // the tapped button's handler usually re-draws; if it didn't (nothing to do), show the typed minute anyway
+      setTimeout(() => { if (b && b.isConnected) redraw(); }, 0);
+    }, true);
   }
 
   function evRow(sess, ev, o) {
@@ -447,7 +506,8 @@
     UI.on(h.el, 'f-og', toggleOG);
     UI.on(h.el, 'min-dn', () => { stepMinute(st.d, -1); main(); });
     UI.on(h.el, 'min-up', () => { stepMinute(st.d, 1); main(); });
-    UI.onSeg(h.el, 'minmode', v => { if (v === 'set') { if (st.d.min == null) st.d.min = startMinute(sess()); } else clearMinute(st.d); main(); });
+    wireMinuteTyping(h, () => st.d, main);
+    UI.onSeg(h.el, 'minmode', v => { if (v === 'set') { if (st.d.min == null) st.d.min = startMinute(sess(), sid); } else clearMinute(st.d); main(); });
     UI.on(h.el, 'f-save', btn => {
       const s = sess(), ev = built();
       commit(sid, s, nextFor(ev), {
@@ -474,7 +534,8 @@
     const live = Clock.canLog(s0);
     const st = { type: args.type || null, pid: args.pid || null, team: args.pid ? teamOf(s0, args.pid) : null,
       assistId: null, forTeam: null, d: {}, addTo: null };
-    if (live) st.d.min = startMinute(s0);
+    // Live: the live minute. Finished: "Not sure", unless you just added one at a minute on this game (then Set, there).
+    if (live || lastAddMin[sid] != null) st.d.min = startMinute(s0, sid);
     const h = sheet({ cls: 'sh-fix-add', title: 'Add a missed event', theme: args.theme });
     const sess = () => Store.session(sid) || s0;
 
@@ -552,13 +613,16 @@
     UI.onSeg(h.el, 'a-for', v => { st.forTeam = v; main(); });
     UI.on(h.el, 'min-dn', () => { stepMinute(st.d, -1); main(); });
     UI.on(h.el, 'min-up', () => { stepMinute(st.d, 1); main(); });
-    UI.onSeg(h.el, 'minmode', v => { if (v === 'set') { if (st.d.min == null) st.d.min = startMinute(sess()); } else clearMinute(st.d); main(); });
+    wireMinuteTyping(h, () => st.d, main);
+    UI.onSeg(h.el, 'minmode', v => { if (v === 'set') { if (st.d.min == null) st.d.min = startMinute(sess(), sid); } else clearMinute(st.d); main(); });
     UI.on(h.el, 'a-save', btn => {
       const ev = build(); if (!ev) return;
       const s = sess();
+      // remember the minute for the next add on this game (finished games only: live keeps the live minute)
+      const keep = ev.min != null && ev.stoppageMin == null && !Clock.canLog(s) ? Number(ev.min) : null;
       commit(sid, s, nextFor(ev), {
         label: `Added · ${typeLabel(ev.type)}, ${pname(st.pid)}`, button: btn, group: h.el,
-        onSaved: () => { h.close(); if (args.onDone) args.onDone(); },
+        onSaved: () => { if (keep != null) lastAddMin[sid] = keep; h.close(); if (args.onDone) args.onDone(); },
       });
     });
     main();

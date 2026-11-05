@@ -2,28 +2,40 @@
    BE Fit Club · js/core/pay.js · THE payments rule (the only one)
    ----------------------------------------------------------------------------
    Read-only maths over paymentDays + sessions, used by Money (admin.js) and
-   Me › Subs (player.js), so both screens always agree. Same rules as classic:
+   Me › Payment history (player.js), so both screens always agree. Same rules as classic:
      - a date is "entered" when it has a payment record: paymentDays/{date}, or
        the legacy sessions/{sid}/payments on that date;
      - someone who PLAYED on an entered date with ₵0 or no amount is "not paid";
      - a date with no record is "not entered" for everyone (nobody owes it);
      - the newest record (updatedAt) wins when a date has more than one.
+   PAY AHEAD (5 Nov 2026): Money › Pay ahead writes { amount, ahead: true, updatedAt, by } on future dates.
+   Those records alone do NOT make a date "entered" (else everyone else who played that night would read
+   "not paid" before the referee took any money). The person who paid ahead is still "paid". Once any other
+   record lands on the date (the referee's register writes plain records), the date is entered as before.
+   Old data has no `ahead` field, so it behaves exactly as before (and as classic).
    Every function takes an optional db (defaults to Store.state), like Scoring.
 
    PUBLIC API (window.BF_PAY, frozen)
      status(pid, date, db?)  → 'paid' | 'not paid' | 'not entered' | null (didn't play, didn't pay)
      owed(pid, db?)          → ['2026-08-24', ...] dates this player owes, oldest first
      amount(pid, date, db?)  → ₵ amount on that date (0 if none)
-     hasRecord(date, db?)    → bool
+     hasRecord(date, db?)    → bool (ahead-only dates: false)
      day(date, db?)          → the Money row summary { played, paid, paidPlayed, notPaid, others, total, entered, isMatch, active }
      dates(db?)              → every money date, newest first · overview(db?) → the Money list model
-     helpers: amountOf, recTime, isDate, sessionsOn, recordsFor, arrivalMin, playedOn
+     upcoming(date, db?)     → bool: later than today, or today with no finished match yet ("Paid ahead")
+     aheadPlan(pid, from, weeks, db?) → { dates, skipped }: `weeks` new weekly dates from `from`, skipping
+                               dates this person already has money on (so "3 weeks" = 3 new paid dates)
+     helpers: amountOf, recTime, isDate, isAhead, addDays, sessionsOn, recordsFor, arrivalMin, playedOn
    ========================================================================== */
 (function () {
   'use strict';
   const amountOf = rec => { const raw = typeof rec === 'number' ? rec : rec && rec.amount; const n = Number(raw); return Number.isFinite(n) && n > 0 ? n : 0; };
   const recTime = rec => (rec && typeof rec === 'object' ? Number(rec.updatedAt) || 0 : 0);
   const isDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '');
+  const isAhead = rec => !!(rec && typeof rec === 'object' && rec.ahead === true);
+  const pad = n => String(n).padStart(2, '0');
+  const isoOf = x => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
+  const addDays = (date, n) => { const x = new Date(date + 'T12:00:00'); x.setDate(x.getDate() + n); return isoOf(x); };
 
   function sessionsOn(date, db) {
     return Object.entries((db || Store.state).sessions || {}).filter(([, s]) => s && s.date === date);
@@ -59,13 +71,38 @@
     }
     return out;
   }
-  // ONE rule for "paid / not paid / not entered" (shared with Me › Subs via window.BF_PAY):
+  // ONE rule for "paid / not paid / not entered" (shared with Me › Payment history via window.BF_PAY):
   //   a date is "entered" when it has a payment record: paymentDays/{date} exists, or the legacy
   //   sessions/{sid}/payments on that date (3 Aug) has entries. Then someone who PLAYED with ₵0 or no
   //   amount is "not paid". A date with no record is "not entered" for everyone (nobody owes it).
+  //   Pay ahead: a paymentDays/{date} whose records are ALL pay-ahead ones doesn't count (see the header).
   function hasRecord(date, db) {
     db = db || Store.state;
-    return !!(db.paymentDays || {})[date] || sessionsOn(date, db).some(([, s]) => s.payments && Object.keys(s.payments).length > 0);
+    const day = (db.paymentDays || {})[date];
+    if (day) {
+      const recs = Object.values((day && day.payments) || {});
+      if (!recs.length || recs.some(r => !isAhead(r))) return true;
+    }
+    return sessionsOn(date, db).some(([, s]) => s.payments && Object.keys(s.payments).length > 0);
+  }
+  // A date still to come: later than today, or today before tonight's match is finished.
+  function upcoming(date, db) {
+    db = db || Store.state;
+    if (!isDate(date)) return false;
+    const t = isoOf(new Date(Store.now()));
+    if (date > t) return true;
+    return date === t && !sessionsOn(date, db).some(([, s]) => s.status === 'completed');
+  }
+  // Pay ahead: `weeks` weekly dates from `from` that this person has no money on yet.
+  function aheadPlan(pid, from, weeks, db) {
+    db = db || Store.state;
+    const dates = [], skipped = [];
+    let d = from;
+    for (let i = 0; isDate(d) && dates.length < weeks && i < weeks + 104; i++) {
+      (amountOf(recordsFor(d, db)[pid]) > 0 ? skipped : dates).push(d);
+      d = addDays(d, 7);
+    }
+    return { dates, skipped };
   }
   // → 'paid' | 'not paid' | 'not entered' | null (didn't play and didn't pay: nothing to say)
   function payStatus(pid, date, db) {
@@ -111,17 +148,20 @@
     const rows = moneyDates(db).map(d => daySummary(d, db));
     const withMoney = rows.filter(r => r.entered);
     const first = withMoney.length ? withMoney[withMoney.length - 1].date : null;
-    const last = withMoney.length ? withMoney[0].date : null;
+    // Collected counts pay-ahead money too (dates with only ahead records aren't "entered" but hold cash).
+    // Old data: every date with money is entered, so this is the same sum and the same last date as before.
+    const withCash = rows.filter(r => r.entered || r.total > 0);
+    const last = withCash.length ? withCash[0].date : null;
     const tracked = rows.filter(r => !first || r.date >= first);
     const earlier = first ? rows.filter(r => r.date < first) : [];
     const missing = tracked.filter(r => r.isMatch && !r.entered && !r.active);
-    return { rows, tracked, earlier, first, last, total: withMoney.reduce((s, r) => s + r.total, 0), missing };
+    return { rows, tracked, earlier, first, last, total: withCash.reduce((s, r) => s + r.total, 0), missing };
   }
 
   window.BF_PAY = Object.freeze({
     status: payStatus, owed: owedDates, hasRecord, day: daySummary,
     amount: (pid, date, db) => amountOf(recordsFor(date, db)[pid]),
-    dates: moneyDates, overview: moneyOverview,
-    amountOf, recTime, isDate, sessionsOn, recordsFor, arrivalMin, playedOn,
+    dates: moneyDates, overview: moneyOverview, upcoming, aheadPlan,
+    amountOf, recTime, isDate, isAhead, addDays, sessionsOn, recordsFor, arrivalMin, playedOn,
   });
 })();
