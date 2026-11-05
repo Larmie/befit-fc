@@ -39,6 +39,9 @@ module.exports = [
   // ---- referee: setup, console, full time
   { name: 'setup-flow', file: 'setup/flow.js', areas: ['setup', 'teams'] },
   { name: 'setup-visual', file: 'setup/visual.js', areas: ['setup', 'console'] },
+  { name: 'kickoff-bar', file: 'setup/kickoff-bar.js', areas: ['setup', 'ui'] },
+  { name: 'end-hold', file: 'console/end-hold.js', areas: ['console', 'clock'], uses: ['browser/console/data.js'] },
+  { name: 'console-newperson', file: 'console/new-person.js', areas: ['console', 'setup'], uses: ['browser/console/data.js'] },
   { name: 'console-match', file: 'console/match.js', areas: ['console', 'clock', 'store'], uses: ['browser/console/data.js'] },
   { name: 'console-audit', file: 'console/audit.js', areas: ['console'], uses: ['browser/console/data.js'] },
   { name: 'deck', file: 'r5-console/deck-test.js', areas: ['console', 'setup', 'clock'], uses: ['browser/console/data.js'] },

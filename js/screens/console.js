@@ -25,7 +25,9 @@
                                                   keepers. Both open setup.bigPoles.
                                                 row 2: Half time · Adjust clock (hold 1.5 s) · + Player · Teams tonight ·
                                                   Edit events (5 tiles: 3 + 2, 52 px)
-                                                row 3: Hold to end the game (1.5 s, amber fill) → ref.ftcheck
+                                                row 3: Hold to end the game (7 s, amber fill; Reuben 5 Nov) → ref.ftcheck
+                                                  ("Hold to end practice" in practice). A short press says "Hold for 7 s
+                                                  to end the game". Data redraws and the clock tick never reset a held finger.
                             LATEST              the last 3 events (minute · name · type · team chip, amber dot =
                                                 still on the phone), "All n ›"
      'ref.events' {sid}   All events: filter chips + search; every row opens App.action('fix.eventSheet', { sid, eid }).
@@ -43,6 +45,11 @@
      Yellow / Red    Team's tile → player (saves); "Booked 71'" marks anyone carded tonight   2 taps
               The sheet opens on the tapped team (tinted title "Block · Green", no team tab);
               "Wrong team? Block · Red ›" at the bottom swaps sides in one tap.
+     + New person (5 Nov)  the last row / tile of every "who" list (scorer, assist, Block / Clear, Yellow / Red):
+              name entry for THAT team (setup.newPerson, join): an existing name or a new person is put on that side
+              tonight (arrival minute, 9 + 1 per side, duplicate check), then it carries on as if tapped (a goal
+              moves on to the assist). Cancel = back to the list, nothing logged. Undo on the event removes the event
+              only (the person stays on tonight); a person undone before the assist sends the goal back to "Who scored?".
      Save     Save · Team logs that side's one keeper at once (lock, Undo)                  1 tap
               the toast's "Penalty" turns it into a penalty save                             2 taps
               two keepers listed on a side → a 2-tile picker (Save | Penalty save first)     2–3 taps
@@ -82,7 +89,9 @@
   const CTL_MS = 700;        // clock buttons: one change per 0.7 s (a double tap on Pause never resumes)
   const OPEN_MS = 500;       // deck tiles that open a sheet: a second tap within 0.5 s does nothing
   const ESCALATE_MS = 4 * 60000;   // the same stoppage running this long → "Still in stoppage?"
-  const HOLD_MS = 1500;      // Adjust clock and End game: 1.5 s hold with a fill
+  const HOLD_MS = 1500;      // Adjust clock: 1.5 s hold with a fill
+  const END_HOLD_MS = 7000;  // Hold to end the game / practice: 7 s hold with a fill (Reuben, 5 Nov)
+  const END_HOLD_S = END_HOLD_MS / 1000;
   // Practice mode (html.practice, set by js/core/practice.js): the clock’s small label and “End practice” (the violet is in css/welcome.css)
   const practice = () => document.documentElement.classList.contains('practice');
   const centreOf = sess => { const c = UI.scoreCentre(sess, { clock: true }); if (practice() && c.state === 'live') c.sub = 'Practice'; return c; };
@@ -253,6 +262,7 @@
 
     function draw() {
       const s = Store.session(sid);
+      if (st.scorer && !teamOfPlayer(s, st.scorer)) st.scorer = null;   // the scorer was taken off (an Undo): ask again
       if (!st.scorer) {
         const scoringTeam = st.og ? st.ogTeam : team;
         const list = sideOf(scoringTeam).sort(byName);
@@ -260,7 +270,7 @@
         h.setSub(st.og ? 'Who put it in his own net?' : 'Who scored?');
         h.setBody(
           `<div class="lbl cn-steplbl">${st.og ? `Own goal by a ${esc(fmtTeam(st.ogTeam))} player` : 'Scorer'}</div>` +
-          (list.length ? UI.tiles(list.map(p => tile(p, 'scorer'))) : UI.empty(`No ${fmtTeam(scoringTeam)} players`, '')) +
+          (list.length ? '' : UI.empty(`No ${fmtTeam(scoringTeam)} players`, '')) + UI.tiles(list.map(p => tile(p, 'scorer')).concat(newTile(scoringTeam))) +
           `<div class="cn-links">` + (st.og
             ? `<button type="button" class="link cn-link" data-tap="normal">‹ ${esc(fmtTeam(team))} scorer</button>`
             : others.map(t => `<button type="button" class="link cn-link" data-tap="og" data-team="${esc(t)}">Own goal by a ${esc(fmtTeam(t))} player ›</button>`).join('')) +
@@ -275,22 +285,45 @@
         `<button type="button" class="cn-change" data-tap="change">Change</button></div></div>` +
         `<div class="lbl">Assist</div>` +
         `<button type="button" class="ptile c cn-noassist" data-tap="assist" data-pid=""><span class="pt-name" data-label>No assist</span></button>` +
-        (mates.length ? UI.tiles(mates.map(p => tile(p, 'assist'))) : ''));
+        UI.tiles(mates.map(p => tile(p, 'assist')).concat(newTile(team))));
     }
 
-    onPick(h, 'scorer', el => { st.scorer = el.dataset.pid; draw(); h.rearm(); });
-    onPick(h, 'og', el => { st.og = true; st.ogTeam = el.dataset.team; st.scorer = null; draw(); h.rearm(); });
-    onPick(h, 'normal', () => { st.og = false; st.ogTeam = null; st.scorer = null; draw(); h.rearm(); });
-    onPick(h, 'change', () => { st.scorer = null; draw(); h.rearm(); });
-    onPick(h, 'assist', el => {
-      const assistId = el.dataset.pid || null;
+    function logGoal(assistId, button) {
+      if (!teamOfPlayer(Store.session(sid), st.scorer)) { st.scorer = null; draw(); h.rearm(); UI.toast('Pick the scorer again'); return; }
       const data = st.og
         ? { type: 'ownGoal', team: st.ogTeam, benefitTeam: team, scorerId: st.scorer }
         : { type: 'goal', team, scorerId: st.scorer };
       if (assistId) data.assistId = assistId;
-      h.save = logEvent({ sid, data, button: el, group: h.el, onSaved: () => h.close() });
+      h.save = logEvent({ sid, data, button, group: h.el, onSaved: () => h.close() });
+    }
+    onPick(h, 'scorer', el => { st.scorer = el.dataset.pid; draw(); h.rearm(); });
+    onPick(h, 'og', el => { st.og = true; st.ogTeam = el.dataset.team; st.scorer = null; draw(); h.rearm(); });
+    onPick(h, 'normal', () => { st.og = false; st.ogTeam = null; st.scorer = null; draw(); h.rearm(); });
+    onPick(h, 'change', () => { st.scorer = null; draw(); h.rearm(); });
+    onPick(h, 'assist', el => logGoal(el.dataset.pid || null, el));
+    // "+ New person": name entry for that team; the person joins tonight, then it carries on as if tapped
+    onPick(h, 'newp', el => {
+      const step = st.scorer ? 'assist' : 'scorer';
+      newPersonFor(sid, el.dataset.team, null, pid => {
+        if (h.closed) return;
+        if (step === 'scorer') { st.scorer = pid; draw(); h.rearm(); return; }
+        draw();
+        if (pid === st.scorer && !st.og) { h.rearm(); UI.toast(`${nameOf(pid)} scored it`); return; }   // no assisting yourself
+        const b = h.el.querySelector(`[data-tap="assist"][data-pid="${CSS.escape(pid)}"]`);
+        logGoal(pid, b || null);
+      });
     });
     draw();
+  }
+
+  // the "+ New person" tile / row at the end of every "who" list
+  const newTile = t => `<button type="button" class="ptile c cn-newp" data-tap="newp" data-team="${esc(t)}"><span class="pt-name" data-label>+ New person</span></button>`;
+  const newRow = t => `<button type="button" class="r cn-prow cn-newp" data-tap="newp" data-team="${esc(t)}"><span class="grow"><span class="nm" data-label>+ New person</span></span></button>`;
+  // Name entry for that team (setup.newPerson, join): adds them to tonight's match on that side with the same rules
+  // as "+ Player" (arrival minute, 9 + 1 per side, duplicate check), then onPicked(pid). Cancel: onPicked is never called.
+  function newPersonFor(sid, team, position, onPicked) {
+    return App.action('setup.newPerson', { sid, team, teams: [team], join: true, position: position || undefined,
+      title: 'New person · ' + fmtTeam(team), onDone: pid => onPicked(pid) });
   }
 
   // ---------------------------------------------------------------- Block / Clear / Card (one tap = save)
@@ -360,16 +393,25 @@
       h.setBody(
         (rec.length ? `<div class="lbl cn-reclbl">Recent tonight</div><div class="chips cn-recent">` +
           rec.map(pid => `<button type="button" class="chip ref" data-tap="pick" data-pid="${esc(pid)}" data-name="${esc(nameOf(pid))}">${esc(nameOf(pid))}</button>`).join('') + `</div>` : '') +
-        `<div class="cn-list" data-list>${list.length ? `<div class="rows">${list.map(p => prow(p, booked)).join('')}</div>` : UI.empty(`No ${fmtTeam(team)} players`, '')}` +
+        `<div class="cn-list" data-list>${list.length ? '' : UI.empty(`No ${fmtTeam(team)} players`, '')}` +
+        `<div class="rows">${list.map(p => prow(p, booked)).join('')}${newRow(team)}</div>` +
         `<div class="cn-wrongs">${teamsOf(s).filter(t => t !== team).map(t =>
           `<button type="button" class="link cn-link cn-wrong" data-tap="wrong" data-team="${esc(t)}">Wrong team? ${esc(word)} · ${esc(fmtTeam(t))} ›</button>`).join('')}</div></div>`);
     }
     onPick(h, 'wrong', el => { const t = el.dataset.team; h.close(); openAction(sid, kind, type, t); });
-    onPick(h, 'pick', el => {
-      h.save = logEvent({ sid, data: { type, playerId: el.dataset.pid }, button: el, group: h.el, again: !isCard,
-        savingText: el.classList.contains('chip') ? 'Saving…' : 'Saving… ' + (el.dataset.name || ''),
-        onSaved: () => h.close() });
-    });
+    const log = (pid, el, savingText) => {
+      h.save = logEvent({ sid, data: { type, playerId: pid }, button: el, group: h.el, again: !isCard, savingText, onSaved: () => h.close() });
+    };
+    onPick(h, 'pick', el => log(el.dataset.pid, el, el.classList.contains('chip') ? 'Saving…' : 'Saving… ' + (el.dataset.name || '')));
+    // "+ New person": name entry for this team; once they are on tonight, the Block / Clear / card is logged for them
+    // (Block / Clear: an outfielder, so a usual keeper joining here plays outfield)
+    onPick(h, 'newp', el => newPersonFor(sid, team, isCard ? null : 'MID', pid => {
+      if (h.closed) return;
+      draw();
+      if (!eligible(Store.session(sid)).some(p => p.pid === pid)) { h.rearm(); UI.toast(`${nameOf(pid)} is in goal`); return; }
+      const b = h.el.querySelector(`.cn-prow[data-tap="pick"][data-pid="${CSS.escape(pid)}"]`) || h.el.querySelector('.cn-newp');
+      log(pid, b, 'Saving… ' + nameOf(pid));
+    }));
     draw();
   }
 
@@ -546,7 +588,7 @@
       `<span class="fill"></span><span class="hl">Adjust clock</span></button>`;
     return primaryHtml(sess) + polesHtml(sess, f) +
       `<div class="cn-grid n5">${ht}${adjust}${ctlTile('+ Player', 'player')}${ctlTile('Teams tonight', 'teams')}${ctlTile('Edit events', 'events')}</div>` +
-      `<div class="cn-endw">${UI.hold(practice() ? 'Hold to end practice' : 'Hold to end the game', { name: 'end', ms: HOLD_MS, warn: true, doneText: 'Ending…' })}</div>`;
+      `<div class="cn-endw">${UI.hold(practice() ? 'Hold to end practice' : 'Hold to end the game', { name: 'end', ms: END_HOLD_MS, warn: true, doneText: 'Ending…' })}</div>`;
   }
 
   function renderConsole(el) {
@@ -673,12 +715,12 @@
         const k = b.dataset.kind;
         if (k === 'save') openSave(sid(), b.dataset.team); else openAction(sid(), k, b.dataset.ctype, b.dataset.team);
       }));
-      // the two protected controls: a short press only explains; the 1.5 s hold does it
+      // the two protected controls: a short press only explains; the hold does it (Adjust clock 1.5 s, end 7 s)
       el.addEventListener('click', e => {
         const hb = e.target.closest && e.target.closest('.hold');
         if (!hb || hb.classList.contains('done') || !el.contains(hb)) return;
         if (hb.dataset.hold === 'adjust' && hb.classList.contains('is-off')) { UI.toast('Kick off first'); return; }
-        UI.toast(hb.dataset.hold === 'adjust' ? 'Hold to adjust the clock' : practice() ? 'Hold for 1.5 s to end practice' : 'Hold for 1.5 s to end the game');
+        UI.toast(hb.dataset.hold === 'adjust' ? 'Hold to adjust the clock' : practice() ? `Hold for ${END_HOLD_S} s to end practice` : `Hold for ${END_HOLD_S} s to end the game`);
       });
       UI.onHold(el, 'adjust', hb => {
         const reset = () => { hb.classList.remove('done'); const hl = hb.querySelector('.hl'); if (hl) hl.textContent = 'Adjust clock'; };
@@ -696,10 +738,16 @@
       ctx.onCleanup(offStatus);
     },
     render(el) { renderConsole(el); },
-    // data changed: never redraw under a finger that is holding a protected control
+    // data changed: never redraw under a finger that is holding a protected control (the 7 s end hold sees
+    // several data changes and clock ticks: one wait, one redraw after the finger lifts)
     onData(el) {
       if (!holding(el)) { renderConsole(el); return; }
-      const wait = setInterval(() => { if (!el.isConnected) { clearInterval(wait); return; } if (!holding(el)) { clearInterval(wait); renderConsole(el); } }, 200);
+      if (el._waitData) return;
+      el._waitData = setInterval(() => {
+        if (el.isConnected && holding(el)) return;
+        clearInterval(el._waitData); el._waitData = null;
+        if (el.isConnected) renderConsole(el);
+      }, 200);
     },
   });
 
