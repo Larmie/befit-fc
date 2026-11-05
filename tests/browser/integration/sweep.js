@@ -103,7 +103,7 @@ const GROUPS = {
   ] },
   guest: { opts: { viewer: 'guest', data: snap }, states: [
     { id: 'guest-home', route: '#/guest.home' },
-    { id: 'welcome-first', route: '#/welcome' },   // nobody remembered on this phone: My stats · Browse as guest · Referee · Admin
+    { id: 'welcome-first', route: '#/welcome' },   // nobody remembered on this phone: the name box · Browse as guest · Referee · Admin
     { id: 'pill-guest', route: '#/guest.home', eval: 'App.openPill()', noExplore: true },
     { id: 'guest-match', route: '#/player.live' },
     { id: 'guest-match-12oct', route: '#/player.match?sid=' + M12 },

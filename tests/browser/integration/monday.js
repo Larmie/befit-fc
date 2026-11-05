@@ -48,14 +48,12 @@ async function signIn(page, who) {
 
 (async () => {
   // =========================================================================== 1 · front door → a player → Home
-  note('1 · Front door: My stats → Find your name → Emmanuel → Me');
+  note('1 · Front door: the name box → Emmanuel → Me');
   const w = await H.open({ width: 390, theme: 'dark', viewer: 'none', now: NOW });
   const wp = w.page;
   check('first open shows the front door (welcome)', await screenOf(wp) === 'welcome');
-  check('front door: no list of names; 4 doors My stats · Browse as guest · Referee · Admin', (await wp.$$('#app-screen [data-tap="pick"]')).length === 0 &&
-    (await wp.$$eval('.fd-doors [data-tap]', a => a.map(x => x.dataset.tap).join())) === 'stats,browse,referee,admin');
-  await wp.click('[data-tap="stats"]'); await sleep(250);
-  check('My stats → Find your name: still no list until typing', (await wp.$$('[data-fd-res] [data-tap="pick"]')).length === 0 && !!(await wp.$('[data-search="who"]')));
+  check('front door: no list of names; the name box, then Browse as guest · Referee · Admin', (await wp.$$('#app-screen [data-tap="pick"]')).length === 0 &&
+    !!(await wp.$('.fd-doors > .fd-find [data-search="who"]')) && (await wp.$$eval('.fd-doors .fd-door', a => a.map(x => x.dataset.tap).join())) === 'browse,referee,admin');
   await wp.type('[data-search="who"]', 'emm'); await sleep(250);
   await wp.click(`[data-tap="pick"][data-pid="${EMM}"]`); await sleep(500);
   check('picking Emmanuel opens player.me (stats + match history); header name chip "Emmanuel ▾"', await screenOf(wp) === 'player.me' && (await txt(wp, '#app-header')).includes('Emmanuel'));

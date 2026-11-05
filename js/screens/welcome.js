@@ -1,10 +1,10 @@
 /* ============================================================================
    BE Fit Club · js/screens/welcome.js · THE FRONT DOOR (round 7: the "title screen" menu)
    ----------------------------------------------------------------------------
-   Screen 'welcome' (no header, no nav, always dark). First open of the day, "Back to menu", the logo button,
+   Screen 'welcome' (no header, no nav, always dark). Opening the app with no name picked, "Back to menu", the logo button,
    after Sign out, or data-shell="welcome". Design: design-review/front-door.html (spec C and E, round 3 art).
 
-   ONE LIST OF DOORS, heights stepping down 84 → 70 → 58 → 58:
+   ONE LIST OF DOORS: the name box (the tallest), then heights stepping down 70 → 58 → 58:
      first time   the name box (lit): "Find your name to view your stats" + an empty box to type in (round 8,
                   Reuben 5 Nov: players have no login, so "My stats" read as if you'd signed in) · Browse as guest ·
                   Referee (lock) · Admin (lock)
