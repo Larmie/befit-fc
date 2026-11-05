@@ -189,6 +189,7 @@
 .sh-console-act .sheet-f .btn { flex: none; }
 /* "+ New person": the last row / tile of every "who" list (quiet, outlined: not a name) */
 .sh-console .cn-newp { color: var(--ink2); font-weight: 600; }
+.sh-console-act .cn-newrow { min-height: 60px; padding: 8px 16px; }
 .sh-console .ptile.cn-newp { background: transparent; box-shadow: inset 0 0 0 1px var(--s3); align-items: center; text-align: center; }
 .sh-console .cn-newp.is-saving, .sh-console .ptile.cn-newp.is-saving { background: var(--ink); color: var(--on-ink); box-shadow: none; }
 

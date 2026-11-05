@@ -318,7 +318,8 @@
 
   // the "+ New person" tile / row at the end of every "who" list
   const newTile = t => `<button type="button" class="ptile c cn-newp" data-tap="newp" data-team="${esc(t)}"><span class="pt-name" data-label>+ New person</span></button>`;
-  const newRow = t => `<button type="button" class="r cn-prow cn-newp" data-tap="newp" data-team="${esc(t)}"><span class="grow"><span class="nm" data-label>+ New person</span></span></button>`;
+  // (its own class, not .cn-prow: it is not a player, so "every player" counts and the A–Z order never see it)
+  const newRow = t => `<button type="button" class="r cn-newrow cn-newp" data-tap="newp" data-team="${esc(t)}"><span class="grow"><span class="nm">+ New person</span></span></button>`;
   // Name entry for that team (setup.newPerson, join): adds them to tonight's match on that side with the same rules
   // as "+ Player" (arrival minute, 9 + 1 per side, duplicate check), then onPicked(pid). Cancel: onPicked is never called.
   function newPersonFor(sid, team, position, onPicked) {
