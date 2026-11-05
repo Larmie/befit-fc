@@ -850,7 +850,7 @@
     tab: 'match', layout: 'phone', console: true,
     header: ctx => {
       const c = evClock(evSid(ctx));
-      return { left: `<button type="button" class="hd-btn cn-back" data-shell="back">‹ Match</button>`,
+      return { left: UI.backBtn({ cls: 'cn-back' }),
         center: `Events${c ? ` · <span class="n cn-evclock">${esc(c)}</span>` : ''}`, right: UI.syncChip(Store.status()) };
     },
     mount(el, ctx) {

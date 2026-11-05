@@ -52,7 +52,7 @@
   }
   const rowsOf = () => Scoring.seasonTable(db());
   const rankOf = (rows, pid) => rows.find(r => r.pid === pid) || null;
-  const backBtn = label => `<button type="button" class="hd-btn" data-shell="back">‹ ${esc(label)}</button>`;
+  const backBtn = () => UI.backBtn();             // round 8: one back arrow everywhere (it used to say where it went)
   const isLive = sess => !!sess && sess.status === 'active';
 
   // one line for the night's poles, from Scoring (handles switches back to small: "Big poles 0'–60' · small from 60'")
@@ -422,10 +422,7 @@
 
   App.registerScreen('player.match', {
     tab: 'match',
-    header: ctx => {
-      const s = Store.session(ctx.params.sid);
-      return { left: backBtn(s ? fmt.date(s.date) : 'Back') };
-    },
+    header: () => ({ left: backBtn() }),
     mount(el, ctx) {
       keyTaps(el);
       UI.onSeg(el, 'mteam', val => { MATCH.team[ctx.params.sid] = val; this.render(el, ctx); });
@@ -558,7 +555,7 @@
 
   App.registerScreen('player.profile', {
     tab: 'tables',
-    header: () => ({ left: backBtn('Back') }),
+    header: () => ({ left: backBtn() }),
     mount(el, ctx) { bindProfile(el, ctx); },
     render(el, ctx) {
       if (!Store.hasData()) { el.innerHTML = LOADING; return; }

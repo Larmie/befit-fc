@@ -138,6 +138,13 @@ button.r:active, a.r:active, .r[data-tap]:active { background: var(--s2); }
 .sheet .inp { background: var(--s2); box-shadow: none; }
 .inp svg { width: 18px; height: 18px; stroke: var(--ink3); fill: none; stroke-width: 1.8; }
 .inp input { flex: 1; height: 100%; font-size: 16px; }   /* 16 px stops phones zooming in */
+/* round 8: the eye in a password box (shows / hides what was typed) */
+.inp-pw { padding-right: 2px; }
+.inp-pw input { min-width: 0; }
+.pw-eye { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: var(--ink3); }
+.pw-eye svg { width: 20px; height: 20px; stroke: currentColor; }
+.pw-eye[aria-pressed="true"] { color: var(--ink); }
+.pw-eye:active { background: var(--s3); }
 .inp input::placeholder { color: var(--ink3); }
 .inp:focus-within { box-shadow: inset 0 0 0 1.5px var(--ink2); }   /* one 1.5 px ink2 ring; never a white line (base.css) */
 .field-err { color: var(--warn); font-size: var(--fs-meta); min-height: 18px; margin-top: 6px; }
@@ -178,6 +185,16 @@ button.r:active, a.r:active, .r[data-tap]:active { background: var(--s2); }
 .sheet-b { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
 .sheet-f { flex: none; padding-top: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
 @keyframes sheet-up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+/* round 8: popups you type into (sign-in, Find a player, New person) sit in the upper middle, clear of the phone's
+   keyboard, with the page dimmed behind (Reuben, 5 Nov) */
+.sheet.sh-shell-signin, .sheet.sh-setup-new {
+  top: max(12dvh, calc(env(safe-area-inset-top, 0px) + 16px)); bottom: auto; left: var(--gutter); right: var(--gutter);
+  max-height: 70dvh; border-radius: var(--r-sheet); border: 1px solid var(--s3);
+  padding: 18px var(--gutter) 18px; animation: sheet-pop .18s ease;
+}
+.sheet.sh-shell-signin .hdl, .sheet.sh-setup-new .hdl { display: none; }
+[data-theme="light"] .sheet.sh-shell-signin, [data-theme="light"] .sheet.sh-setup-new { border-color: var(--line); }
+@keyframes sheet-pop { from { transform: scale(.97); opacity: .4; } to { transform: none; opacity: 1; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 body.sheet-open { overflow: hidden; }
 

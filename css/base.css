@@ -55,6 +55,10 @@ body.no-nav .screen-host { padding-bottom: calc(var(--safe-b) + 96px); }
 .hd-btn { min-height: var(--h-target-player); display: inline-flex; align-items: center; gap: var(--sp-2); font-size: 13px; color: var(--ink2); padding: 0 2px; }
 .hd-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
 body[data-mode="referee"] .hd-btn { min-height: var(--h-target); }   /* referee targets: 48 */
+/* round 8: the one back arrow, first thing on the left of every page but the first tab */
+.hd-back { min-width: 44px; padding: 0 8px 0 0; gap: 2px; color: var(--ink); font-size: 14px; font-weight: 600; }
+.hd-back svg { width: 24px; height: 24px; margin-left: -4px; }
+.hd-back:active { opacity: .7; }
 .wm { font-weight: 700; font-size: 13px; letter-spacing: .2em; white-space: nowrap; }
 .wm em { font-style: normal; color: var(--ink3); }
 /* the brand button: the square mark + "BE FIT". It is the way back to the menu (44 tall, 48 for staff).

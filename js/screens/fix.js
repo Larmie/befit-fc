@@ -978,7 +978,7 @@
     tab: 'match',
     header: ctx => {
       const s = Store.session(ctx.params.sid);
-      return { center: 'Edit' + (s ? ' · ' + esc(fmt.date(s.date)) : ''), right: `<button type="button" class="hd-btn" data-shell="back">Done</button>` };
+      return { center: 'Edit' + (s ? ' · ' + esc(fmt.date(s.date)) : '') };   // round 8: the shell's back arrow replaces "Done" (edits save as you go)
     },
     mount(el, ctx) {
       const sid = ctx.params.sid;

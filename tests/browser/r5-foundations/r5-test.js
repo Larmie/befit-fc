@@ -52,10 +52,12 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check('1.1 first open shows the front door', await screenId(p) === 'welcome');
     check('1.2 no list of names before typing', await p.evaluate(() => document.querySelectorAll('#app-screen [data-tap="pick"]').length === 0));
     const doors = await p.evaluate(() => [...document.querySelectorAll('#app-screen .fd-door')].map(d => ({ name: d.querySelector('.tx b').textContent, sub: d.querySelector('.tx .sub').textContent, tap: d.dataset.tap, h: Math.round(d.getBoundingClientRect().height), cls: d.className })));
-    check('1.3 four doors in one list: My stats · Browse as guest · Referee · Admin (no Staff heading)', doors.map(d => d.name).join(' · ') === 'My stats · Browse as guest · Referee · Admin' && doors.map(d => d.tap).join() === 'stats,browse,referee,admin' &&
-      await p.evaluate(() => document.querySelectorAll('#app-screen .fd-doors').length === 1 && !/staff/i.test(document.getElementById('app-screen').innerText)), doors);
-    check('1.3b the door words are the designed ones', doors.map(d => d.sub).join(' | ') === 'Your points and every match you played | Scores, tables, the season | Tonight’s match | Run the club', doors.map(d => d.sub));
-    check('1.3c door heights step down 84 → 70 → 58 → 58, My stats is the lit one', doors.map(d => d.h).join() === '84,70,58,58' && /is-primary/.test(doors[0].cls) && doors.slice(2).every(d => /is-staff/.test(d.cls)), doors.map(d => d.h));
+    // round 8: the first door is the name box ("My stats" read as if players had a login)
+    const box = await p.evaluate(() => { const b = document.querySelector('#app-screen .fd-doors > :first-child'); return b && { cls: b.className, label: (b.querySelector('.fd-find-l') || {}).innerText, ph: (b.querySelector('[data-search="who"]') || {}).placeholder, h: Math.round(b.getBoundingClientRect().height) }; });
+    check('1.3 one list: the name box, then Browse as guest · Referee · Admin (no Staff heading, no "My stats")', !!box && /fd-find/.test(box.cls) && doors.map(d => d.name).join(' · ') === 'Browse as guest · Referee · Admin' && doors.map(d => d.tap).join() === 'browse,referee,admin' &&
+      await p.evaluate(() => document.querySelectorAll('#app-screen .fd-doors').length === 1 && !/staff|My stats/i.test(document.getElementById('app-screen').innerText)), { box, doors });
+    check('1.3b the words: "Find your name to view your stats", "Type your name", then the designed door lines', box.label === 'Find your name to view your stats' && box.ph === 'Type your name' && doors.map(d => d.sub).join(' | ') === 'Scores, tables, the season | Tonight’s match | Run the club', { box, subs: doors.map(d => d.sub) });
+    check('1.3c the name box is the lit, tallest one (over 84), then 70 → 58 → 58', box.h > 84 && doors.map(d => d.h).join() === '70,58,58' && doors.slice(1).every(d => /is-staff/.test(d.cls)), [box.h, ...doors.map(d => d.h)]);
     check('1.3d no header, no bottom nav on the front door', await p.evaluate(() => document.getElementById('app-header').hidden && document.getElementById('app-nav').hidden));
     check('1.3e the lockup, BE FIT CLUB and the slogan are there, and the footer holds one link (practice pill)', await p.evaluate(() => {
       const s = document.getElementById('app-screen'); const foot = s.querySelectorAll('.fd-foot a, .fd-foot button');
@@ -64,21 +66,22 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check('1.4 Tonight strip: next game Mon 26 Oct and the last score as two mini squares (Green 6, Red 4)',
       await p.evaluate(() => { const t = document.querySelector('.fd-tonight'); const sq = [...t.querySelectorAll('.ms i')]; return !!t && /Next game/i.test(t.innerText) && /Mon 26 Oct/.test(t.innerText) && sq.length === 2 && sq[0].textContent === '6' && sq[0].classList.contains('t-green') && sq[1].textContent === '4' && sq[1].classList.contains('t-red'); }));
     check('1.4b every door has its own picture on the right, behind the words', await p.evaluate(() => [...document.querySelectorAll('#app-screen .fd-door')].every(d => { const a = d.querySelector('.fd-art svg'); return a && getComputedStyle(d.querySelector('.fd-art')).position === 'absolute' && /mask|linear-gradient/.test(getComputedStyle(d.querySelector('.fd-art')).maskImage || getComputedStyle(d.querySelector('.fd-art')).webkitMaskImage || ''); })));
-    // "My stats" → the Find your name state on the same screen
-    await tap(p, '#app-screen [data-tap="stats"]');
-    check('1.4c My stats → Find your name on the same screen: "‹ Menu", the heading, the hint, no list yet', await p.evaluate(() => { const s = document.getElementById('app-screen'); return s.querySelector('section').dataset.screen === 'welcome' && /‹ Menu/.test(s.querySelector('.fd-back').innerText) && s.querySelector('.fd-sub h2').innerText === 'Find your name' && /Your name stays on this phone\./.test(s.querySelector('.fd-hint').innerText) && !s.querySelector('[data-tap="pick"]') && !s.querySelector('.fd-door'); }));
-    check('1.4d the search box has the cursor already (auto-focus)', await p.evaluate(() => document.activeElement && document.activeElement.dataset.search === 'who'));
+    // the name box: typing in it turns the menu into Find your name (round 8)
+    check('1.4c before typing: no list, no back arrow, no hint (it is just a door)', await p.evaluate(() => { const s = document.getElementById('app-screen'); const vis = q => { const e = s.querySelector(q); return !!e && e.getBoundingClientRect().height > 0; }; return !s.querySelector('[data-tap="pick"]') && !vis('.fd-back') && !vis('.fd-hint'); }));
     // search box fix: no outline on the inner input, no browser clear button, one ink2 ring on the box
     await p.focus('[data-search="who"]');
+    check('1.4d the name box takes the cursor', await p.evaluate(() => document.activeElement && document.activeElement.dataset.search === 'who'));
     const sb = await p.evaluate(() => { const i = document.querySelector('[data-search="who"]'); const cs = getComputedStyle(i); const x = getComputedStyle(i, '::-webkit-search-cancel-button'); return { outline: cs.outlineStyle, cancel: x.display, appearance: x.webkitAppearance || x.appearance, ring: getComputedStyle(i.closest('.inp')).boxShadow }; });
     check('1.5 search box: no white focus line on the input', sb.outline === 'none', sb);
     check('1.6 search box: browser clear button hidden', sb.cancel === 'none' || sb.appearance === 'none', sb);
     check('1.7 search box: focus shows as one 1.5 px ring on the box', /1\.5px/.test(sb.ring), sb);
     await p.keyboard.type('Da', { delay: 30 }); await sleep(300);
-    const res = await p.evaluate(() => ({ names: [...document.querySelectorAll('#app-screen [data-tap="pick"] .nm')].map(x => x.textContent), label: document.querySelector('[data-fd-res] .lbl')?.innerText, brandHidden: !document.querySelector('.fd-title'), optsHidden: !document.querySelector('.fd-doors'), chips: document.querySelectorAll('[data-fd-res] .tc').length }));
+    const res = await p.evaluate(() => { const gone = q => [...document.querySelectorAll(q)].every(e => e.getBoundingClientRect().height === 0); const s = document.getElementById('app-screen');
+      return { names: [...document.querySelectorAll('#app-screen [data-tap="pick"] .nm')].map(x => x.textContent), label: document.querySelector('[data-fd-res] .lbl')?.innerText, brandHidden: gone('.fd-title'), optsHidden: gone('.fd-door'), chips: document.querySelectorAll('[data-fd-res] .tc').length,
+        menu: /Menu/.test(s.querySelector('.fd-back').innerText) && s.querySelector('.fd-back').getBoundingClientRect().height > 0, hint: /Your name stays on this phone\./.test(s.querySelector('.fd-hint').innerText) }; });
     check('1.8 typing "Da" shows 4 matches, each with a team chip', res.names.length === 4 && /4 MATCHES/i.test(res.label) && res.chips === 4, res);
     check('1.9 the 4 are Daniel fair guy, Danny red dark short, David O, David S', res.names.join('|') === 'Daniel fair guy|Danny red dark short|David O|David S', res.names);
-    check('1.10 in Find your name the logo and the doors step aside', res.brandHidden && res.optsHidden, res);
+    check('1.10 in Find your name the logo and the doors step aside; "‹ Menu" and the hint show', res.brandHidden && res.optsHidden && res.menu && res.hint, res);
     await s.shot(path.join(H.out(__dirname, 'shots'), 'test-door-typing.png'));
     await tap(p, '#app-screen [data-tap="pick"]');
     check('1.11 picking a name opens Me (stats + match history), not Home', await screenId(p) === 'player.me');
@@ -103,9 +106,9 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check('1.16e Continue as opens Me', await screenId(p) === 'player.me');
     await p.evaluate(() => App.go('welcome')); await sleep(300);
     await tap(p, '#app-screen [data-tap="find"]');
-    check('1.16f "Not Daniel? Find your name ›" opens the find state', await p.evaluate(() => !!document.querySelector('#app-screen .fd-sub [data-search="who"]')));
+    check('1.16f "Not Daniel? Find your name ›" opens the find state', await p.evaluate(() => document.querySelector('.scr-welcome').classList.contains('is-find') && document.querySelector('#app-screen .fd-find [data-search="who"]').getBoundingClientRect().height > 0));
     await tap(p, '#app-screen [data-tap="menu"]');
-    check('1.16g "‹ Menu" goes back to the doors', await p.evaluate(() => document.querySelectorAll('#app-screen .fd-door').length === 4));
+    check('1.16g "‹ Menu" goes back to the doors', await p.evaluate(() => [...document.querySelectorAll('#app-screen .fd-door')].filter(d => d.getBoundingClientRect().height > 0).length === 4));
     console.log(s.errors.length ? 'errors: ' + s.errors.join(' | ') : '');
     check('1.17 no console errors', !s.errors.length, s.errors);
     await s.close();
@@ -249,7 +252,7 @@ function liveData() {   // the 19 Oct match frozen at 30', running
     check('7.1 the app is light but the front door is always dark (screen data-theme=dark, --bg #0b0d10, ink #f2f3f5)', dk.app === 'light' && dk.screen === 'dark' && dk.bg === '#0b0d10' && dk.ink === '#f2f3f5', dk);
     check('7.2 … and the light theme does not darken the mini score numerals on it (Green 6 stays the bright dark-theme green)', dk.green === '#3dd68c' && dk.sq === 'rgb(61, 214, 140)', dk);
     await s.shot(path.join(H.out(__dirname, 'shots'), 'test-door-light-app.png'));
-    check('7.3 first-time doors in light too: My stats is the lit one', await p.evaluate(() => !!document.querySelector('.fd-door.is-primary')));
+    check('7.3 first-time doors in light too: the name box is the lit one', await p.evaluate(() => !!document.querySelector('.fd-find:not(.is-quiet)')));
     check('7.4 no console errors', !s.errors.length, s.errors);
     await s.close();
   }

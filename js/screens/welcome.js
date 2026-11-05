@@ -5,12 +5,15 @@
    after Sign out, or data-shell="welcome". Design: design-review/front-door.html (spec C and E, round 3 art).
 
    ONE LIST OF DOORS, heights stepping down 84 → 70 → 58 → 58:
-     first time   My stats (lit) · Browse as guest · Referee (lock) · Admin (lock)
+     first time   the name box (lit): "Find your name to view your stats" + an empty box to type in (round 8,
+                  Reuben 5 Nov: players have no login, so "My stats" read as if you'd signed in) · Browse as guest ·
+                  Referee (lock) · Admin (lock)
      returning    Continue as <name> (rank · pts · move, team coloured, last 5 games as bars)
                   + "Not <name>? Find your name ›" · Browse as guest · Referee · Admin
      signed in    the lock becomes a tick on green, sub-line "Signed in", the tap goes straight in
-   - "My stats" / "Find your name" → the same screen in state find ("‹ Menu", the search, results only after
-     typing). Tapping a name remembers it on this phone and opens player.me. "Continue as" opens player.me too.
+   - State find: the first letter typed in the name box (or "Not <name>? Find your name ›") fades everything else
+     out, so only the name search is left, with a back arrow (and the phone's Back) to the menu. Results only after
+     typing. Tapping a name remembers it on this phone and opens player.me. "Continue as" opens player.me too.
    - Browse as guest → guest.home. Referee / Admin → the sign-in sheets (App.openSignIn).
    - Above the doors: the K1 lockup, "BE FIT CLUB", the slogan, then the Tonight strip (the next game + the last
      score as two mini squares). While a match is live the strip becomes the live score block and taps to Match.
@@ -26,7 +29,6 @@
 
   // ---- the art: one faded picture per door (design file, art-data), the K1 lockup (#lk-kick)
   const ART = {
-    stats: '<svg viewBox="0 0 220 64" preserveAspectRatio="xMaxYMid slice"><defs><radialGradient id="g-stat" cx="80%" cy="80%" r="40%"><stop offset="0" stop-color="currentColor" stop-opacity=".16"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><rect width="220" height="64" fill="url(#g-stat)"/><rect x="112" y="48" width="11" height="14" rx="3" fill="currentColor" opacity="0.14"/><rect x="130" y="40" width="11" height="22" rx="3" fill="currentColor" opacity="0.14"/><rect x="148" y="44" width="11" height="18" rx="3" fill="currentColor" opacity="0.14"/><rect x="166" y="32" width="11" height="30" rx="3" fill="currentColor" opacity="0.14"/><rect x="184" y="20" width="11" height="42" rx="3" fill="currentColor" opacity="0.32"/><path d="M150 20H158L162 12L167 28L173 3L178 20H198" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".45"/></svg>',
     guest: '<svg viewBox="0 0 220 64" preserveAspectRatio="xMaxYMid slice"><defs><linearGradient id="g-beam" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".24"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><path d="M184 18L76 64H156Z" fill="url(#g-beam)"/><path d="M196 64V18" stroke="currentColor" stroke-width="2" opacity=".32"/><rect x="180" y="3" width="32" height="15" rx="2.5" fill="currentColor" opacity=".22"/><circle cx="187" cy="7.5" r="2.2" fill="currentColor" opacity=".8"/><circle cx="187" cy="13.5" r="2.2" fill="currentColor" opacity=".8"/><circle cx="196" cy="7.5" r="2.2" fill="currentColor" opacity=".8"/><circle cx="196" cy="13.5" r="2.2" fill="currentColor" opacity=".8"/><circle cx="205" cy="7.5" r="2.2" fill="currentColor" opacity=".8"/><circle cx="205" cy="13.5" r="2.2" fill="currentColor" opacity=".8"/><path d="M112 49H220M100 56.5H220M88 64H220" stroke="currentColor" stroke-width="4" stroke-dasharray="7 4" opacity=".16"/></svg>',
     ref: '<svg viewBox="0 0 220 64" preserveAspectRatio="xMaxYMid slice"><defs><clipPath id="cp-ref"><path d="M84 64L90 26L114 10L136 15Q152 27 168 15L190 10L220 22V64Z"/></clipPath></defs><g clip-path="url(#cp-ref)"><rect x="80" y="0" width="140" height="64" fill="currentColor" opacity=".07"/><rect x="86" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="98" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="110" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="122" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="134" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="146" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="158" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="170" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="182" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="194" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="206" y="0" width="6" height="64" fill="currentColor" opacity=".26"/><rect x="218" y="0" width="6" height="64" fill="currentColor" opacity=".26"/></g><path d="M136 15Q152 27 168 15" fill="none" stroke="currentColor" stroke-width="2" opacity=".45"/><path d="M147 21C145 32 137 38 128 42" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".5"/><g opacity=".65"><circle cx="122" cy="46" r="6.5" fill="currentColor"/><rect x="122" y="39.5" width="15" height="6.5" rx="2" fill="currentColor" transform="rotate(-24 122 46)"/><circle cx="122" cy="46" r="2.3" style="fill:var(--s1)"/></g></svg>',
     admin: '<svg viewBox="0 0 220 64" preserveAspectRatio="xMaxYMid slice"><path d="M100 0H148L160 46L156 64H92Z" fill="currentColor" opacity=".12"/><path d="M220 0H176L164 46L168 64H220Z" fill="currentColor" opacity=".12"/><path d="M148 0L160 46L130 16Z" fill="currentColor" opacity=".14"/><path d="M176 0L164 46L194 16Z" fill="currentColor" opacity=".14"/><path d="M148 0H176L162 48Z" fill="currentColor" opacity=".24"/><path d="M150 0L157 9L162 2ZM174 0L167 9L162 2Z" fill="currentColor" opacity=".45"/><path d="M158 4H166L164.5 11H159.5Z" fill="currentColor" opacity=".7"/><path d="M159.5 11H164.5L167 40L162 47L157 40Z" fill="currentColor" opacity=".5"/><path d="M130 16L148 0M194 16L176 0M112 31H132" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".4"/><path d="M116 31L128 31L124 26Z" fill="currentColor" opacity=".35"/><circle cx="162" cy="56" r="2" fill="currentColor" opacity=".45"/></svg>',
@@ -99,7 +101,7 @@
     return door({ tap, cls: 'is-staff', art: art(svg), left, title: name, sub: signedIn ? 'Signed in' : sub, at });
   }
 
-  function doors(at) {
+  function doors(at, q) {
     const out = [];
     const pid = App.viewer();
     const me = pid ? Store.player(pid) : null;
@@ -111,8 +113,9 @@
       out.push(door({ tap: 'continue', cls: `is-continue lit ${Teams.cls(me.defaultTeam)}`, art: barsArt(hist), left: UI.avatar(me.name, me.defaultTeam, { size: 48 }),
         kk: 'Continue as', title: me.name, sub, at }));
       out.push(`<button type="button" class="fd-notyou st" data-tap="find"${at()}>Not ${esc(firstName(me.name))}? Find your name ›</button>`);
+      out.push(findBox(q, at, true));
     } else {
-      out.push(door({ tap: 'stats', cls: 'is-primary', art: art(ART.stats), title: 'My stats', sub: 'Your points and every match you played', at }));
+      out.push(findBox(q, at, false));
     }
     out.push(door({ tap: 'browse', art: art(ART.guest), title: 'Browse as guest', sub: 'Scores, tables, the season', at }));
     out.push(staffDoor('referee', 'Referee', 'Tonight’s match', ART.ref, Auth.isReferee(), at));
@@ -146,9 +149,12 @@
     return `<div class="lbl">${r.total === 1 ? '1 match' : r.total + ' matches'}${r.total > r.list.length ? ' <b>keep typing</b>' : ''}</div>` +
       UI.rows(r.list.map(p => personRow(p, q, pts))) + `<button type="button" class="link fd-skip" data-tap="browse">Not you? Browse as guest ›</button>`;
   }
-  function findPane(q, at) {
-    return `<div class="fd-sub st"${at()}><button type="button" class="fd-back" data-tap="menu">‹ Menu</button><h2>Find your name</h2>` +
-      UI.search({ name: 'who', placeholder: 'Find your name', value: q }) +
+  // The name box. On the menu it is the first door; in state find it is all that's left. quiet: hidden until find.
+  function findBox(q, at, quiet) {
+    return `<div class="fd-find${quiet ? ' is-quiet' : ''} st"${at()}>` +
+      `<button type="button" class="fd-back" data-tap="menu" aria-label="Back to the menu">${UI.icon('back')}<span>Menu</span></button>` +
+      `<div class="fd-find-l">Find your name to view your stats</div>` +
+      UI.search({ name: 'who', placeholder: 'Type your name', value: q }) +
       `<div data-fd-res>${q.trim() ? results(q) : ''}</div><div class="fd-hint">Your name stays on this phone.</div></div>`;
   }
 
@@ -176,9 +182,8 @@
       } else el.classList.add('fd-anim');
 
       const draw = () => render(el, { wide: matchMedia('(min-width: 960px)').matches });
-      UI.on(el, 'stats', () => { el._fd.view = 'find'; draw(); });
       UI.on(el, 'find', () => { el._fd.view = 'find'; draw(); });
-      UI.on(el, 'menu', () => { el._fd.view = 'menu'; el._fd.q = ''; draw(); });
+      UI.on(el, 'menu', () => leaveFind(el));
       UI.on(el, 'continue', () => App.go('player.me', {}, { replace: true }));
       UI.on(el, 'pick', b => { App.setViewer(b.dataset.pid); App.go('player.me', {}, { replace: true }); });
       UI.on(el, 'browse', () => { App.setViewer('guest'); App.go('guest.home', {}, { replace: true }); });
@@ -200,6 +205,7 @@
       el.addEventListener('input', e => {
         if (!e.target.matches('[data-search="who"]')) return;
         el._fd.q = e.target.value;
+        if (el._fd.q.trim() && el._fd.view !== 'find') enterFind(el);
         el.querySelector('[data-fd-res]').innerHTML = el._fd.q.trim() ? results(el._fd.q) : '';
       });
       el.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-search="who"]')) e.target.blur(); });
@@ -214,7 +220,26 @@
       });
     },
     render(el, ctx) { render(el, ctx); },
+    // the phone's Back in state find: back to the menu, not out of the app
+    onBack(el) { if (!el._fd || el._fd.view !== 'find') return false; leaveFind(el); return true; },
   });
+
+  // Typing in the name box: everything else fades out (180 ms), then only the search is left. The box itself is not
+  // redrawn, so the phone's keyboard stays up.
+  function enterFind(el) {
+    el._fd.view = 'find';
+    el._fdFocused = true;
+    const settle = () => { el.classList.remove('fd-fading'); el.classList.add('is-find'); window.scrollTo(0, 0); };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { settle(); return; }
+    el.classList.add('fd-fading');
+    setTimeout(() => { if (el._fd.view === 'find') settle(); else el.classList.remove('fd-fading'); }, 180);
+  }
+  function leaveFind(el) {
+    el._fd.view = 'menu'; el._fd.q = '';
+    if (document.activeElement && el.contains(document.activeElement)) document.activeElement.blur();
+    el.classList.remove('fd-fading');
+    render(el, { wide: matchMedia('(min-width: 960px)').matches });
+  }
 
   function render(el, ctx) {
     if (!Store.hasData()) { el.innerHTML = '<div class="skel" style="height:220px;margin:30px 16px 0"></div><div class="skel" style="height:84px;margin:16px 16px 0"></div>'; return; }
@@ -230,13 +255,12 @@
     const at = () => ` style="--i:${n++}"`;
     const find = s.view === 'find';
     el.classList.toggle('is-find', find);
+    // One layout for the menu and state find: CSS hides everything but the name box in find.
     if (wide) {
       el.innerHTML = `<div class="fd-l">${title(at)}${lastBlock(at)}</div>` +
-        `<div class="fd-r">${find ? findPane(s.q, at) : `<div class="fd-section st"${at()}>Who’s here?</div>${doors(at)}${foot(at)}`}</div>`;
-    } else if (find) {
-      el.innerHTML = findPane(s.q, at);
+        `<div class="fd-r"><div class="fd-section st"${at()}>Who’s here?</div>${doors(at, s.q)}${foot(at)}</div>`;
     } else {
-      el.innerHTML = title(at) + tonight(at) + doors(at) + foot(at);
+      el.innerHTML = title(at) + tonight(at) + doors(at, s.q) + foot(at);
     }
     if (find) {
       const input = el.querySelector('[data-search="who"]');

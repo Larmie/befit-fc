@@ -19,10 +19,9 @@ async function phoneFlow(themeName) {
   check(`[${t}] Firebase never loaded`, await p.evaluate(() => !document.querySelector('script[src*="firebase"]') && Store.status().source === 'test'));
   await s.shot(path.join(OUT, `welcome-${t}.png`));
 
-  // Round 7 front door: My stats → Find your name, no names until you type, then pick → Me (stats + match history)
+  // Round 8 front door: the name box on the menu, no names until you type, then pick → Me (stats + match history)
   check(`[${t}] no names listed before typing`, await p.evaluate(() => !document.querySelector('#app-screen [data-tap="pick"]')));
-  await tap(p, '#app-screen [data-tap="stats"]');
-  check(`[${t}] My stats opens Find your name, still no names`, await p.evaluate(() => !!document.querySelector('[data-search="who"]') && !document.querySelector('#app-screen [data-tap="pick"]')));
+  check(`[${t}] the menu has the name box, still no names`, await p.evaluate(() => !!document.querySelector('.fd-find [data-search="who"]') && !document.querySelector('#app-screen [data-tap="pick"]')));
   await p.type('[data-search="who"]', 'emm');
   await sleep(200);
   const hits = await p.$$eval('[data-fd-res] [data-tap="pick"] .nm', els => els.map(e => e.textContent));

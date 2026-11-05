@@ -194,23 +194,18 @@
   </div>
   <span id="splash-sr" class="sr-only">Loading BE Fit Club</span>
 <script>
-/* Splash rules (front door). None: tests, a #/ link, or a match is live on this phone. Full: first open of the day.
-   Short: every other open. Reduced motion: the last frame, still. Ends at max(2.4 s, data ready) capped at 3.0 s (short and still: 0.6 s). Tap = skip. */
+/* Splash rules (front door). None: tests, a #/ link, or a match is live on this phone. Full: every open (Reuben, 5 Nov;
+   it used to be once a day). Reduced motion: the last frame, still. Ends at max(2.4 s, data ready) capped at 3.0 s (still: 0.6 s). Tap = skip. */
 (function () {
   var el = document.getElementById('splash'), sr = document.getElementById('splash-sr');
   if (!el) return;
   function drop() { if (el.parentNode) el.parentNode.removeChild(el); if (sr && sr.parentNode) sr.parentNode.removeChild(sr); }
   var K = (window.BF_CONFIG && window.BF_CONFIG.keys) || {};
   function get(k) { try { return k ? localStorage.getItem(k) : null; } catch (e) { return null; } }
-  function put(k, v) { try { if (k) localStorage.setItem(k, v); } catch (e) { /* private mode: fine */ } }
   if (window.__BEFIT_TEST__ || /^#\//.test(location.hash) || get(K.live)) { drop(); return; }
-  var d = new Date(), p2 = function (n) { return (n < 10 ? '0' : '') + n; };
-  var today = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
-  var full = get(K.splashDay) !== today;
-  if (full) put(K.splashDay, today);
   var still = false;
   try { still = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) { /* ignore */ }
-  var useFull = full && !still;
+  var useFull = !still;
   var keep = el.querySelector(useFull ? '.spl-full' : '.spl-short'), gone = el.querySelector(useFull ? '.spl-short' : '.spl-full');
   if (gone) gone.parentNode.removeChild(gone);
   try {

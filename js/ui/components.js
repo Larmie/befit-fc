@@ -39,6 +39,8 @@
      UI.seg(name, [{value,label,n,team}], value, {ref})                        segmented switch (one is .on)
      UI.teamSwitch(name, [{team,count}], value, {ref})                         "Green · 5 | Red · 5", any number of teams
      UI.search({ name, placeholder, value })                                   48 px search box
+     UI.password({ name, placeholder, label, autocomplete, attrs })            password box with an eye to show / hide it
+     UI.backBtn({ cls })                                                       the one back arrow for a header's left
      UI.btn(label, { kind:'w'|'g'|'o'|'warn', sm, big, tap, data, cls, attrs })
      UI.hold(label, { name, ms:2000, warn, doneText:'Ending…' })               hold-to-confirm (End game, Clear payment record)
      ---- round 5 shared pieces (see css/components.css "round 5") ----
@@ -132,6 +134,8 @@
     search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.6-4.6"/>',
     chev: '<path d="M9 6l6 6-6 6"/>',
     back: '<path d="M15 6l-6 6 6 6"/>',
+    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+    'eye-off': '<path d="M3 3l18 18M10.6 6.1A9 9 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.8M6.4 6.9C3.9 8.6 2.5 12 2.5 12S6 18.5 12 18.5a8.6 8.6 0 0 0 4.3-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     more: '<circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
@@ -187,6 +191,26 @@
 
   const search = o => `<label class="inp">${icon('search')}<input type="search" autocomplete="off" enterkeyhint="search" ` +
     `data-search="${esc(o.name || 'q')}" placeholder="${esc(o.placeholder || 'Search')}" value="${esc(o.value || '')}" aria-label="${esc(o.placeholder || 'Search')}"></label>`;
+
+  // A password box with an eye button: tap to show what you typed, tap again to hide it (the keyboard stays up).
+  const password = o => `<label class="inp inp-pw"><input type="password" ${o.name ? `name="${esc(o.name)}" ` : ''}autocomplete="${esc(o.autocomplete || 'current-password')}" ` +
+    `placeholder="${esc(o.placeholder || 'Password')}" aria-label="${esc(o.label || o.placeholder || 'Password')}"${o.attrs || ''}>` +
+    `<button type="button" class="pw-eye" data-eye aria-label="Show password" aria-pressed="false">${icon('eye')}</button></label>`;
+  document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('[data-eye]')) e.preventDefault(); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-eye]');
+    if (!b) return;
+    e.preventDefault();
+    const inp = b.parentElement.querySelector('input');
+    if (!inp) return;
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', String(show));
+    b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    b.innerHTML = icon(show ? 'eye-off' : 'eye');
+  });
+  // The one back arrow (round 8): the same look on every page that has somewhere to go back to.
+  const backBtn = o => `<button type="button" class="hd-btn hd-back${o && o.cls ? ' ' + esc(o.cls) : ''}" data-shell="back" aria-label="Back">${icon('back')}<span class="hd-back-t">Back</span></button>`;
 
   function btn(label, o) {
     o = o || {};
@@ -511,7 +535,7 @@
   window.UI = {
     esc, fmt, icon, dataAttrs,
     teamMark, teamChip, resultMark, move, pos, pill, avatar, cardGlyph,
-    row, rows, tile, tiles, chips, seg, teamSwitch, search, btn, hold, score, empty,
+    row, rows, tile, tiles, chips, seg, teamSwitch, search, password, backBtn, btn, hold, score, empty,
     scoreFor, scoreCentre, miniScore, liveDot, sum, podium, leaderRow, syncChip, nextGame,
     on, onSeg: onCustom('ui:seg'), onChip: onCustom('ui:chip'),
     onHold: (root, name, fn) => root.addEventListener('ui:hold', e => { if (e.detail && e.detail.name === name) fn(e.target); }),

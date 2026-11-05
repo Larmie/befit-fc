@@ -265,19 +265,90 @@
 
   // In-app history: our own stack of hashes, so Back knows whether there is a page to go back to.
   const trail = [];
+  // The phone's Back button (round 8, Reuben 5 Nov): never out of the app by surprise.
+  //   a popup open → it closes · an inner page → the page before (or its tab) · another tab → the first tab (Home)
+  //   · Home (or the menu) → "Press back again to exit", and the next Back leaves.
+  // How: a "guard" entry sits under the app's own entries. Landing on it runs the rule above and, unless it is time
+  // to leave, puts a fresh entry back on top. It is added at the first tap (Chrome skips entries a page adds before
+  // anyone has touched it), once per tab: a reload keeps the one already there.
+  const GUARD_KEY = 'befit_back_guard';
+  let guarded = false, atGuard = false, pendingHash = null;
+  function rootScreen(r) { return tabScreen(tabs(r)[0]); }
+  function isRoot() { return !cur || cur.id === 'welcome' || cur.id === rootScreen(cur.role); }
+  // Where "up" goes when there is no page to go back to: an inner page → its tab, a tab → the first tab.
+  function upScreen() {
+    if (!cur) return null;
+    const list = tabs(cur.role), t = list.find(x => x.id === cur.tab);
+    const own = t ? tabScreen(t) : null;
+    return own && own !== cur.id ? own : rootScreen(cur.role);
+  }
+  function pushTop() {
+    if (!guarded) return;
+    history.pushState({ bf: 'top' }, '', location.pathname + location.search + location.hash);
+    atGuard = false;
+  }
+  function addGuard() {
+    if (guarded) return;
+    guarded = true;
+    try { sessionStorage.setItem(GUARD_KEY, location.pathname + location.search); } catch (e) { /* private mode: fine */ }
+    history.replaceState({ bf: 'guard' }, '', location.pathname + location.search + location.hash);
+    pushTop();
+  }
+  function guardOnStart() {
+    let nav = 'navigate', mark = null;
+    try { nav = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate'; } catch (e) { /* ignore */ }
+    try { mark = sessionStorage.getItem(GUARD_KEY); } catch (e) { /* ignore */ }
+    if (nav !== 'navigate' && mark === location.pathname + location.search) { guarded = true; atGuard = !!(history.state && history.state.bf === 'guard'); }
+    // the first tap (touch: on lift; mouse and keys: on press) adds the guard, or re-arms it after "Press back again"
+    const tapped = () => { if (!guarded) addGuard(); else if (atGuard) pushTop(); };
+    ['pointerup', 'keydown'].forEach(t => document.addEventListener(t, tapped, true));
+  }
+  function onPop(e) {
+    if (pendingHash && location.hash === pendingHash) return;           // our own forward step, not Back
+    const st = e.state && e.state.bf;
+    const here = trail[trail.length - 1] || location.hash;
+    // 1 · a popup is open: Back closes it and the page stays where it was
+    if (UI.sheet.top()) {
+      UI.sheet.top().close();
+      history.pushState({ bf: 'top' }, '', location.pathname + location.search + here);
+      return;
+    }
+    // 2 · the screen has its own step back (the menu's name search)
+    if (cur && cur.def.onBack && cur.def.onBack(cur.el, cur.ctx)) {
+      history.pushState({ bf: 'top' }, '', location.pathname + location.search + here);
+      return;
+    }
+    if (st !== 'guard') return;                                          // an ordinary step back: onHash draws it
+    // 3 · the bottom of the app's history
+    if (!isRoot()) {
+      const h = hashFor(upScreen(), {});
+      history.replaceState({ bf: 'guard' }, '', location.pathname + location.search + h);
+      history.pushState({ bf: 'top' }, '', location.pathname + location.search + h);
+      trail.length = 0; trail.push(h);
+      route = parseHash(); scheduleRender(true);
+      return;
+    }
+    // 4 · Home or the menu: warn; the next Back leaves (the guard stays the last entry)
+    atGuard = true;
+    history.replaceState({ bf: 'guard' }, '', location.pathname + location.search + here);
+    UI.toast('Press back again to exit', { ms: 2500 });
+  }
   function go(id, params, opts) {
     const h = hashFor(id, params);
+    if (atGuard) pushTop();
     if (opts && opts.replace) {
       history.replaceState(null, '', h);
       if (trail.length) trail[trail.length - 1] = h; else trail.push(h);
       route = parseHash(); scheduleRender(true); return;
     }
     if (location.hash === h) { scheduleRender(true); return; }
+    pendingHash = h;
     location.hash = h;
   }
+  // The on-screen back arrow: the page before, else up (an inner page → its tab, a tab → the first tab).
   function back() {
     if (trail.length > 1) { history.back(); return; }
-    go(homeFor(cur ? cur.role : role()), {}, { replace: true });
+    go(upScreen() || homeFor(cur ? cur.role : role()), {}, { replace: true });
   }
   function goTab(tabId) {
     if (tabId === 'table') lastTables = 'tables.players';
@@ -291,6 +362,7 @@
   }
   function onHash() {
     const h = location.hash;
+    pendingHash = null;
     if (trail.length > 1 && trail[trail.length - 2] === h) trail.pop(); else if (trail[trail.length - 1] !== h) trail.push(h);
     route = parseHash(); scheduleRender(true);
   }
@@ -401,6 +473,8 @@
       // Staff: the brand button takes the left; the role pill moves to the right (after the screen's own right side).
       // A screen that sets its own left (a back button) keeps it, and then has no pill, as before.
       if ((rl === 'referee' || rl === 'admin') && own.left === undefined) parts.right = (parts.right || '') + pillButton(rl);
+      // Round 8: every page but the first tab (Home, or the referee's Match) starts with the back arrow; the mark stays beside it.
+      if (own.left === undefined && !isRoot() && !(rl === 'referee' && isLiveMatch())) parts.left = UI.backBtn() + brandBtn({ markOnly: true });
       hd.className = 'hd hd-' + rl;
       hd.innerHTML = `<div class="hd-l">${parts.left || ''}</div><div class="hd-c">${parts.center || ''}</div><div class="hd-r">${parts.right || ''}</div>`;
     }
@@ -605,7 +679,7 @@
       title: admin ? 'Admin' : 'Referee', cls: 'sh-shell-signin',
       body: `<form class="stack" data-signin novalidate style="padding-top:8px">
           ${admin ? `<label class="inp"><input type="email" name="email" autocomplete="username" placeholder="Email" aria-label="Email"></label>` : ''}
-          <label class="inp"><input type="password" name="password" autocomplete="current-password" placeholder="${admin ? 'Password' : 'Referee password'}" aria-label="Password"></label>
+          ${UI.password({ name: 'password', placeholder: admin ? 'Password' : 'Referee password', label: 'Password' })}
           <div class="field-err" data-err></div>
           <button type="submit" class="btn w big">Sign in</button>
         </form>`,
@@ -704,6 +778,8 @@
     Object.entries(PLACEHOLDERS).forEach(([id, p]) => { if (!screens[id]) screens[id] = Object.assign({ layout: 'wide' }, placeholderDef(id, p)); });
     route = parseHash(); trail.push(location.hash);
     window.addEventListener('hashchange', () => { onHash(); });
+    window.addEventListener('popstate', onPop);
+    guardOnStart();
     wideMQ.addEventListener && wideMQ.addEventListener('change', () => scheduleRender(false));
     Store.on(() => scheduleRender(false));
     Store.onStatus(renderStatus);

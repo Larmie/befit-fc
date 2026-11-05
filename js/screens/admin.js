@@ -455,7 +455,7 @@
 
   App.registerScreen('ref.pastGame', {
     tab: 'home', title: 'Log a past game',
-    header: () => ({ right: `<button type="button" class="hd-btn" data-shell="back">Close</button>` }),
+    header: () => ({ right: '' }),               // round 8: the shell's back arrow replaces "Close"
     mount(el) {
       if (!past) past = freshPast();
       el.addEventListener('input', e => {

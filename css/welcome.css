@@ -56,13 +56,6 @@ body.is-fd .screen-host, body.is-fd.no-nav .screen-host { padding: 0; max-width:
 .scr-welcome .fd-door .chev { font-size: 24px; color: var(--ink2); line-height: 1; }
 .scr-welcome .fd-door > .tx, .scr-welcome .fd-door > .chev, .scr-welcome .fd-door > .av, .scr-welcome .fd-door > .fd-lock { position: relative; z-index: 1; }
 
-/* My stats: the lit door */
-.scr-welcome .fd-door.is-primary { min-height: 84px;
-  background: radial-gradient(90% 140% at 0% 0%, rgba(242,243,245,.10), transparent 60%), linear-gradient(180deg, #1A1E24, #15181D);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.09), inset 0 0 0 1px #343A44, 0 10px 30px -12px rgba(0,0,0,.6); }
-.scr-welcome .fd-door.is-primary::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ink); }
-.scr-welcome .fd-door.is-primary .tx b { font-size: 22px; }
-
 /* Continue as <name>: team coloured */
 .scr-welcome .fd-door.is-continue { min-height: 92px;
   background: radial-gradient(90% 140% at 0% 110%, color-mix(in srgb, var(--tc) 30%, transparent), transparent 65%), linear-gradient(180deg, #1A1E24, #15181D);
@@ -73,7 +66,7 @@ body.is-fd .screen-host, body.is-fd.no-nav .screen-host { padding: 0; max-width:
 .scr-welcome .fd-door.is-continue .sub em { font-style: normal; font-weight: 650; }
 .scr-welcome .fd-door.is-continue .sub em.up { color: var(--green); }
 .scr-welcome .fd-door.is-continue .sub em.dn { color: var(--ink3); }
-.scr-welcome .fd-notyou { align-self: center; font-size: 13px; color: var(--ink2); min-height: 48px; display: flex; align-items: center; margin-top: -10px; }   /* 48: staff reach the menu too (Back to menu) */
+.scr-welcome .fd-notyou { align-self: center; font-size: 15px; font-weight: 600; color: var(--ink2); min-height: 48px; display: flex; align-items: center; margin-top: -10px; }   /* 48: staff reach the menu too (Back to menu) · 15 px: round 8, "slightly bigger" */
 
 /* Referee, Admin */
 .scr-welcome .fd-door.is-staff { min-height: 58px; padding: 9px 16px; gap: 12px; }
@@ -101,16 +94,34 @@ body.is-fd .screen-host, body.is-fd.no-nav .screen-host { padding: 0; max-width:
 .scr-welcome .fd-pill em { font-style: normal; color: var(--ink3); font-weight: 500; }
 .scr-welcome .fd-pill em + svg { width: 13px; height: 13px; stroke: var(--ink2); margin-left: 2px; }
 
-/* find your name */
-.scr-welcome .fd-sub { padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 0; display: flex; flex-direction: column; gap: 12px; }
-.scr-welcome .fd-back { align-self: flex-start; font-size: 14px; color: var(--ink2); display: flex; align-items: center; min-height: 44px; padding-right: 12px; }
-.scr-welcome .fd-sub h2 { font-size: 24px; font-weight: 750; letter-spacing: -.02em; color: var(--ink); line-height: 1.15; }
-.scr-welcome .fd-sub .inp { height: 56px; border-radius: 14px; background: var(--s1); box-shadow: inset 0 0 0 1.5px var(--s3); font-size: 15px; }
-.scr-welcome .fd-sub .inp:focus-within { box-shadow: inset 0 0 0 1.5px var(--ink2); }
-.scr-welcome [data-fd-res]:not(:empty) { margin-top: 4px; }
+/* the name box (round 8): the first door on the menu, the whole screen in state find */
+.scr-welcome .fd-find { display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 14px 16px; border-radius: 16px; position: relative;
+  background: radial-gradient(90% 140% at 0% 0%, rgba(242,243,245,.10), transparent 60%), linear-gradient(180deg, #1A1E24, #15181D);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.09), inset 0 0 0 1px #343A44, 0 10px 30px -12px rgba(0,0,0,.6); }
+.scr-welcome .fd-find::before { content: ''; position: absolute; left: 0; top: 14px; height: 26px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ink); }
+.scr-welcome .fd-find.is-quiet { display: none; }
+.scr-welcome .fd-find-l { font-size: 18px; font-weight: 750; letter-spacing: -.015em; line-height: 1.2; }
+.scr-welcome .fd-find .inp { height: 52px; border-radius: 13px; background: var(--s1); box-shadow: inset 0 0 0 1.5px var(--s3); font-size: 15px; }
+.scr-welcome .fd-find .inp:focus-within { box-shadow: inset 0 0 0 1.5px var(--ink2); }
+.scr-welcome .fd-back { display: none; align-self: flex-start; align-items: center; gap: 2px; min-height: 44px; padding-right: 12px; margin: -6px 0 -4px -6px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.scr-welcome .fd-back svg { width: 24px; height: 24px; }
+.scr-welcome .fd-hint { display: none; font-size: 12px; color: var(--ink3); text-align: center; }
+.scr-welcome [data-fd-res]:not(:empty) { margin-top: 2px; }
 .scr-welcome .fd-hl { background: color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 3px; padding: 0 1px; }
 .scr-welcome .fd-skip { display: flex; justify-content: center; margin: 8px auto 0; }
-.scr-welcome .fd-hint { font-size: 12px; color: var(--ink3); text-align: center; }
+/* typing: the rest fades out, then only the name box is left */
+.scr-welcome.fd-fading :is(.fd-door, .fd-notyou, .fd-foot, .fd-section) { opacity: 0; transition: opacity .18s ease; }
+.scr-welcome.is-find :is(.fd-door, .fd-notyou, .fd-foot, .fd-section) { display: none; }
+@media (max-width: 959px) {   /* phones: the title and Tonight go too (the laptop keeps its left column) */
+  .scr-welcome.fd-fading :is(.fd-title, .fd-tonight, .fd-live) { opacity: 0; transition: opacity .18s ease; }
+  .scr-welcome.is-find :is(.fd-title, .fd-tonight, .fd-live) { display: none; }
+}
+.scr-welcome.is-find .fd-doors { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+.scr-welcome.is-find .fd-find, .scr-welcome.is-find .fd-find.is-quiet { display: flex; background: none; box-shadow: none; padding: 0; }
+.scr-welcome.is-find .fd-find::before { display: none; }
+.scr-welcome.is-find .fd-find-l { font-size: 24px; letter-spacing: -.02em; }
+.scr-welcome.is-find .fd-back { display: flex; }
+.scr-welcome.is-find .fd-hint { display: block; }
 @media (max-width: 959px) { .scr-welcome.is-find .fd-l { display: none; } }
 
 /* entry motion: each block fades up 420 ms, 40 ms apart (js adds .fd-anim once, after the splash) */
@@ -131,7 +142,7 @@ body.is-fd .screen-host, body.is-fd.no-nav .screen-host { padding: 0; max-width:
   .scr-welcome .fd-last { margin-top: 44px; max-width: 470px; }
   .scr-welcome .fd-section { font-size: 12px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); margin: 0 2px 6px; max-width: 440px; }
   .scr-welcome .fd-doors { padding: 0; max-width: 440px; width: 100%; }
-  .scr-welcome .fd-sub { padding: 0; max-width: 440px; width: 100%; }
+  .scr-welcome.is-find .fd-doors { padding-top: 0; }
   .scr-welcome .fd-foot { margin-top: 18px; padding: 0; justify-content: flex-start; }
 }
 
@@ -149,9 +160,10 @@ html.practice .scr-welcome {
     repeating-linear-gradient(135deg, color-mix(in srgb, var(--practice) 5.5%, transparent) 0 2px, transparent 2px 16px),
     var(--bg);
 }
-html.practice .scr-welcome .fd-door.is-primary {
+html.practice .scr-welcome .fd-find:not(.is-quiet) {
   background: radial-gradient(90% 140% at 0% 0%, color-mix(in srgb, var(--practice) 16%, transparent), transparent 60%), linear-gradient(180deg, #221C30, #1A1625);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 0 1px #3A3150, 0 10px 30px -12px rgba(0,0,0,.6); }
+html.practice .scr-welcome.is-find .fd-find { background: none; box-shadow: none; }
 html.practice .scr-welcome .fd-pill { color: var(--ink); background: color-mix(in srgb, var(--practice) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--practice) 60%, transparent); }
 /* the violet bar */
 .practice-bar { gap: 7px; }
