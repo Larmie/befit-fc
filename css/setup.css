@@ -10,8 +10,53 @@
 .scr-ref-setup .rows .r.tall .meta .pos { line-height: 1.6; }
 .scr-ref-setup .su-foot .su-kl { margin-top: var(--sp-4); }
 
-/* Kick off: full width, 16 px above it (in the flow, so the Undo bar never sits on it for long) */
-.scr-ref-setup .su-go { margin-top: var(--sp-4); }
+/* Not ready yet: a quiet line at the end of the page (no bar, no button) */
+.scr-ref-setup .su-hint { margin-top: var(--sp-4); padding: var(--sp-3) 2px; text-align: center; color: var(--ink3); font-size: 13.5px; }
+
+/* ---------------------------------------------------------------- the kick-off bar (5 Nov)
+   Once both sides have players: Small poles | Big poles, the football + whistle and "Hold to kick off · n players",
+   pinned to the bottom of the screen just above the tabs (and the phone's safe area). It is sticky, not fixed: it
+   keeps its own place at the end of the page, so it never covers the last squad rows or the keepers. The screen is
+   a column at least the window's height, so on a short list the bar still sits on the bottom edge. */
+body:has(.scr-ref-setup > .su-pin:not([hidden])) .screen-host { display: flex; flex-direction: column; padding-bottom: calc(var(--h-nav) + var(--safe-b)); }
+body.no-nav:has(.scr-ref-setup > .su-pin:not([hidden])) .screen-host { padding-bottom: var(--safe-b); }
+body:has(.scr-ref-setup > .su-pin:not([hidden])) .scr-ref-setup { flex: 1 0 auto; display: flex; flex-direction: column; }
+.scr-ref-setup > .su-pin {
+  position: sticky; bottom: calc(var(--h-nav) + var(--safe-b)); z-index: 35;
+  margin: auto calc(-1 * var(--gutter)) 0; padding: 10px var(--gutter) 12px;
+  background: var(--bg); border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: var(--sp-2);
+}
+body.no-nav .scr-ref-setup > .su-pin { bottom: var(--safe-b); padding-bottom: calc(12px + var(--safe-b)); }
+.scr-ref-setup .su-foot { scroll-margin-top: calc(var(--h-header) + 12px); }
+.scr-ref-setup:has(> .su-pin:not([hidden])) .su-foot { padding-bottom: var(--sp-4); }   /* 16 px between the page and the bar */
+.scr-ref-setup .su-pin-go { display: flex; align-items: center; gap: 10px; }
+.scr-ref-setup .su-pic { width: 44px; height: 44px; flex: none; }
+.su-pic .ball { fill: none; stroke: var(--ink); stroke-width: 2; }
+.su-pic .patch { fill: var(--ink); }
+.su-pic .seam { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.su-pic .wh { fill: var(--ink); stroke: var(--bg); stroke-width: 2.5; paint-order: stroke; stroke-linejoin: round; }
+.su-pic .whh { fill: var(--bg); }
+/* the hold button: the app's primary (ink fill); a darker band fills it left to right over 1.5 s */
+.scr-ref-setup .hold.su-kick { flex: 1 1 auto; min-width: 0; height: 56px; background: var(--ink); color: var(--on-ink); box-shadow: none; font-weight: 700; font-size: 15px; }
+.scr-ref-setup .hold.su-kick .fill { background: color-mix(in srgb, var(--on-ink) 26%, transparent); }
+.scr-ref-setup .hold.su-kick.done .fill { width: 100%; }
+.scr-ref-setup .hold.su-kick.is-saving { opacity: 1; }
+.scr-ref-setup .hold.su-kick .hl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 8px; }
+/* big poles with a side still to pick: the way to the keepers (they stay on the page, above the bar) */
+.scr-ref-setup .su-pk { min-height: var(--h-target); border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-weight: 650; font-size: 14px; color: var(--ink); background: var(--s1); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.scr-ref-setup .su-pk:active { transform: scale(.98); }
+/* the Undo bar and toasts float above the kick-off bar, never over "Hold to kick off" */
+body:has(.scr-ref-setup > .su-pin:not([hidden])) { --float-bottom: calc(var(--h-nav) + var(--safe-b) + 142px); }
+body:has(.scr-ref-setup > .su-pin.has-pk:not([hidden])) { --float-bottom: calc(var(--h-nav) + var(--safe-b) + 198px); }
+body.no-nav:has(.scr-ref-setup > .su-pin:not([hidden])) { --float-bottom: calc(var(--safe-b) + 154px); }
+@media (min-width: 960px) {
+  body:has(.scr-ref-setup > .su-pin:not([hidden])) .screen-host { padding-bottom: 0; }
+  .scr-ref-setup > .su-pin, body.no-nav .scr-ref-setup > .su-pin { bottom: 0; padding-bottom: 16px; }
+  body:has(.scr-ref-setup > .su-pin:not([hidden])) { --float-bottom: 158px; }
+  body:has(.scr-ref-setup > .su-pin.has-pk:not([hidden])) { --float-bottom: 214px; }
+}
 
 /* ---------------------------------------------------------------- person rows with a side button each */
 .scr-ref-setup .su-pr, .sh-setup .su-pr { padding-right: 8px; }

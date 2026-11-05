@@ -8,7 +8,14 @@
      'ref.setup'          tab match · layout phone · console   THE LINEUP PICKER (round 6) before kick-off: one 56 px tab
                           per team ("4 of 10"), that team's usual squad (usually here first: last 8 matches), tap to tick;
                           "+ From Red" (other teams' usual squads) · "+ New person" (duplicate check) · search; the team
-                          sheet card once both sides have players; poles + keepers; "Kick off · n players". Round 4 text:
+                          sheet card once both sides have players; poles + keepers; "Kick off · n players".
+                          KICK-OFF BAR (5 Nov): once both sides have players, a bar pinned to the bottom of the screen
+                          (above the tabs, in the page flow so it never covers the last rows): Small poles | Big poles,
+                          a football + whistle and "Hold to kick off · n players" (hold 1.5 s; a short press says
+                          "Hold to kick off"). Big poles: the keeper picks stay on the page above the bar, and while a
+                          side has none the bar adds "Pick the keepers · 1 of 2 ›" (scrolls to them). Kick-off does
+                          NOT require keepers (as before). Before both sides have players: no bar; poles + keepers + a
+                          quiet "Pick both teams to kick off" at the end of the page. Round 4 text:
                           Green · n | Red · n switch, search ("Add a name": existing names first, then
                           "Someone new"), "Usually here" chips (recent players first), the side's rows,
                           Small poles | Big poles (+ one keeper per side when big), "Kick off · n players"
@@ -24,6 +31,10 @@
                           With onDone: picking an existing name calls onDone(pid) (no write); a new name is
                           written, then onDone(pid, team). Without onDone, inside a match (sid, or the active
                           session) the person is also put on that side tonight, in the same write.
+                          With onDone AND join:true (the console's "+ New person" in a pick list, 5 Nov): BOTH. The
+                          person is put on that side tonight (same rules as addArrival: arrival minute, 9 + 1 per side,
+                          duplicate check), then onDone(pid, team) once saved. Someone already on that side → onDone
+                          at once (no write). Cancel → nothing written, onDone never called.
      'setup.addArrival'   ({ sid })   "Who's arrived?": usually-here rows not on yet + search; one tap on a side
                           adds them at once (Save.run: Saving… → Undo 5 s), the sheet stays open for the next.
      'setup.teamsTonight' ({ sid })   one team per tab, full-width rows, a quiet "→ Red" per row, "Moved 27'" tag.
@@ -56,6 +67,7 @@
   const POSITIONS = ['GK', 'DEF', 'MID', 'FWD'];
   const DRAFT_KEY = 'befit_setup_draft';       // the "Who's here?" list being built (this phone only)
   const KICK_OFF_STARTS_CLOCK = true;          // "Kick off · n players" also starts the match clock
+  const KICK_HOLD_MS = 1500;                   // "Hold to kick off": 1.5 s hold with a fill (5 Nov)
 
   // ======================================================================== people
   const norm = s => String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase();
@@ -229,7 +241,8 @@
     return parts.join(' · ');
   }
 
-  // One person row. o: { teams, onTeam(pid) → team|null, pick, onTap, withApps, pids }
+  // One person row. o: { teams, onTeam(pid) → team|null, pick, onTap, tapTeam, withApps, pids }
+  // (tapTeam: only someone already on THAT side tonight is tappable with onTap)
   function personRow(pid, o) {
     const pids = o.pids || [pid];
     const meta = pids.length > 1 ? dupMeta(pids) : personMeta(pid, o.withApps);
@@ -238,7 +251,7 @@
     if (onPid) {
       const team = o.onTeam(onPid);
       const mark = `<span class="end">${UI.teamMark(team)}</span>`;
-      return o.onTap ? `<button type="button" class="r tall" data-tap="${o.onTap}" data-pid="${esc(onPid)}">${name}${mark}</button>`
+      return o.onTap && (!o.tapTeam || o.tapTeam === team) ? `<button type="button" class="r tall" data-tap="${o.onTap}" data-pid="${esc(onPid)}">${name}${mark}</button>`
         : `<div class="r tall su-on">${name}${mark}</div>`;
     }
     if (o.pick) return `<button type="button" class="r tall" data-tap="pick" data-pid="${esc(pid)}">${name}<span class="chev">›</span></button>`;
@@ -398,20 +411,49 @@
         openKeeperOther(team, dSide(team), draft.keepers[team], pick,
           () => App.action('setup.newPerson', { team, teams: [team], position: 'GK', title: T(team) + ' keeper', onDone: pick }));
       });
-      UI.on(el, 'kickoff', b => kickOff(el, b));
+      // "Hold to kick off" (the pinned bar): the 1.5 s hold kicks off; a short press only explains
+      let heldAt = 0;
+      UI.onHold(el, 'kickoff', b => {
+        heldAt = Date.now();
+        b.classList.remove('done');                       // Save.run locks it from here (and unlocks it on a failure)
+        const hl = b.querySelector('.hl'); if (hl) hl.textContent = b.dataset.idle || hl.textContent;
+        kickOff(el, b);
+      });
+      el.addEventListener('click', e => {
+        const hb = e.target.closest && e.target.closest('.hold[data-hold="kickoff"]');
+        if (!hb || !el.contains(hb) || hb.classList.contains('is-saving') || Date.now() - heldAt < 800) return;
+        UI.toast('Hold to kick off');
+      });
+      UI.on(el, 'gokeepers', () => {
+        const k = el.querySelector('[data-r="foot"]');
+        if (k && k.scrollIntoView) k.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
       UI.on(el, 'to-match', () => App.go('ref.console', {}, { replace: true }));
     },
-    render(el) {
-      if (Store.activeSessionId()) {
-        el.innerHTML = UI.empty('A game is on', '') + `<div class="mt-4">${UI.btn('Go to the match', { tap: 'to-match' })}</div>`;
-        return;
-      }
-      getDraft();
-      el.innerHTML = `<div data-r="tabs"></div><div class="su-acts" data-r="acts"></div>` +
-        `<div class="su-list" data-r="list"></div><div data-r="sheet"></div><div class="su-foot" data-r="foot"></div>`;
-      drawAll(el);
+    render(el) { renderSetup(el); },
+    // data changed (another phone, a save landing): never redraw under a finger holding "Hold to kick off"
+    onData(el) {
+      if (!holdingKick(el)) { renderSetup(el); return; }
+      if (el._waitData) return;
+      el._waitData = setInterval(() => {
+        if (el.isConnected && holdingKick(el)) return;
+        clearInterval(el._waitData); el._waitData = null;
+        if (el.isConnected) renderSetup(el);
+      }, 200);
     },
   });
+  function holdingKick(el) { return !!el.querySelector('.hold.holding'); }
+  function renderSetup(el) {
+    if (Store.activeSessionId()) {
+      el.innerHTML = UI.empty('A game is on', '') + `<div class="mt-4">${UI.btn('Go to the match', { tap: 'to-match' })}</div>`;
+      return;
+    }
+    getDraft();
+    el.innerHTML = `<div data-r="tabs"></div><div class="su-acts" data-r="acts"></div>` +
+      `<div class="su-list" data-r="list"></div><div data-r="sheet"></div><div class="su-foot" data-r="foot"></div>` +
+      `<div class="su-pin" data-r="pin" hidden></div>`;
+    drawAll(el);
+  }
 
   // tick / untick on the open side (a player ticked for another side moves here; the 9 + 1 cap still asks twice)
   function dTick(pid, team) {
@@ -475,18 +517,45 @@
         }).join('') + `</div>`;
       }).join('') + `</div>`;
   }
+  // The football and the whistle on the kick-off bar (inline, no file; ink on the page colour, no sound)
+  const KICK_PIC = `<svg class="su-pic" viewBox="0 0 48 48" aria-hidden="true" focusable="false">` +
+    `<circle class="ball" cx="19" cy="20" r="14"/>` +
+    `<path class="patch" d="M19 13.5l5.7 4.1-2.2 6.7h-7l-2.2-6.7z"/>` +
+    `<path class="seam" d="M19 13.5V6M24.7 17.6l7-2.3M22.5 24.3l4.3 6M15.5 24.3l-4.3 6M13.3 17.6l-7-2.3"/>` +
+    `<path class="wh" d="M33 30H45a1.5 1.5 0 0 1 1.5 1.5V35H39.6A7 7 0 1 1 33 30z"/>` +
+    `<circle class="whh" cx="33" cy="37" r="2.2"/></svg>`;
+  function kickHold(n) {
+    const label = `Hold to kick off · ${plural(n, 'player')}`;
+    return `<button type="button" class="hold su-kick" data-hold="kickoff" data-ms="${KICK_HOLD_MS}" style="--hold-ms:${KICK_HOLD_MS}ms" ` +
+      `data-done-text="Kicking off…" data-idle="${esc(label)}"><span class="fill"></span><span class="hl" data-label>${esc(label)}</span></button>`;
+  }
   function drawFoot(el) {
     const box = el.querySelector('[data-r="foot"]');
+    const pin = el.querySelector('[data-r="pin"]');
     if (!box) return;
+    if (pin && holdingKick(pin)) return;                  // never redraw under a finger that is holding
     const n = Object.keys(draft.picks).length;
     const ready = draft.teams.filter(t => dSide(t).length).length >= 2;
-    let html = `<div class="mt-6">${UI.seg('poles', [{ value: 'small', label: 'Small poles' }, { value: 'big', label: 'Big poles' }], draft.poles, { ref: true })}</div>`;
+    const poles = UI.seg('poles', [{ value: 'small', label: 'Small poles' }, { value: 'big', label: 'Big poles' }], draft.poles, { ref: true });
+    let keepers = '';
     if (draft.poles === 'big') {
       const taken = t => Object.keys(draft.keepers).filter(x => x !== t).map(x => draft.keepers[x]);
-      html += draft.teams.filter(t => dSide(t).length || draft.teams.length <= 2).map(t => keeperBlock(t, knownKeepers(t, dSide, draft.keepers[t], taken(t)), draft.keepers[t])).join('');
+      keepers = draft.teams.filter(t => dSide(t).length || draft.teams.length <= 2).map(t => keeperBlock(t, knownKeepers(t, dSide, draft.keepers[t], taken(t)), draft.keepers[t])).join('');
     }
-    html += `<div class="su-go">${UI.btn(ready ? `Kick off · ${plural(n, 'player')}` : 'Pick both teams to kick off', { kind: 'w', big: true, tap: 'kickoff', attrs: ready ? '' : ' disabled' })}</div>`;
-    box.innerHTML = html;
+    if (!ready || !pin) {                                  // not ready: no bar; poles, keepers and a quiet hint at the end
+      box.innerHTML = `<div class="mt-6">${poles}</div>` + keepers + `<div class="su-hint">Pick both teams to kick off</div>`;
+      if (pin) { pin.innerHTML = ''; pin.hidden = true; }
+      return;
+    }
+    // ready: the keepers stay on the page; poles + "Hold to kick off" are pinned to the bottom of the screen
+    box.innerHTML = keepers;
+    const sides = draft.teams.filter(t => dSide(t).length);
+    const chosen = sides.filter(t => draft.keepers[t]).length;
+    const pick = draft.poles === 'big' && chosen < sides.length
+      ? `<button type="button" class="su-pk" data-tap="gokeepers">Pick the keepers · ${chosen} of ${sides.length} ›</button>` : '';
+    pin.classList.toggle('has-pk', !!pick);
+    pin.innerHTML = poles + pick + `<div class="su-pin-go">${KICK_PIC}${kickHold(n)}</div>`;
+    pin.hidden = false;
   }
 
   // "+ From Red": the other teams' usual squads; tick to add to tonight's side (tick again to take off)
@@ -601,14 +670,17 @@
   // ---------------------------------------------------------------- setup.newPerson
   App.registerAction('setup.newPerson', args => {
     const a = args || {};
-    const sid = a.onDone ? null : (a.sid ? activeSid(a.sid) : Store.activeSessionId());
+    const join = !!(a.onDone && a.join);                 // add to tonight's match AND hand the person back
+    const sid = a.onDone && !join ? null : (a.sid ? activeSid(a.sid) : Store.activeSessionId());
     const sess = sid && Store.session(sid);
+    if (join && !sess) { UI.toast('No game on', { err: true }); return null; }
     const teams = a.teams && a.teams.length ? a.teams : sess ? matchTeams(sess) : nightTeams([]);
     const h = searchSheet({
       title: a.title || 'Add someone', cls: 'sh-setup-new', placeholder: 'Type a name', name: a.name || '',
       list: q => finderHtml(q, {
         teams, newTeams: teams, pick: !sess,
         onTeam: pid => (sess ? (rosterOf(Store.session(sid) || {})[pid] || {}).team || null : null),
+        onTap: join ? 'pick' : null, tapTeam: join ? a.team : null,   // join: someone already on that side carries on at once
         empty: '',
       }),
     });
@@ -618,7 +690,11 @@
       if (a.onDone) a.onDone(pid, a.team || null);
       else App.action('admin.editPlayer', { pid });
     });
-    UI.on(h.el, 'add', b => addToMatch(sid, b.dataset.pid, b.dataset.team, { button: b, group: h.el, onSaved: () => h.close() }));
+    UI.on(h.el, 'add', b => {
+      const pid = b.dataset.pid, team = b.dataset.team;
+      addToMatch(sid, pid, team, { position: join ? a.position : undefined, button: b, group: h.el,
+        onSaved: () => { h.close(); if (join) a.onDone(pid, team); } });
+    });
     UI.on(h.el, 'new', b => createPerson(h.getQ(), b.dataset.team, {
       sid, position: a.position, button: b, group: h.el,
       onDone: (pid, team) => { h.close(); if (a.onDone) a.onDone(pid, team); },

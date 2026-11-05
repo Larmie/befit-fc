@@ -18,6 +18,12 @@ const KEITH = pidOf('Keith'), SHAMO = pidOf('Shamo'), TOBY = pidOf('Toby'), MIKE
 const HOLD = new Set([KEITH, SHAMO, TOBY, MIKE, pidOf('Bona'), pidOf('Joel')]);
 const tap = async (p, sel, ms) => { await p.evaluate(sel => { const e = document.querySelector(sel); if (e) e.scrollIntoView({ block: "center" }); }, sel); await p.click(sel); await sleep(ms || 350); };
 const screenId = p => p.evaluate(() => document.querySelector('#app-screen section')?.dataset.screen);
+// 5 Nov: kick-off is "Hold to kick off" on the pinned bar (1.5 s); a real press and hold with the mouse
+const KICK = '.su-pin [data-hold="kickoff"]';
+const holdKick = async (p, ms) => {
+  const b = await (await p.waitForSelector(KICK, { visible: true, timeout: 4000 })).boundingBox();
+  await p.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await p.mouse.down(); await sleep(ms || 1800); await p.mouse.up(); await sleep(700);
+};
 
 // round 6: tick the first n unticked rows of the open team's usual squad (not the held-back players)
 const nextRow = p => p.$$eval('.scr-ref-setup [data-tap="tick"]:not(.on)', (els, hold) => (els.find(e => !hold.includes(e.dataset.pid)) || {}).dataset?.pid, [...HOLD]);
@@ -61,7 +67,7 @@ async function noTruncation(p, label) {
   await tap(p, `.sh-setup-new [data-tap="pick"][data-pid="${viaSearchPid}"]`, 400);
   check('picking a found name ticks him for the open side (Red) and closes the sheet', !(await p.$('.sh-setup-new')) && (await p.$eval(`.scr-ref-setup [data-tap="tick"][data-pid="${viaSearchPid}"]`, e => e.classList.contains('on'))));
   check('13 people: Green 7 · Red 6', (await sideCount(p, 'green')) === 7 && (await sideCount(p, 'red')) === 6, [await sideCount(p, 'green'), await sideCount(p, 'red')]);
-  check('Kick off states the count', (await p.$eval('[data-tap="kickoff"]', e => e.textContent)) === 'Kick off · 13 players');
+  check('Kick off states the count', (await p.$eval(KICK, e => e.textContent)) === 'Hold to kick off · 13 players');
   await s.shot(path.join(OUT, 'whos-here-390-dark.png'));
   await p.evaluate(() => window.scrollTo(0, 0));
 
@@ -89,7 +95,7 @@ async function noTruncation(p, label) {
   await s.shot(path.join(OUT, 'whos-here-after-new-390-dark.png'));
 
   // ---------------------------------------------------------------- 3 · kick off (small poles)
-  await tap(p, '[data-tap="kickoff"]', 700);
+  await holdKick(p);
   const sid = await p.evaluate(() => Store.activeSessionId());
   const sess0 = await p.evaluate(id => Store.session(id), sid);
   check('kick off creates the session and opens the console', !!sid && await screenId(p) === 'ref.console');
@@ -263,7 +269,7 @@ async function noTruncation(p, label) {
   check('Mike → Red keeper; Toby is offered only on Green', (await p2.$eval('[data-tap="keeper"][data-team="red"]', e => e.dataset.pid + ':' + e.classList.contains('sel'))) === `${MIKE}:true` && !(await p2.$(`[data-tap="keeper"][data-team="red"][data-pid="${TOBY}"]`)));
   check('picking a keeper puts him on that side (Green 5 · Red 5)', (await sideCount(p2, 'green')) === 5 && (await sideCount(p2, 'red')) === 5);
   await s2.shot(path.join(OUT, 'whos-here-big-poles-390-dark.png'), { fullPage: true });
-  await tap(p2, '[data-tap="kickoff"]', 700);
+  await holdKick(p2);
   const sid2 = await p2.evaluate(() => Store.activeSessionId());
   const s2sess = await p2.evaluate(id => Store.session(id), sid2);
   check('big-poles start: format {start:big, keepers}', s2sess.format.start === 'big' && s2sess.format.keepers.green === TOBY && s2sess.format.keepers.red === MIKE && s2sess.format.switchedAt === undefined, s2sess.format);

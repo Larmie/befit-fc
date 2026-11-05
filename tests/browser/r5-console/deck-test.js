@@ -1,6 +1,6 @@
 // Round 5 · console builder · the deck's new behaviour, TEST MODE ONLY (harness: in-memory data, Firebase blocked).
 // Stoppage escalation at 4 min · labels restart each half · Adjust clock (hold + sheet) keeps logged minutes ·
-// the 1.5 s holds (short press does nothing) · sync chip offline states + waiting dots · Blue v Green Goal tiles ·
+// the Adjust clock 1.5 s hold (short press does nothing; the 7 s end hold is in console/end-hold.js) · sync chip offline states + waiting dots · Blue v Green Goal tiles ·
 // double / triple taps = 1 event · Card sheet "Booked" · Save = tonight's keepers · GK plays as MID on small poles ·
 // nav hidden live · retired ⋯ menu harmless.  Screens at 390 dark, 390 light (console = app), 1280 dark.
 // Run: node deck-test.js
@@ -266,8 +266,8 @@ async function main() {
   check('ready: the team sheet card, Green 3 · Blue 2', (await p.$$eval('.su-tsh', a => a.map(x => x.querySelector('span').textContent + ' ' + x.querySelector('b').textContent).join(' | '))) === 'Green 3 | Blue 2');
   check('poles: "Small poles" | "Big poles"', (await p.$$eval('[data-seg="poles"] > button', a => a.map(x => x.textContent.trim()).join(' | '))) === 'Small poles | Big poles');
   await h.shot('setup-blue-390-dark.png');
-  await p.evaluate(() => document.querySelector('[data-tap="kickoff"]').scrollIntoView({ block: 'center' })); await sleep(200);   // clear of the fixed bottom nav
-  await h.tap('[data-tap="kickoff"]', 1800);
+  check('the kick-off bar: "Hold to kick off · 5 players"', (await h.text('.su-pin [data-hold="kickoff"]')) === 'Hold to kick off · 5 players', await h.text('.su-pin [data-hold="kickoff"]'));
+  await h.hold('.su-pin [data-hold="kickoff"]', 1800); await sleep(1400);   // the pinned bar, above the bottom nav
   const ns = await p.evaluate(() => { const s = Store.activeSession(); return s ? Object.keys(s.teams).sort().join(',') : null; });
   const shape = await p.evaluate(() => { const x = Store.activeSession(); return { keys: Object.keys(x).sort().join(','), entry: [...new Set(Object.values(x.teams).flatMap(t => Object.values(t.players).map(e => Object.keys(e).sort().join(','))))].join('|'), format: JSON.stringify(x.format), status: x.status, mode: x.mode, timer: x.timer.status }; });
   check('the lineup writes the same session shape as before: {date, format, mode, status, teams{players{pid:{position}}}, timer}', shape.keys === 'date,format,mode,status,teams,timer' && shape.entry === 'position' && shape.format === '{"start":"small"}' && shape.status === 'active' && shape.mode === 'live' && shape.timer === 'running', shape);

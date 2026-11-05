@@ -7,7 +7,7 @@
 //   4 a stoppage left running past 4 min (escalation), then ended      5 Adjust clock (hold + sheet)
 //   6 late arrivals, Keith moved · big poles with keepers, keeper saves · a guest + a player watch live (breakdown sums)
 //   7 a wrong scorer fixed via Edit events · a 2nd-half stoppage goal (labels restart each half)
-//   8 1.5 s hold to end → full-time check: long-stoppage heads-up → OK · a double tap → Remove one · Publish OFFLINE
+//   8 7 s hold to end → full-time check: long-stoppage heads-up → OK · a double tap → Remove one · Publish OFFLINE
 //     (waits) → signal back → published → the full-time card is offered
 //   9 admin signs in (email + password) → Needs you shows the result → Money tonight inline 60 · 120 · Other →
 //     Settings: Add Blue → Blue in the chips, Who's here and the tables
@@ -144,7 +144,8 @@ async function signIn(page, who) {
   check('poles: small by default', (await p.$eval('[data-seg="poles"] .on', e => e.dataset.value)) === 'small');
   await s.shot(path.join(SHOTS, '03-whos-here.png'));
   await adv(5);   // 19:05
-  await tap('[data-tap="kickoff"]', 800);
+  check('the kick-off bar (pinned above the tabs): "Hold to kick off · 13 players"', (await txt(p, '.su-pin [data-hold="kickoff"]')) === 'Hold to kick off · 13 players');
+  await hold('.su-pin [data-hold="kickoff"]', 1800);
   SID = await p.evaluate(() => Store.activeSessionId());
   let sess = await S();
   check('kick-off: session for Mon 26 Oct, active, live, small poles, 13 players, clock running', sess && sess.date === NIGHT && sess.status === 'active' && sess.mode === 'live' && sess.format.start === 'small' &&
@@ -405,12 +406,14 @@ async function signIn(page, who) {
   check('2nd-half stoppage ≈ 2 min; total tonight = both halves', t.stoppageTotal - t.stoppageAtHalf >= 120000 && t.stoppageTotal - t.stoppageAtHalf < 180000, (t.stoppageTotal - t.stoppageAtHalf) / 1000);
 
   // =========================================================================== 8 · end, full-time check, publish
-  note('8 · 1.5 s hold to end → full-time check: long-stoppage heads-up → OK; a double tap → Remove one; Publish offline');
+  note('8 · 7 s hold to end → full-time check: long-stoppage heads-up → OK; a double tap → Remove one; Publish offline');
   await hold('.cn-endw .hold', 500);
   check('a 0.5 s press on "Hold to end the game" does nothing', (await S()).timer.status === 'running');
   await hold('.cn-endw .hold', 2300);
+  check('a 2.3 s hold (the old length) does nothing either', (await S()).timer.status === 'running');
+  await hold('.cn-endw .hold', 7400);
   sess = await S();
-  check('held (> 1.5 s) → full time: timer ended, still active (checking), full-time check open', sess.timer.status === 'ended' && sess.status === 'active' && await screenId() === 'ref.ftcheck');
+  check('held (> 7 s) → full time: timer ended, still active (checking), full-time check open', sess.timer.status === 'ended' && sess.status === 'active' && await screenId() === 'ref.ftcheck');
   const finalScore = await score();
   check('final score 3–3', finalScore === '3–3', finalScore);
   const flag = await itxt(p, '[data-stoppage]');
