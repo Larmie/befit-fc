@@ -190,7 +190,7 @@ button.r:active, a.r:active, .r[data-tap]:active { background: var(--s2); }
 .sheet.sh-shell-signin, .sheet.sh-setup-new {
   top: max(12dvh, calc(env(safe-area-inset-top, 0px) + 16px)); bottom: auto; left: var(--gutter); right: var(--gutter);
   max-height: 70dvh; border-radius: var(--r-sheet); border: 1px solid var(--s3);
-  padding: 18px var(--gutter) 18px; animation: sheet-pop .18s ease;
+  padding: 18px var(--gutter) var(--sheet-safe); animation: sheet-pop .18s ease;
 }
 .sheet.sh-shell-signin .hdl, .sheet.sh-setup-new .hdl { display: none; }
 [data-theme="light"] .sheet.sh-shell-signin, [data-theme="light"] .sheet.sh-setup-new { border-color: var(--line); }

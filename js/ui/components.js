@@ -210,7 +210,9 @@
     b.innerHTML = icon(show ? 'eye-off' : 'eye');
   });
   // The one back arrow (round 8): the same look on every page that has somewhere to go back to.
-  const backBtn = o => `<button type="button" class="hd-btn hd-back${o && o.cls ? ' ' + esc(o.cls) : ''}" data-shell="back" aria-label="Back">${icon('back')}<span class="hd-back-t">Back</span></button>`;
+  // o.short: the arrow alone, no word (staff headers carry a title, the sync chip and the role pill).
+  const backBtn = o => `<button type="button" class="hd-btn hd-back${o && o.cls ? ' ' + esc(o.cls) : ''}" data-shell="back" aria-label="Back">${icon('back')}` +
+    (o && o.short ? '' : '<span class="hd-back-t">Back</span>') + `</button>`;
 
   function btn(label, o) {
     o = o || {};

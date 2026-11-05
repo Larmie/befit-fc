@@ -474,7 +474,10 @@
       // A screen that sets its own left (a back button) keeps it, and then has no pill, as before.
       if ((rl === 'referee' || rl === 'admin') && own.left === undefined) parts.right = (parts.right || '') + pillButton(rl);
       // Round 8: every page but the first tab (Home, or the referee's Match) starts with the back arrow; the mark stays beside it.
-      if (own.left === undefined && !isRoot() && !(rl === 'referee' && isLiveMatch())) parts.left = UI.backBtn() + brandBtn({ markOnly: true });
+      // Staff: the arrow alone (their headers also carry a title, the sync chip and the role pill).
+      if (own.left === undefined && !isRoot() && !(rl === 'referee' && isLiveMatch())) {
+        parts.left = rl === 'referee' || rl === 'admin' ? UI.backBtn({ short: true }) : UI.backBtn() + brandBtn({ markOnly: true });
+      }
       hd.className = 'hd hd-' + rl;
       hd.innerHTML = `<div class="hd-l">${parts.left || ''}</div><div class="hd-c">${parts.center || ''}</div><div class="hd-r">${parts.right || ''}</div>`;
     }

@@ -101,7 +101,7 @@
 .sh-admin-ahead .adm-ah-dates { font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
 .sh-admin-ahead .adm-ah-skip { margin-top: 6px; overflow-wrap: anywhere; }
 .sh-admin-ahead .adm-ah-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink2); }
-.sh-admin-ahead .adm-ah-total b { font-size: 22px; font-weight: 700; color: var(--ink); }
+.sh-admin-ahead .adm-ah-total b { font-size: 22px; font-weight: 700; color: var(--ink); font-family: var(--font); font-variant-numeric: tabular-nums; }   /* a big total: no Mono slashed zeros */
 .sh-admin-ahead .adm-ah-foot { display: contents; }
 .sh-admin-ahead .adm-ah-list .r { min-height: 56px; }
 :is(.scr-ref-money, .scr-ref-moneyDay) .adm-hero { padding: 16px; }
