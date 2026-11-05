@@ -23,7 +23,7 @@ window.BF_CONFIG = Object.freeze({
   // Fallbacks only. Round 5: the club and team settings are data (settings/club, settings/teams);
   // read them through window.Teams (js/core/teams.js): Teams.club().fee, Teams.list(), Teams.name(id) …
   seasonLabel: 'Season 2026',
-  fee: 60,                                   // the usual subs, in cedis (fallback for Teams.club().fee)
+  fee: 60,                                   // the usual weekly payment, in cedis (fallback for Teams.club().fee)
   currency: '₵',
   teams: Object.freeze(['green', 'red', 'blue', 'gold']),   // the 4 built-in team COLOURS (= Teams.COLOURS); not the team list
   maxOutfield: 9,                            // per side, plus 1 keeper

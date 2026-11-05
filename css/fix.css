@@ -11,6 +11,11 @@
 :is(.scr-ref-edit, .sh-fix) .fx-ph { color: var(--ink3); font-weight: 400; }
 :is(.scr-ref-edit, .sh-fix) .fx-step { display: flex; align-items: center; gap: 8px; flex: none; }
 :is(.scr-ref-edit, .sh-fix) .fx-minv { min-width: 48px; text-align: center; font-weight: 600; font-size: 15px; }
+/* tap the minute to type it (5 Nov 2026): the value looks like a small box, then becomes one */
+.sh-fix :is(.fx-mintap, .fx-minin) { width: 60px; height: var(--h-target); border-radius: var(--r-chip); background: var(--s2); color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line); font: 600 16px var(--font); font-variant-numeric: tabular-nums; text-align: center; padding: 0; }
+.sh-fix .fx-minin { box-shadow: inset 0 0 0 1.5px var(--ink2); outline: none; }
+.sh-fix .fx-mintap:active { background: var(--s3); }
 :is(.scr-ref-edit, .sh-fix) .fx-f .seg { flex: none; width: 184px; background: var(--s3); }
 :is(.scr-ref-edit, .sh-fix) .fx-f .seg > button { min-height: var(--h-target); }
 :is(.scr-ref-edit, .sh-fix) .fx-f .seg > button.on { background: var(--ink); color: var(--on-ink); }

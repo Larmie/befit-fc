@@ -98,7 +98,7 @@ async function matrix() {
 
 // ------------------------------------------------------------------ 2. numbers vs the engine
 async function numbers() {
-  // ---- Me (Andrew): 135 = 58 + 77, rank chip, bars in team colour, subs with reasons
+  // ---- Me (Andrew): 135 = 58 + 77, rank chip, bars in team colour, payment history with reasons
   const m = await H.open({ width: 390, theme: 'dark', route: '#/player.me', viewer: ANDREW });
   const me = await m.page.evaluate(pid => {
     const st = Scoring.seasonStats(pid, Store.state);
@@ -120,7 +120,7 @@ async function numbers() {
   const won = me.bars.filter(b => b.r === 'W'), lost = me.bars.filter(b => b.r === 'L');
   check('won bars are full team colour; lost bars are faint (the won/brightest bug fixed)', won.length > 0 && won.every(b => b.bg === me.redRgb) && lost.every(b => b.bg !== me.redRgb), `W ${won.map(b => b.bg).join()} · L ${lost[0] && lost[0].bg} · red ${me.redRgb}`);
   check('bar heights follow points (9 tallest)', me.bars.every(b => b.h <= Math.max(...me.bars.map(x => x.h))) && me.bars.find(b => b.v === String(Math.max(...me.want.map(w => +w.v)))).h === Math.max(...me.bars.map(x => x.h)));
-  check('Subs card shows the date not paid', /7 Sep not paid/.test(me.subs), me.subs);
+  check('Payment history card (was "Subs") shows the date not paid', /^Payment history 7 Sep not paid/.test(me.subs), me.subs);
   // (i): how 135 adds up, as a sum
   await m.page.click('[data-tap="carry"]'); await sleep(250);
   const carry = await m.page.evaluate(() => {
@@ -134,13 +134,13 @@ async function numbers() {
   await health(m, 'carry-sheet', 'sheet');
   await m.shot(path.join(OUT, 'me-carry-sheet-390-dark.png'));
   await m.page.keyboard.press('Escape'); await sleep(150);
-  // subs with reasons
+  // payment history with reasons
   await m.page.click('[data-tap="subs"]'); await sleep(250);
   const subs = await m.page.evaluate(() => [...document.querySelectorAll('.sh-player-subs .r')].map(r => r.innerText.replace(/\s+/g, ' ')));
   const subsEnd = await m.page.evaluate(() => { const e = document.querySelector('.sh-player-subs h4 .end'); return e ? { t: e.innerText, f: getComputedStyle(e.querySelector('*') || e).fontFamily } : null; });
-  check('Subs: every line says why (Played / Paid · didn\'t play)', subs.length > 0 && subs.every(x => /Played|Paid · didn't play/.test(x)), subs.slice(0, 5).join(' / '));
-  check('Subs: 10 Aug reads "Paid · didn\'t play"', subs.some(x => /Mon 10 Aug Paid · didn't play/.test(x)), subs.find(x => /10 Aug/.test(x)));
-  check('Subs: 7 Sep "Played · Not paid", header "1 not paid" not in Mono', subs.some(x => /Mon 7 Sep Played Not paid/.test(x)) && subsEnd && subsEnd.t === '1 not paid' && !/Mono/.test(subsEnd.f), JSON.stringify(subsEnd));
+  check('Payment history: every line says why (Played / Paid · didn\'t play)', subs.length > 0 && subs.every(x => /Played|Paid · didn't play/.test(x)), subs.slice(0, 5).join(' / '));
+  check('Payment history: 10 Aug reads "Paid · didn\'t play"', subs.some(x => /Mon 10 Aug Paid · didn't play/.test(x)), subs.find(x => /10 Aug/.test(x)));
+  check('Payment history: 7 Sep "Played · Not paid", header "1 not paid" not in Mono', subs.some(x => /Mon 7 Sep Played Not paid/.test(x)) && subsEnd && subsEnd.t === '1 not paid' && !/Mono/.test(subsEnd.f), JSON.stringify(subsEnd));
   await health(m, 'subs-sheet', 'sheet');
   await m.shot(path.join(OUT, 'me-subs-sheet-390-dark.png'));
   await m.page.keyboard.press('Escape'); await sleep(150);
@@ -163,7 +163,7 @@ async function numbers() {
     const dom = [...document.querySelectorAll('.pl-hist [data-tap="match"]')].map(b => ({ sid: b.dataset.sid, pts: b.querySelector('.pts').textContent }));
     return { ok: h.length === dom.length && h.every((x, i) => x.sid === dom[i].sid && String(x.pts) === dom[i].pts), n: h.length, subs: !!document.querySelector('.pl-subs'), hero: document.querySelector('.pl-hero').textContent, want: Scoring.seasonStats('seed_p001').pts };
   });
-  check('profile: match history = Scoring.playerHistory (every row), hero = season pts, no Subs', ph.ok && !ph.subs && ph.hero === String(ph.want), ph.n + ' rows');
+  check('profile: match history = Scoring.playerHistory (every row), hero = season pts, no Payment history', ph.ok && !ph.subs && ph.hero === String(ph.want), ph.n + ' rows');
   await pr.close();
 
   // ---- player home (Andrew, Tuesday): You hero + table near you

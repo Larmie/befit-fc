@@ -201,7 +201,7 @@ const text = (p, sel) => p.evaluate(s => (document.querySelector(s) || {}).textC
     const sumG = rows.reduce((a, r) => a + Number(r[6]), 0), allG = Object.keys(Store.players()).reduce((a, k) => a + Scoring.seasonStats(k).g, 0);
     return { head: head.join('|'), n: rows.length, players: Object.keys(Store.players()).length, bad: bad.slice(0, 2), nbad: bad.length, sumPts, allPts, sumG, allG, csv };
   });
-  check('CSV: header + one row per player (76)', csvChk.n === 76 && csvChk.players === 76 && csvChk.head === 'Rank|Name|Usual team|Position|Apps|Points|Goals|Assists|Saves|Yellow cards|Red cards|Nights not paid|Subs owed', csvChk.head);
+  check('CSV: header + one row per player (76)', csvChk.n === 76 && csvChk.players === 76 && csvChk.head === 'Rank|Name|Usual team|Position|Apps|Points|Goals|Assists|Saves|Yellow cards|Red cards|Nights not paid|Payments owed', csvChk.head);
   check('CSV: every row = Scoring.seasonStats + BF_PAY.owed for that player (0 differences)', csvChk.nbad === 0, csvChk.bad);
   check(`CSV totals reconcile: points ${csvChk.sumPts} = ${csvChk.allPts}, goals ${csvChk.sumG} = ${csvChk.allG}`, csvChk.sumPts === csvChk.allPts && csvChk.sumG === csvChk.allG);
   const cdp = await p.target().createCDPSession();

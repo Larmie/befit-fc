@@ -27,10 +27,10 @@ const check = (l, ok, x) => { ok ? passes++ : fails++; console.log(ok ? 'ok  ' :
     const t1 = await txt();
     const it1 = await items();
     check(`[${tag}] Needs you · 6 things, in order`, t1.startsWith('Needs you 6 things') &&
-      JSON.stringify(it1) === JSON.stringify(['Money not entered', 'Money tonight', 'Subs owed', 'Names used twice', '2 new players to finish', 'Published · Mon 12 Oct']), [t1.slice(0, 30), it1]);
+      JSON.stringify(it1) === JSON.stringify(['Money not entered', 'Money tonight', 'Payments owed', 'Names used twice', '2 new players to finish', 'Published · Mon 12 Oct']), [t1.slice(0, 30), it1]);
     check(`[${tag}] money not entered: 5 match days · 14 Sep – 12 Oct (tonight has its own line)`, t1.includes('5 match days · 14 Sep – 12 Oct'), t1);
     check(`[${tag}] money tonight: 0 of 18 paid · 18 to collect`, t1.includes('0 of 18 paid · 18 to collect'), t1);
-    check(`[${tag}] subs owed: 24 players · ₵2,400 for 40 nights (= BF_PAY.owed × ₵60)`, t1.includes('24 players · ₵2,400 for 40 nights'), t1);
+    check(`[${tag}] payments owed: 24 players · ₵2,400 for 40 nights (= BF_PAY.owed × ₵60)`, t1.includes('24 players · ₵2,400 for 40 nights'), t1);
     check(`[${tag}] names used twice: Chris, Frankie, Fred, New francis guy`, t1.includes('Chris, Frankie, Fred, New francis guy'), t1);
     check(`[${tag}] 12 Oct published, by ref, 1 fix + 1 flag kept + the fix's text`, t1.includes('Published · Mon 12 Oct') && t1.includes('By ref · 1 fix at full time · 1 flag kept') && t1.includes('Andrew · duplicate block removed −2'), t1);
     check(`[${tag}] old matches without ftCheck are not listed as new`, (t1.match(/Published/g) || []).length === 1, t1);
@@ -60,7 +60,7 @@ const check = (l, ok, x) => { ok ? passes++ : fails++; console.log(ok ? 'ok  ' :
         await p.$eval(`[data-tap="${tap}"]`, e => e.click()); await sleep(300);
         check(`${tap} → ${want} (${extra})`, await p.evaluate((w, x) => document.querySelector('#app-screen section').dataset.screen === w && location.hash.includes(x), want, extra));
       }
-      check('Owes filter is on after "Subs owed": 24 rows', await p.evaluate(() => document.querySelector('[data-chips="sq-f"] .on').dataset.value === 'owes' && document.querySelectorAll('[data-part="list"] .adm-sq').length === 24));
+      check('Owes filter is on after "Payments owed": 24 rows', await p.evaluate(() => document.querySelector('[data-chips="sq-f"] .on').dataset.value === 'owes' && document.querySelectorAll('[data-part="list"] .adm-sq').length === 24));
       // reload: the 12 Oct result has now been seen
       await p.evaluate(() => { location.hash = '#/admin.home'; }); await sleep(200); await p.reload({ waitUntil: 'networkidle0' }); await sleep(600);
       const t2 = await txt();
