@@ -13,8 +13,10 @@
                           (above the tabs, in the page flow so it never covers the last rows): Small poles | Big poles,
                           a football + whistle and "Hold to kick off · n players" (hold 1.5 s; a short press says
                           "Hold to kick off"). Big poles: the keeper picks stay on the page above the bar, and while a
-                          side has none the bar adds "Pick the keepers · 1 of 2 ›" (scrolls to them). Kick-off does
-                          NOT require keepers (as before). Before both sides have players: no bar; poles + keepers + a
+                          side has none the bar's button is "Pick the keepers · 1 of 2 ›" (scrolls to them) instead of the hold:
+                          on big poles every side needs its keeper before kick-off (Reuben, 5 Nov; "Other ›" can add
+                          someone not here yet). The same rule for switching to big poles mid-match. Before both sides
+                          have players: no bar; poles + keepers + a
                           quiet "Pick both teams to kick off" at the end of the page. Round 4 text:
                           Green · n | Red · n switch, search ("Add a name": existing names first, then
                           "Someone new"), "Usually here" chips (recent players first), the side's rows,
@@ -551,10 +553,10 @@
     box.innerHTML = keepers;
     const sides = draft.teams.filter(t => dSide(t).length);
     const chosen = sides.filter(t => draft.keepers[t]).length;
-    const pick = draft.poles === 'big' && chosen < sides.length
-      ? `<button type="button" class="su-pk" data-tap="gokeepers">Pick the keepers · ${chosen} of ${sides.length} ›</button>` : '';
-    pin.classList.toggle('has-pk', !!pick);
-    pin.innerHTML = poles + pick + `<div class="su-pin-go">${KICK_PIC}${kickHold(n)}</div>`;
+    // big poles: no kick-off until every side has its keeper; the bar's button takes you to the keeper picks instead
+    const go = draft.poles === 'big' && chosen < sides.length
+      ? `<button type="button" class="su-pk is-go" data-tap="gokeepers">Pick the keepers · ${chosen} of ${sides.length} ›</button>` : kickHold(n);
+    pin.innerHTML = poles + `<div class="su-pin-go">${KICK_PIC}${go}</div>`;
     pin.hidden = false;
   }
 
@@ -627,6 +629,9 @@
       (teams[t] || (teams[t] = { players: {} })).players[pid] = { position: dPos(pid) };
     });
     const format = { start: draft.poles === 'big' ? 'big' : 'small' };
+    if (format.start === 'big' && draft.teams.some(t => teams[t] && !(draft.keepers[t] && teams[t].players[draft.keepers[t]]))) {
+      UI.toast('Pick a keeper for each side first'); return;   // big poles: every side needs its keeper (Reuben, 5 Nov)
+    }
     if (format.start === 'big') {
       const keepers = {};
       draft.teams.forEach(t => { if (draft.keepers[t] && teams[t] && teams[t].players[draft.keepers[t]]) keepers[t] = draft.keepers[t]; });
@@ -857,8 +862,9 @@
         return keeperBlock(t, knownKeepers(t, x => Object.keys(roster).filter(pid => rTeam(pid) === x), chosen[t], taken), chosen[t]);
       }).join(''));
       const n = teams.filter(t => chosen[t]).length;
-      h.el.querySelector('[data-r="go"]').innerHTML = UI.btn(alreadyBig ? 'Save keepers' : 'Switch to big poles',
-        { kind: 'w', big: true, tap: 'switch', attrs: n ? '' : ' disabled' });
+      // every side needs its keeper (Reuben, 5 Nov): the button waits until each one is picked
+      h.el.querySelector('[data-r="go"]').innerHTML = UI.btn(n < teams.length ? `Pick the keepers · ${n} of ${teams.length}` : alreadyBig ? 'Save keepers' : 'Switch to big poles',
+        { kind: 'w', big: true, tap: 'switch', attrs: n < teams.length ? ' disabled' : '' });
     }
     UI.on(h.el, 'keeper', b => {
       const t = b.dataset.team, pid = b.dataset.pid;
@@ -878,6 +884,7 @@
     UI.on(h.el, 'switch', b => {
       const sess = Store.session(sid);
       if (!sess) return;
+      if (teams.some(t => !chosen[t])) { UI.toast('Pick a keeper for each side first'); return; }
       const f = Scoring.formatOf(sess);
       const roster = rosterOf(sess);
       const min = nowMinute(sess);

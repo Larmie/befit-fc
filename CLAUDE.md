@@ -46,6 +46,7 @@ a usual-Red player may play Green. Max 9 outfield + 1 keeper per side.
   small poles with no keepers and switch to big poles mid-match; the score carries over.
 - **Keepers:** saves, clean sheets and goals conceded count **only from the switch to big poles**. On small poles
   a usual keeper plays (and scores) as a MID; after the switch only the chosen keepers are GK.
+  On big poles every side must have its keeper picked (or someone added) before kick-off or the switch (5 Nov 2026).
 - **Stoppage:** the stoppage label restarts each half (46+12', not cumulative). A long or forgotten stoppage is
   **never** re-stamped into plain minutes ("I want people to see the stoppages"). The full-time check only shows a
   heads-up with "OK". Adjust clock keeps the minutes already logged.

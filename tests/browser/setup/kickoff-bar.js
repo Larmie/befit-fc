@@ -3,7 +3,8 @@
 //   6 + 6 ticked on an 844 px phone: a bar pinned above the tabs with Small poles | Big poles, the football + whistle
 //   and "Hold to kick off · 12 players", on screen without scrolling; it never covers the last rows or the tabs.
 //   Short press = a toast, 1 s = nothing, 1.5 s = kick off (one session, even if the hold fires twice).
-//   Big poles: "Pick the keepers · n of 2 ›" scrolls to the keepers (kick-off still allowed without them, as before).
+//   Big poles: until every side has its keeper the bar's button is "Pick the keepers · n of 2 ›" (it scrolls to them)
+//   and there is no kick-off (Reuben, 5 Nov); once both are picked, "Hold to kick off" is back.
 //   Another phone's change while a finger holds does not reset the hold. Laptop 1280: the bar sits in the column, at the bottom.
 // Run: node tests/browser/setup/kickoff-bar.js
 const path = require('path');
@@ -85,13 +86,17 @@ async function press(p, ms, during) {
   const fill = await p.evaluate(() => { const b = document.querySelector('.su-pin [data-hold="kickoff"]'); b.classList.add('holding'); const d = getComputedStyle(b.querySelector('.fill')).transitionDuration; b.classList.remove('holding'); return { d, ms: b.dataset.ms }; });
   check('the fill runs 1.5 s (data-ms 1500)', fill.d === '1.5s' && fill.ms === '1500', fill);
 
-  // big poles: keepers stay on the page; the bar offers the way to them; kick-off is not blocked
+  // big poles: keepers stay on the page; until each side has one the bar takes you to them and there is no kick-off
   await p.evaluate(() => document.querySelector('.su-pin [data-seg="poles"] [data-value="big"]').click()); await sleep(250);
   const kn = await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('befit_setup_draft')); return Object.keys(d.keepers || {}).length; });
   const pk = await p.$eval('.su-pin [data-tap="gokeepers"]', e => e.textContent).catch(() => null);
   check(`big poles, ${kn} of 2 keepers known: the bar says "Pick the keepers · ${kn} of 2 ›"`, kn < 2 ? pk === `Pick the keepers · ${kn} of 2 ›` : pk === null, pk);
   check('big poles: the keeper picks are on the page, above the bar', (await p.$$eval('.su-foot .su-kl', a => a.length)) === 2);
-  check('big poles: "Hold to kick off" stays available (keepers are not required, as before)', !!(await p.$('.su-pin [data-hold="kickoff"]')));
+  check(`big poles, ${kn} of 2 keepers: no "Hold to kick off" until both are picked`, kn < 2 ? !(await p.$('.su-pin [data-hold="kickoff"]')) : !!(await p.$('.su-pin [data-hold="kickoff"]')));
+  if (kn < 2) {   // and even a direct kick-off is refused
+    await p.evaluate(() => { const b = document.createElement('button'); b.className = 'hold'; b.dataset.hold = 'kickoff'; document.querySelector('.scr-ref-setup').appendChild(b); b.dispatchEvent(new CustomEvent('ui:hold', { bubbles: true, detail: { name: 'kickoff' } })); b.remove(); }); await sleep(500);
+    check('big poles without both keepers: a kick-off is refused ("Pick a keeper for each side first"), no match made', (await sessions(p)) === 0 && /Pick a keeper for each side first/.test(await p.evaluate(() => (document.querySelector('#app-toast') || {}).innerText || '')));
+  }
   await s.shot(path.join(OUT, 'kickoff-bar-390-bigpoles.png'));
   if (pk) {
     await p.evaluate(() => document.querySelector('.su-pin [data-tap="gokeepers"]').click()); await sleep(900);
@@ -105,7 +110,7 @@ async function press(p, ms, during) {
       await p.evaluate(tm => document.querySelector(`.su-foot [data-tap="kother"][data-team="${tm}"]`).click(), team); await sleep(450);
       await p.evaluate(() => document.querySelector('.sh-setup-kother [data-tap="kpick"]').click()); await sleep(450);
     }
-    check('both keepers chosen: the "Pick the keepers" row goes', !(await p.$('.su-pin [data-tap="gokeepers"]')));
+    check('both keepers chosen: "Pick the keepers" goes and "Hold to kick off" is back', !(await p.$('.su-pin [data-tap="gokeepers"]')) && !!(await p.$('.su-pin [data-hold="kickoff"]')));
     await s.shot(path.join(OUT, 'kickoff-bar-390-bigpoles-keepers.png'));
   }
   await p.evaluate(() => document.querySelector('.su-pin [data-seg="poles"] [data-value="small"]').click()); await sleep(250);

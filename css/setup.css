@@ -47,15 +47,14 @@ body.no-nav .scr-ref-setup > .su-pin { bottom: var(--safe-b); padding-bottom: ca
 .scr-ref-setup .su-pk { min-height: var(--h-target); border-radius: 12px; display: flex; align-items: center; justify-content: center;
   font-weight: 650; font-size: 14px; color: var(--ink); background: var(--s1); box-shadow: inset 0 0 0 1.5px var(--ink); }
 .scr-ref-setup .su-pk:active { transform: scale(.98); }
+.scr-ref-setup .su-pk.is-go { flex: 1 1 auto; min-width: 0; height: 56px; font-size: 15px; font-weight: 700; color: var(--on-ink); background: var(--ink); box-shadow: none; }   /* in place of "Hold to kick off" */
 /* the Undo bar and toasts float above the kick-off bar, never over "Hold to kick off" */
 body:has(.scr-ref-setup > .su-pin:not([hidden])) { --float-bottom: calc(var(--h-nav) + var(--safe-b) + 142px); }
-body:has(.scr-ref-setup > .su-pin.has-pk:not([hidden])) { --float-bottom: calc(var(--h-nav) + var(--safe-b) + 198px); }
 body.no-nav:has(.scr-ref-setup > .su-pin:not([hidden])) { --float-bottom: calc(var(--safe-b) + 154px); }
 @media (min-width: 960px) {
   body:has(.scr-ref-setup > .su-pin:not([hidden])) .screen-host { padding-bottom: 0; }
   .scr-ref-setup > .su-pin, body.no-nav .scr-ref-setup > .su-pin { bottom: 0; padding-bottom: 16px; }
   body:has(.scr-ref-setup > .su-pin:not([hidden])) { --float-bottom: 158px; }
-  body:has(.scr-ref-setup > .su-pin.has-pk:not([hidden])) { --float-bottom: 214px; }
 }
 
 /* ---------------------------------------------------------------- person rows with a side button each */
