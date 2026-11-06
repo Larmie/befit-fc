@@ -3,6 +3,9 @@
 //   Back: a popup closes · an inner page → the page before (or its tab) · another tab → the first tab
 //         · Home or the menu → "Press back again to exit", then the next Back leaves.
 // TEST MODE ONLY, via the harness (in-memory data, no Firebase). history.back() stands in for the phone's button.
+// Chrome on a phone SKIPS, on Back, any history entry a page added without a tap, and a test's history.back() can't
+// show that. So the spy below fails the suite if the app adds an entry while handling Back (6 Nov: on Reuben's phone
+// the old guard was re-added on Back, Chrome skipped it, and the app closed with no "Press back again to exit").
 // Run: node tests/browser/r5-foundations/back-button.js
 'use strict';
 const path = require('path');
@@ -19,11 +22,19 @@ const realClick = async (p, sel, w = 450) => { const el = await p.waitForSelecto
 const back = async (p, w = 450) => { try { await p.evaluate(() => history.back()); } catch (e) { /* the page left */ } await sleep(w); };
 const toast = p => p.evaluate(() => { const t = document.querySelector('#app-toast .toast, .toast'); return t ? t.innerText : ''; });
 const sheetOpen = p => p.evaluate(() => !!document.querySelector('#app-layer .sheet'));
+// counts history entries the app adds while it handles Back (popstate) or a hash change, i.e. not from a tap
+const spy = p => p.evaluate(() => {
+  window.__untrusted = [];
+  const push = history.pushState.bind(history);
+  history.pushState = function (st, t, u) { const ev = window.event; if (ev && (ev.type === 'popstate' || ev.type === 'hashchange')) window.__untrusted.push((st && st.bf) + ' in ' + ev.type); return push(st, t, u); };
+});
+const untrusted = p => p.evaluate(() => window.__untrusted || []).catch(() => ['(page gone)']);
 
 (async () => {
   // ---- 1 · the menu, the name box, state find
   {
     const s = await H.open({ width: 390, height: 844, viewer: 'none', now: NOW, scale: 1 }); const p = s.page;
+    await spy(p);
     await sleep(400);
     await p.screenshot({ path: path.join(OUT, 'menu.jpg'), type: 'jpeg', quality: 75 });
     const m = await p.evaluate(() => ({ box: !!document.querySelector('.fd-find:not(.is-quiet) [data-search="who"]'), label: (document.querySelector('.fd-find-l') || {}).innerText, stats: !!document.querySelector('[data-tap="stats"]'), h: document.scrollingElement.scrollHeight, ph: (document.querySelector('[data-search="who"]') || {}).placeholder }));
@@ -53,6 +64,8 @@ const sheetOpen = p => p.evaluate(() => !!document.querySelector('#app-layer .sh
     check('phone Back on Me → Home', await where(p) === 'player.home', await where(p));
     await back(p);
     check('phone Back on Home → still Home, "Press back again to exit"', await where(p) === 'player.home' && /Press back again to exit/.test(await toast(p)), [await where(p), await toast(p)]);
+    const u1 = await untrusted(p);
+    check('Back never adds a history entry by itself (Chrome would skip it, and the next Back would leave)', u1.length === 0, u1);
     await back(p, 700);
     const gone = await p.evaluate(() => (typeof App === 'undefined' ? 'LEFT:' + location.href : 'still in')).catch(() => 'LEFT');
     check('the next Back leaves the app', /^LEFT:/.test(String(gone)), gone);
@@ -61,6 +74,7 @@ const sheetOpen = p => p.evaluate(() => !!document.querySelector('#app-layer .sh
   // ---- 2 · tabs and inner pages, popups
   {
     const s = await H.open({ width: 390, height: 844, viewer: 'seed_p002', route: '#/player.home', now: NOW, scale: 1 }); const p = s.page;
+    await spy(p);
     await sleep(300);
     check('Home has no back arrow (it is the first tab)', !(await p.$('#app-header .hd-back')));
     await realClick(p, '#app-nav [data-tab="tables"]'); await realClick(p, '#app-nav [data-tab="match"]');
@@ -76,6 +90,18 @@ const sheetOpen = p => p.evaluate(() => !!document.querySelector('#app-layer .sh
     check('Back with a popup open closes the popup and stays on Tables', !(await sheetOpen(p)) && /^tables\./.test(await scr(p)), await scr(p));
     await realClick(p, '#app-header .hd-back', 500);
     check('the back arrow on the Tables tab → Home', await scr(p) === 'player.home', await scr(p));
+    const u2 = await untrusted(p);
+    check('… and closing a popup with Back adds no history entry either', u2.length === 0, u2);
+    // the real-phone case (6 Nov): a tab, Back up to Home, then straight Back again with no tap in between: it must warn
+    await realClick(p, '#app-nav [data-tab="tables"]');
+    await back(p); check('Tables → Back → Home', await where(p) === 'player.home', await where(p));
+    await back(p);
+    check('… straight Back again (no tap): still Home, "Press back again to exit"', await where(p) === 'player.home' && /Press back again to exit/.test(await toast(p)), [await where(p), await toast(p)]);
+    const u3 = await untrusted(p);
+    check('… with no history entry added on Back', u3.length === 0, u3);
+    await realClick(p, '#app-nav [data-tab="match"]');
+    check('a tap after the warning: the app carries on (Match)', await scr(p) === 'player.live', await scr(p));
+    await back(p); check('… and Back is guarded again (Home)', await where(p) === 'player.home', await where(p));
     // inner page reached straight from a link, no history: the arrow goes to its tab
     await p.evaluate(() => App.go('player.profile', { pid: 'seed_p044' }, { replace: true })); await sleep(400);
     await p.evaluate(() => { document.querySelector('#app-header .hd-back').click(); }); await sleep(500);

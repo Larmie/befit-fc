@@ -268,11 +268,15 @@
   // The phone's Back button (round 8, Reuben 5 Nov): never out of the app by surprise.
   //   a popup open → it closes · an inner page → the page before (or its tab) · another tab → the first tab (Home)
   //   · Home (or the menu) → "Press back again to exit", and the next Back leaves.
-  // How: a "guard" entry sits under the app's own entries. Landing on it runs the rule above and, unless it is time
-  // to leave, puts a fresh entry back on top. It is added at the first tap (Chrome skips entries a page adds before
-  // anyone has touched it), once per tab: a reload keeps the one already there.
-  const GUARD_KEY = 'befit_back_guard';
-  let guarded = false, atGuard = false, pendingHash = null;
+  // How: two "guard" entries sit under the app's own ones: g1 (one step up) and, below it, g0 (the exit warning).
+  // Chrome skips, on Back, any entry a page adds without a tap, so entries are ONLY added on a tap or key press:
+  // the first one adds g0 + g1 + the page, and later ones top them up after Back has used them. Back itself never
+  // adds one (6 Nov: on a real phone the old way re-added the guard on Back, Chrome skipped it, and the next Back
+  // left with no warning). A popup closed by Back steps forward again instead. Once per tab: a reload keeps them.
+  const GUARD_KEY = 'befit_back_guard2';
+  let guarded = false, skipG0 = false, forwarding = false, restoring = null, pendingHash = null;
+  const urlFor = h => location.pathname + location.search + (h == null ? location.hash : h);
+  const guardHere = () => { const b = history.state && history.state.bf; return b === 'g0' || b === 'g1' ? b : null; };
   function rootScreen(r) { return tabScreen(tabs(r)[0]); }
   function isRoot() { return !cur || cur.id === 'welcome' || cur.id === rootScreen(cur.role); }
   // Where "up" goes when there is no page to go back to: an inner page → its tab, a tab → the first tab.
@@ -282,62 +286,72 @@
     const own = t ? tabScreen(t) : null;
     return own && own !== cur.id ? own : rootScreen(cur.role);
   }
-  function pushTop() {
-    if (!guarded) return;
-    history.pushState({ bf: 'top' }, '', location.pathname + location.search + location.hash);
-    atGuard = false;
-  }
-  function addGuard() {
-    if (guarded) return;
-    guarded = true;
-    try { sessionStorage.setItem(GUARD_KEY, location.pathname + location.search); } catch (e) { /* private mode: fine */ }
-    history.replaceState({ bf: 'guard' }, '', location.pathname + location.search + location.hash);
-    pushTop();
+  // Only ever called from a tap or a key press.
+  function arm() {
+    const at = guardHere();
+    if (!guarded) {
+      guarded = true;
+      try { sessionStorage.setItem(GUARD_KEY, location.pathname + location.search); } catch (e) { /* private mode: fine */ }
+      history.replaceState({ bf: 'g0' }, '', urlFor());
+      history.pushState({ bf: 'g1' }, '', urlFor());
+      history.pushState({ bf: 'top' }, '', urlFor());
+    } else if (at === 'g0') {
+      history.pushState({ bf: 'g1' }, '', urlFor());
+      history.pushState({ bf: 'top' }, '', urlFor());
+    } else if (at === 'g1') {
+      history.pushState({ bf: 'top' }, '', urlFor());
+    }
   }
   function guardOnStart() {
     let nav = 'navigate', mark = null;
     try { nav = (performance.getEntriesByType('navigation')[0] || {}).type || 'navigate'; } catch (e) { /* ignore */ }
     try { mark = sessionStorage.getItem(GUARD_KEY); } catch (e) { /* ignore */ }
-    if (nav !== 'navigate' && mark === location.pathname + location.search) { guarded = true; atGuard = !!(history.state && history.state.bf === 'guard'); }
-    // the first tap (touch: on lift; mouse and keys: on press) adds the guard, or re-arms it after "Press back again"
-    const tapped = () => { if (!guarded) addGuard(); else if (atGuard) pushTop(); };
-    ['pointerup', 'keydown'].forEach(t => document.addEventListener(t, tapped, true));
+    if (nav !== 'navigate' && mark === location.pathname + location.search) guarded = true;
+    // touch: on lift; mouse and keys: on press (when the browser counts it as the person's own action)
+    ['pointerup', 'keydown'].forEach(t => document.addEventListener(t, arm, true));
+  }
+  // Back closed a popup (or the menu's name search): step forward again, and ignore the address flicking back and forth.
+  function stayHere(here) {
+    if (location.hash !== here) restoring = location.hash;
+    forwarding = true;
+    history.forward();
   }
   function onPop(e) {
     if (pendingHash && location.hash === pendingHash) return;           // our own forward step, not Back
+    if (forwarding) { forwarding = false; return; }                     // the step forward after closing a popup
     const st = e.state && e.state.bf;
     const here = trail[trail.length - 1] || location.hash;
     // 1 · a popup is open: Back closes it and the page stays where it was
-    if (UI.sheet.top()) {
-      UI.sheet.top().close();
-      history.pushState({ bf: 'top' }, '', location.pathname + location.search + here);
-      return;
-    }
+    if (UI.sheet.top()) { UI.sheet.top().close(); stayHere(here); return; }
     // 2 · the screen has its own step back (the menu's name search)
-    if (cur && cur.def.onBack && cur.def.onBack(cur.el, cur.ctx)) {
-      history.pushState({ bf: 'top' }, '', location.pathname + location.search + here);
+    if (cur && cur.def.onBack && cur.def.onBack(cur.el, cur.ctx)) { stayHere(here); return; }
+    // 3 · one step up (g1): an inner page or another tab goes up; Home warns and steps down to g0
+    if (st === 'g1') {
+      if (!isRoot()) {
+        const h = hashFor(upScreen(), {});
+        history.replaceState({ bf: 'g1' }, '', urlFor(h));
+        trail.length = 0; trail.push(h);
+        route = parseHash(); scheduleRender(true);
+        return;
+      }
+      history.replaceState({ bf: 'g1' }, '', urlFor(here));
+      UI.toast('Press back again to exit', { ms: 2500 });
+      skipG0 = true;
+      history.back();
       return;
     }
-    if (st !== 'guard') return;                                          // an ordinary step back: onHash draws it
-    // 3 · the bottom of the app's history
-    if (!isRoot()) {
-      const h = hashFor(upScreen(), {});
-      history.replaceState({ bf: 'guard' }, '', location.pathname + location.search + h);
-      history.pushState({ bf: 'top' }, '', location.pathname + location.search + h);
-      trail.length = 0; trail.push(h);
-      route = parseHash(); scheduleRender(true);
-      return;
+    // 4 · the exit guard (g0): the next Back leaves
+    if (st === 'g0') {
+      history.replaceState({ bf: 'g0' }, '', urlFor(here));
+      if (skipG0) { skipG0 = false; return; }
+      UI.toast('Press back again to exit', { ms: 2500 });
     }
-    // 4 · Home or the menu: warn; the next Back leaves (the guard stays the last entry)
-    atGuard = true;
-    history.replaceState({ bf: 'guard' }, '', location.pathname + location.search + here);
-    UI.toast('Press back again to exit', { ms: 2500 });
+    // an ordinary step back: onHash draws it
   }
   function go(id, params, opts) {
     const h = hashFor(id, params);
-    if (atGuard) pushTop();
     if (opts && opts.replace) {
-      history.replaceState(null, '', h);
+      history.replaceState(history.state, '', h);                       // keeps a guard a guard
       if (trail.length) trail[trail.length - 1] = h; else trail.push(h);
       route = parseHash(); scheduleRender(true); return;
     }
@@ -363,6 +377,10 @@
   function onHash() {
     const h = location.hash;
     pendingHash = null;
+    if (restoring !== null) {                    // Back closed a popup: the address goes back, then forward again
+      if (h === restoring) return;
+      restoring = null;
+    }
     if (trail.length > 1 && trail[trail.length - 2] === h) trail.pop(); else if (trail[trail.length - 1] !== h) trail.push(h);
     route = parseHash(); scheduleRender(true);
   }
