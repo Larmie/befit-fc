@@ -108,8 +108,13 @@
 .pl-stats .meta { margin-top: 4px; font-size: 13px; }
 .pl-subs { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; min-height: 56px; margin-top: var(--card-gap); font-weight: 600; text-align: left; }
 .pl-subs .grow { flex: 1; }
-.pl-owe { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--attn); color: var(--warn); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
-.pl-ok { font-size: 12.5px; color: var(--ink3); font-weight: 500; white-space: nowrap; }
+/* Me › Payments (6 Nov): green "✓ Up to date", red "Owes · see the admin", the same badge shape */
+.pl-owe, .pl-ok { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.pl-owe { background: color-mix(in srgb, var(--red) 14%, var(--s1)); color: var(--red); }
+.pl-ok { background: color-mix(in srgb, var(--green) 14%, var(--s1)); color: var(--green); }
+[data-theme="light"] .pl-owe { color: #B4232A; }    /* light: darker text so it reads (the light --red / --green are for marks) */
+[data-theme="light"] .pl-ok { color: #0B6E3F; }
+
 
 /* Last 5 bars in team colour: W full · D half · L faint (the won bar is the team's colour, not white) */
 .pl-bars { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
