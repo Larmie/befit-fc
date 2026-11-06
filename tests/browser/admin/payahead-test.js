@@ -1,7 +1,8 @@
 // Pay ahead (5 Nov 2026) + "Payment history" (was "Subs"). TEST MODE ONLY (the harness: no Firebase, writes in memory).
 // Admin: the entry on Money (landing + All dates) and on a player's page, the one sheet (who → weeks → ₵ a week →
 // the real dates and the sum), a date already paid is skipped, one write with Undo, then how it reads everywhere:
-// All dates "1 person paid ahead", Payment history "Paid ahead", the rule (the night stays "not entered").
+// All dates "1 person paid ahead", the admin's Payment history "Paid ahead", the rule (the night stays "not entered").
+// The player's own Me shows a status only (6 Nov): paying ahead doesn't clear dates already owed.
 'use strict';
 const path = require('path');
 const H = require('../harness.js');
@@ -127,7 +128,7 @@ const waitSaved = p => p.waitForFunction(() => { const u = document.querySelecto
     await w.close();
   });
 
-  // ---------------------------------------------------------------- the player's own Me › Payment history, 390 and 320 wide
+  // ---------------------------------------------------------------- the player's own Me › Payments (a status), 390 and 320 wide
   for (const width of [390, 320]) {
     await step(`me ${width}`, async () => {
       const m = await H.open({ viewer: who.pid, width, theme: 'dark', now: NOW, data: state, route: '#/player.me', latency: 40 });
@@ -137,14 +138,9 @@ const waitSaved = p => p.waitForFunction(() => { const u = document.querySelecto
         return { t: b.innerText.replace(/\s+/g, ' ').trim(), wide: b.scrollWidth > b.clientWidth + 1, oneLine: g.getBoundingClientRect().height <= lh * 1.5,
           inside: o ? o.getBoundingClientRect().right <= r.right && o.getBoundingClientRect().left >= g.getBoundingClientRect().right - 1 : false, page: document.documentElement.scrollWidth <= innerWidth };
       });
-      check(`[${width}] Me card: "Payment history · 2 dates not paid" fits on one line, nothing spills`, card.t === 'Payment history 2 dates not paid ›' && !card.wide && card.oneLine && card.inside && card.page, card);
-      await m.shot(path.join(OUT, `me-payment-history-card-${width}-dark.png`));
-      await click(m.page, '[data-tap="subs"]');
-      const rows = await m.page.$$eval('.sh-player-subs .r', l => l.map(r => r.innerText.replace(/\s+/g, ' ').trim()));
-      check(`[${width}] Me sheet: title "Payment history"; 9, 23, 30 Nov read "Paid ahead ₵60"`, (await txt(m.page, '.sh-player-subs .sheet-title')) === 'Payment history' &&
-        ['Mon 9 Nov', 'Mon 23 Nov', 'Mon 30 Nov'].every(d => rows.includes(`${d} Paid ahead ₵60`)), rows.slice(0, 6));
-      check(`[${width}] Me sheet: past dates keep "Played" / "Paid · didn't play"`, rows.filter(x => !/Nov|Dec/.test(x)).every(x => /Played|Paid · didn't play/.test(x)), rows);
-      if (width === 390) await m.shot(path.join(OUT, 'me-payment-history-sheet-390-dark.png'));
+      check(`[${width}] Me card: "Payments · Owes · see the admin" (paid ahead, but 2 dates still owed) fits on one line, nothing spills`, card.t === 'Payments Owes · see the admin' && !card.wide && card.oneLine && card.inside && card.page, card);
+      check(`[${width}] Me: no dates or amounts, and the card opens nothing`, !(await m.page.evaluate(() => /₵|not paid|Paid ahead/i.test(document.getElementById('app-screen').innerText) || !!document.querySelector('.pl-subs[data-tap]'))));
+      await m.shot(path.join(OUT, `me-payments-status-${width}-dark.png`));
       check(`[${width}] no console errors`, !m.errors.length, m.errors.join(' | '));
       await m.close();
     });

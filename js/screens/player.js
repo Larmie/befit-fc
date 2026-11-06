@@ -17,9 +17,9 @@
                                          then every past game with UI.miniScore.
      'player.match'  {sid}    tab match  Summary: score hero, Top points, team switch "Green · 64 player pts",
                                          tap a player = his points as a sum (UI.sum).
-     'player.me'              tab me     Me: 72 px hero, rank chip, How it adds up (i), Payment history (with reasons),
+     'player.me'              tab me     Me: 72 px hero, rank chip, How it adds up (i), Payments: a status only,
                                          last 5 bars in team colour (W full · D half · L faint), every match.
-     'player.profile' {pid}   tab tables Anyone's page (Me without Payment history).
+     'player.profile' {pid}   tab tables Anyone's page (Me without Payments).
    ACTIONS
      'home.liveBreakdown' ({ sid, pid })  that player's points tonight as a sum, "Season page ›". Live points rows
                                           everywhere call this (never the profile).
@@ -442,17 +442,10 @@
   });
 
   // ======================================================================== profile (Me + anyone)
-  // Me › Payment history uses the same payments rule as Money (js/core/pay.js), so both screens always agree.
-  // Lists every date the player paid or owes, newest first; dates with no record ("not entered") are left out.
-  function subsFor(pid) {
-    const d = db();
-    const out = BF_PAY.dates(d).map(date => ({ date, status: BF_PAY.status(pid, date, d) }))
-      .filter(x => x.status === 'paid' || x.status === 'not paid')
-      .map(x => ({ date: x.date, played: BF_PAY.playedOn(x.date, d).has(pid), amount: BF_PAY.amount(pid, x.date, d) }));
-    return { dates: out, unpaid: out.filter(x => x.played && !x.amount) };
-  }
-  // Why each line is there: "Played", "Paid ahead" (a paid date still to come), or "Paid · didn't play" once it has passed
-  const subsReason = x => (x.played ? 'Played' : x.amount ? (BF_PAY.upcoming(x.date, db()) ? 'Paid ahead' : 'Paid · didn\'t play') : 'Didn\'t play');
+  // Me › Payments: a status only (Reuben, 6 Nov). Players have no login, so anyone can open anyone's Me; no dates or
+  // amounts are shown, just "Up to date" or "Owes · see the admin". The same payments rule as Money (js/core/pay.js);
+  // the admin sees who owes what under Needs you › Payments owed.
+  const owesAny = pid => BF_PAY.owed(pid, db()).length > 0;
 
   function statCells(st, pos) {
     const cells = pos === 'GK'
@@ -486,7 +479,7 @@
     })), { cls: 'pl-hist' });
   }
 
-  // o = { own: Me (Payment history), ctx }
+  // o = { own: Me (the Payments status), ctx }
   function profileHtml(pid, o) {
     const p = Store.player(pid);
     if (!p) return UI.empty('Player not found', '');
@@ -504,11 +497,8 @@
       `<div class="grid4 pl-stats">${statCells(st, p.defaultPosition)}</div></div>`;
     let subs = '';
     if (o.own) {
-      const s = subsFor(pid);
-      const right = s.unpaid.length === 1 ? `<span class="pl-owe">${esc(fmt.short(s.unpaid[0].date))} not paid</span>`
-        : s.unpaid.length > 1 ? `<span class="pl-owe">${s.unpaid.length} dates not paid</span>`
-        : `<span class="pl-ok">${s.dates.length ? '✓ All paid' : 'Nothing due'}</span>`;
-      subs = `<button type="button" class="card pl-subs" data-tap="subs" data-pid="${esc(pid)}"><span class="grow">Payment history</span>${right}<span class="chev">›</span></button>`;
+      const right = owesAny(pid) ? `<span class="pl-owe">Owes · see the admin</span>` : `<span class="pl-ok">✓ Up to date</span>`;
+      subs = `<div class="card pl-subs"><span class="grow">Payments</span>${right}</div>`;
     }
     const a = head + pts + subs + barsHtml(hist.slice(0, 5));
     const b = historyHtml(hist) || `<div class="pl-gap">${UI.empty('No games yet', '')}</div>`;
@@ -530,24 +520,10 @@
     });
   }
 
-  function openSubs(pid, ctx) {
-    const p = Store.player(pid); if (!p) return;
-    const s = subsFor(pid);
-    const body = s.dates.length ? UI.rows(s.dates.map(x => UI.row({
-      tap: ctx.isReferee ? 'money-day' : null, data: { date: x.date },
-      title: fmt.date(x.date), meta: subsReason(x),
-      right: x.amount ? `<span class="pl-paid">${esc(fmt.money(x.amount))}</span>` : `<span class="pl-owe">Not paid</span>`,
-      chevron: ctx.isReferee,
-    }))) : UI.empty('Nothing due', '');
-    const h = UI.sheet.open({ title: 'Payment history', titleEnd: s.unpaid.length ? `<span class="pl-owe">${s.unpaid.length} not paid</span>` : '', cls: 'sh-player-subs', body, cancel: 'Close' });
-    UI.on(h.el, 'money-day', b => { h.close(); App.go('ref.moneyDay', { date: b.dataset.date }); });
-  }
-
   function bindProfile(el, ctx) {
     keyTaps(el);
     UI.on(el, 'match', b => App.go('player.match', { sid: b.dataset.sid }));
     UI.on(el, 'carry', b => openCarry(b.dataset.pid));
-    UI.on(el, 'subs', b => openSubs(b.dataset.pid, ctx));
     UI.on(el, 'share', b => App.action('player.shareCard', { pid: b.dataset.pid }));
     UI.on(el, 'who', () => App.go('welcome'));
     UI.on(el, 'appearance', () => App.openAppearance());

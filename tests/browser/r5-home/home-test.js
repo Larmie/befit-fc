@@ -111,7 +111,7 @@ async function numbers() {
     return { st, r, n: rows.length, hero: document.querySelector('.pl-hero').textContent, heroPx: parseFloat(getComputedStyle(document.querySelector('.pl-hero')).fontSize),
       heroCard: document.querySelector('.pl-pcard').className, stats: [...document.querySelectorAll('.pl-stats > div')].map(d => d.innerText.replace(/\s+/g, ' ').trim()),
       rank: document.querySelector('.pl-rank').textContent, bars, want: h5.map(h => ({ v: String(h.pts), r: h.result, team: h.team })), redRgb,
-      subs: document.querySelector('.pl-subs').innerText.replace(/\s+/g, ' ') };
+      subs: document.querySelector('.pl-subs').innerText.replace(/\s+/g, ' ').trim(), subsTap: !!document.querySelector('.pl-subs[data-tap], .pl-subs button') };
   }, ANDREW);
   check(`Me hero = seasonStats.pts (${me.st.pts}), 72 px, the glowing hero in his team colour`, me.hero === String(me.st.pts) && me.heroPx === 72 && /hero/.test(me.heroCard) && /t-red/.test(me.heroCard), me.hero + ' ' + me.heroPx + 'px');
   check('Me apps/goals/assists/yellow = seasonStats', me.stats.join('|') === `${me.st.apps} Apps|${me.st.g} Goals|${me.st.a} Assists|${me.st.y} Yellow`, me.stats.join('|'));
@@ -120,7 +120,7 @@ async function numbers() {
   const won = me.bars.filter(b => b.r === 'W'), lost = me.bars.filter(b => b.r === 'L');
   check('won bars are full team colour; lost bars are faint (the won/brightest bug fixed)', won.length > 0 && won.every(b => b.bg === me.redRgb) && lost.every(b => b.bg !== me.redRgb), `W ${won.map(b => b.bg).join()} · L ${lost[0] && lost[0].bg} · red ${me.redRgb}`);
   check('bar heights follow points (9 tallest)', me.bars.every(b => b.h <= Math.max(...me.bars.map(x => x.h))) && me.bars.find(b => b.v === String(Math.max(...me.want.map(w => +w.v)))).h === Math.max(...me.bars.map(x => x.h)));
-  check('Payment history card (was "Subs") shows the date not paid', /^Payment history 7 Sep not paid/.test(me.subs), me.subs);
+  check('Payments card (6 Nov: a status only) reads "Payments Owes · see the admin" for him (7 Sep not paid), and is not a button', me.subs === 'Payments Owes · see the admin' && !me.subsTap, me);
   // (i): how 135 adds up, as a sum
   await m.page.click('[data-tap="carry"]'); await sleep(250);
   const carry = await m.page.evaluate(() => {
@@ -134,15 +134,10 @@ async function numbers() {
   await health(m, 'carry-sheet', 'sheet');
   await m.shot(path.join(OUT, 'me-carry-sheet-390-dark.png'));
   await m.page.keyboard.press('Escape'); await sleep(150);
-  // payment history with reasons
-  await m.page.click('[data-tap="subs"]'); await sleep(250);
-  const subs = await m.page.evaluate(() => [...document.querySelectorAll('.sh-player-subs .r')].map(r => r.innerText.replace(/\s+/g, ' ')));
-  const subsEnd = await m.page.evaluate(() => { const e = document.querySelector('.sh-player-subs h4 .end'); return e ? { t: e.innerText, f: getComputedStyle(e.querySelector('*') || e).fontFamily } : null; });
-  check('Payment history: every line says why (Played / Paid · didn\'t play)', subs.length > 0 && subs.every(x => /Played|Paid · didn't play/.test(x)), subs.slice(0, 5).join(' / '));
-  check('Payment history: 10 Aug reads "Paid · didn\'t play"', subs.some(x => /Mon 10 Aug Paid · didn't play/.test(x)), subs.find(x => /10 Aug/.test(x)));
-  check('Payment history: 7 Sep "Played · Not paid", header "1 not paid" not in Mono', subs.some(x => /Mon 7 Sep Played Not paid/.test(x)) && subsEnd && subsEnd.t === '1 not paid' && !/Mono/.test(subsEnd.f), JSON.stringify(subsEnd));
-  await health(m, 'subs-sheet', 'sheet');
-  await m.shot(path.join(OUT, 'me-subs-sheet-390-dark.png'));
+  // payments: no dates, no amounts, no way into a list (anyone can open anyone's Me: there are no player logins)
+  const money = await m.page.evaluate(() => { const t = document.getElementById('app-screen').innerText; return { cedi: /₵/.test(t), notPaid: /not paid/i.test(t), sheet: !!document.querySelector('.sh-player-subs') }; });
+  check('Me shows no money: no ₵ amounts, no "not paid" dates, no payments list', !money.cedi && !money.notPaid && !money.sheet, money);
+  await m.shot(path.join(OUT, 'me-payments-status-390-dark.png'));
   await m.page.keyboard.press('Escape'); await sleep(150);
   // Share entry calls player.shareCard (owned by tables.js)
   await m.page.evaluate(() => { window.__acts = []; const a = App.action; App.action = (n, x) => { window.__acts.push(n + ':' + (x && x.pid)); return a(n, x); }; });

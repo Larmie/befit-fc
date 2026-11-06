@@ -41,7 +41,7 @@
 .pl-you .meta { overflow-wrap: anywhere; }
 .pl-you-p { display: flex; flex-direction: column; align-items: flex-end; flex: none; }
 .pl-you-n { font-size: 40px; }
-.pl-you:active, .pl-yseason:active, .pl-subs:active { filter: brightness(1.08); }
+.pl-you:active, .pl-yseason:active { filter: brightness(1.08); }
 
 /* "You · season" (hero on Home when no game is on) */
 .pl-yseason { display: block; width: 100%; text-align: left; padding: 16px 16px 18px; margin-top: var(--card-gap); }
@@ -110,7 +110,6 @@
 .pl-subs .grow { flex: 1; }
 .pl-owe { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--attn); color: var(--warn); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .pl-ok { font-size: 12.5px; color: var(--ink3); font-weight: 500; white-space: nowrap; }
-.pl-paid { font: 650 15px var(--font); font-variant-numeric: tabular-nums; }
 
 /* Last 5 bars in team colour: W full · D half · L faint (the won bar is the team's colour, not white) */
 .pl-bars { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
@@ -137,11 +136,10 @@
 @media (max-width: 959px) { .pl-prof-b > .lbl:first-child { margin-top: var(--sp-6); } }
 
 /* ---------------------------------------------------------------- sheets */
-:is(.sh-player-subs, .sh-player-live, .sh-player-feed) h4 .end { font-family: var(--font); }
+:is(.sh-player-live, .sh-player-feed) h4 .end { font-family: var(--font); }
 .pl-te { font: 600 13px var(--font); color: var(--ink2); font-variant-numeric: tabular-nums; }
 .sh-player-live .pl-rr, .sh-player-feed .r { min-height: 48px; }
 .sh-player-feed .min { width: 46px; flex: none; font: 500 12px var(--mono); color: var(--ink3); }
-.sh-player-subs .r .meta { overflow-wrap: anywhere; }
 /* live breakdown: a team-tinted top, the head, the sum (the sheet's hero), "Season page ›" */
 .sheet.sh-player-bd { background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 20%, var(--sheet)), var(--sheet) 150px), var(--sheet); }
 .pl-bdh { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; }

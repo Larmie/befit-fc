@@ -8,7 +8,7 @@ the end-of-task report). If anything here disagrees with it, `AGENTS.md` wins.
 
 ## What it is
 A mobile-first web app for a Monday night football group: live match logging by a referee, FPL-style points,
-the season tables, and payments (each person's "Payment history"; the admin can record "Pay ahead"). Plain files, no build step, no frameworks.
+the season tables, and payments (the admin sees each person's "Payment history" and can record "Pay ahead"). Plain files, no build step, no frameworks.
 
 - **Live:** https://the-be-fit-club.pages.dev (Cloudflare Pages; every push to `main` deploys in about 40 s)
 - **Branch previews:** `https://<branch, slashes as dashes>.the-be-fit-club.pages.dev`
@@ -50,6 +50,8 @@ a usual-Red player may play Green. Max 9 outfield + 1 keeper per side.
 - **Stoppage:** the stoppage label restarts each half (46+12', not cumulative). A long or forgotten stoppage is
   **never** re-stamped into plain minutes ("I want people to see the stoppages"). The full-time check only shows a
   heads-up with "OK". Adjust clock keeps the minutes already logged.
+- **Payments on player pages (6 Nov 2026):** players have no login, so Me shows a status only: "✓ Up to date" or
+  "Owes · see the admin", never dates or amounts. The admin sees who owes under Needs you › Payments owed.
 - **Full time:** the referee publishes the result; Reuben is notified and can edit after (no approval step).
 - **Scoring (FPL-style), the one engine is `js/core/scoring.js`** (its header and `SCORE` table are the source):
   everyone played +2, assist +3, yellow −1, red −3 · GK goal +10, penalty save +6, clean sheet +8, +1 per 4 saves,
