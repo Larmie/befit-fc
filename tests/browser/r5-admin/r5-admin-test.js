@@ -252,23 +252,25 @@ const text = (p, sel) => p.evaluate(s => (document.querySelector(s) || {}).textC
   check('referee: no console errors', r.errors.length === 0, r.errors);
   await r.close();
 
-  // =============================================================== C · no match today: record a match day (Monday-ready fix)
+  // =============================================================== C · no match today (9 Nov: Tonight stays tonight; the days to record have their own tab)
   console.log('— No match today');
   const TUE = '2026-10-20T12:00';
   for (const theme of ['dark', 'light']) {
     const a = await H.open({ width: 390, theme, referee: true, route: '#/ref.money', now: TUE });
     const m = a.page;
     const want = await m.evaluate(() => BF_PAY.overview().missing.map(r => ({ date: r.date, played: r.played })));
-    const hero = await m.evaluate(() => { const c = document.querySelector('.adm-record'); return c ? { t: c.innerText.replace(/\s+/g, ' ').trim(), date: c.querySelector('[data-tap="record"]').dataset.date, hero: c.classList.contains('hero'), tonight: document.querySelector('[data-seg="money-view"] .on').dataset.value } : null; });
+    const hero = await m.evaluate(() => { const c = document.querySelector('.adm-record'); return c ? { t: c.innerText.replace(/\s+/g, ' ').trim(), hero: c.classList.contains('hero'), tonight: document.querySelector('[data-seg="money-view"] .on').dataset.value, old: !!c.querySelector('[data-tap="record"]') } : null; });
     const latest = want[0];
-    check(`[${theme}] Money lands on the latest unrecorded match day: ${latest && latest.date} (${want.length} unrecorded), "${latest && latest.played} players played · not entered"`, !!hero && hero.date === latest.date &&
-      hero.t.includes(await m.evaluate(d => UI.fmt.date(d), latest.date)) && hero.t.includes(`${latest.played} played`) && hero.t.includes('not entered') && hero.t.includes('Record money ›') && hero.hero && hero.tonight === 'tonight', { hero, want });
+    check(`[${theme}] Tuesday: Tonight says "No match today · Tue 20 Oct · Next game · Mon 26 Oct", and shows no other night`, !!hero && hero.tonight === 'tonight' && hero.hero && !hero.old &&
+      /^no match today tue 20 oct next game · mon 26 oct/i.test(hero.t), { hero, want });
     console.log('     unrecorded match days:', want.map(x => `${x.date} (${x.played})`).join(', '));
-    check(`[${theme}] "+ ${want.length - 1} more match days not entered ›"`, hero && hero.t.includes(`+ ${want.length - 1} more match days not entered ›`), hero && hero.t);
+    check(`[${theme}] … with "${want.length} match days still to record ›"`, hero && hero.t.includes(`${want.length} match days still to record ›`), hero && hero.t);
     await a.shot(path.join(OUT, `money-record-landing-390-${theme}.png`));
     if (theme === 'dark') {
       const w0 = await nW(m);
-      await click(m, '.adm-record [data-tap="record"]', 500);
+      await click(m, '.adm-record [data-tap="more-days"]', 400);
+      check('"… still to record ›" → the To record tab, the latest first', await m.evaluate(d => location.hash.includes('view=need') && (document.querySelector('.adm-needs-rec [data-tap="day"]') || { dataset: {} }).dataset.date === d, latest.date));
+      await click(m, `.adm-needs-rec [data-tap="day"][data-date="${latest.date}"]`, 500);
       const reg = await m.evaluate(() => ({ id: document.querySelector('#app-screen section').dataset.screen, hash: location.hash, tab: document.querySelector('[data-chips="reg-tab"] .on').dataset.value,
         rows: [...document.querySelectorAll('[data-part="rows"] [data-tap="row"]')].map(b => b.dataset.pid).sort() }));
       const played = await m.evaluate(d => [...BF_PAY.playedOn(d).keys()].sort(), latest.date);
@@ -280,12 +282,10 @@ const text = (p, sel) => p.evaluate(s => (document.querySelector(s) || {}).textC
       await click(m, '[data-tap="pay-save"]', 700);
       const ws = await writesSince(m, w0);
       check('… tick ₵60 and Save: one write; that day is now entered', ws.length === 1 && ws[0][`paymentDays/${latest.date}/payments/${played[0]}`].amount === 60 && await m.evaluate(d => BF_PAY.hasRecord(d), latest.date), ws);
-      await m.evaluate(() => { location.hash = '#/ref.money'; }); await sleep(400);
-      const next = await m.evaluate(() => (document.querySelector('.adm-record [data-tap="record"]') || { dataset: {} }).dataset.date || null);
-      check(`… back on Money, the card moves to the next one (${want[1] && want[1].date})`, next === want[1].date, next);
-      await click(m, '.adm-record [data-tap="more-days"]', 400);
-      check('"+ n more" → All dates with "Needs recording" first', await m.evaluate(() => location.hash.includes('all=1') && document.querySelector('.adm-reg-b > .lbl').textContent.includes('Needs recording')));
-      await a.shot(path.join(OUT, 'money-all-needs-recording-390-dark.png'));
+      await m.evaluate(() => { location.hash = '#/ref.money?view=need'; }); await sleep(400);
+      const next = await m.evaluate(() => (document.querySelector('.adm-needs-rec [data-tap="day"]') || { dataset: {} }).dataset.date || null);
+      check(`… back on To record, the list starts at the next one (${want[1] && want[1].date})`, next === want[1].date, next);
+      await a.shot(path.join(OUT, 'money-to-record-390-dark.png'));
       // Needs you › Money not entered → the sheet
       await m.evaluate(() => { location.hash = '#/admin.home'; }); await sleep(400);
       await click(m, '[data-tap="need-money"]', 400);
@@ -293,6 +293,14 @@ const text = (p, sel) => p.evaluate(s => (document.querySelector(s) || {}).textC
       await a.shot(path.join(OUT, 'needs-money-sheet-390-dark.png'));
     }
     check(`[${theme}] no console errors`, a.errors.length === 0, a.errors);
+    await a.close();
+  }
+  // match day, before kick-off (9 Nov, Reuben's phone at 14:52: it said "No match today" and showed 19 Oct): Tonight is tonight
+  {
+    const a = await H.open({ width: 390, theme: 'light', referee: true, route: '#/ref.money', now: '2026-11-09T14:52' });
+    const t = await a.page.evaluate(() => ({ on: (document.querySelector('[data-seg="money-view"] .on') || { dataset: {} }).dataset.value, top: ((document.querySelector('[data-part="top"]') || {}).innerText || '').replace(/\s+/g, ' '), old: !!document.querySelector('.adm-record') }));
+    check('Monday 14:52, before kick-off: Tonight is that night’s register ("Tonight · Mon 9 Nov", "before kick-off"), no old night', t.on === 'tonight' && !t.old && /tonight · mon 9 nov/i.test(t.top) && /before kick-off/.test(t.top), t);
+    check('Monday: no console errors', a.errors.length === 0, a.errors);
     await a.close();
   }
   // only one unrecorded day: Needs you goes straight to its register

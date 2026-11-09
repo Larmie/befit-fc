@@ -90,6 +90,9 @@
 /* Pay ahead (5 Nov 2026): the entry under the switch, and its sheet */
 .scr-ref-money > .adm-ahead { margin-bottom: var(--sp-4); }
 .scr-ref-money > .adm-ahead .r { min-height: 60px; }
+/* Pay ahead in gold (9 Nov, Reuben: "a different colour"): its own colour, apart from the green / red payment badges */
+.adm-ahead .r, .scr-ref-player [data-tap="ed-ahead"] { background: color-mix(in srgb, var(--gold) 13%, var(--s1)); box-shadow: inset 3px 0 0 var(--gold); }
+.adm-ahead .r .nm, .scr-ref-player [data-tap="ed-ahead"] .nm { color: var(--gold); }
 .sh-admin-ahead .adm-ah-row { min-height: 60px; gap: 12px; }
 .sh-admin-ahead .adm-ah-step { display: flex; align-items: center; gap: 8px; flex: none; }
 .sh-admin-ahead .adm-ah-step .step:disabled { opacity: .35; }

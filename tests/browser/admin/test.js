@@ -136,13 +136,16 @@ const PING = () => Store.set('sessions/-Oz8393enopc2awvN6-n/zzPing', Math.random
   check('"All dates" (on the page) shows the list', await p.evaluate(() => !!document.querySelector('.adm-collected')));
   const listTxt = await p.evaluate(() => document.querySelector('#app-screen').textContent);
   check('list: "6 match days not entered", "5 of 21 paid", "not entered", never ₵0.00', listTxt.includes('6 match days not entered') && listTxt.includes('5 of 21 paid') && listTxt.includes('not entered') && !listTxt.includes('₵0.00'));
-  // Monday-ready fix: match days with nothing entered come first, each with "Record ›"; tonight keeps its own register
+  // 9 Nov: All dates = Collected, then "Match days" (every day); the days still to record have their own tab
   const order = await p.evaluate(() => ({ labels: [...document.querySelectorAll('.adm-reg-b > .lbl')].map(l => l.firstElementChild.textContent.replace(/\s+/g, ' ').trim()),
-    need: [...document.querySelectorAll('.adm-needs-rec [data-tap="day"]')].map(b => ({ d: b.dataset.date, t: b.innerText.replace(/\s+/g, ' ').trim() })),
+    rows: [...document.querySelectorAll('.adm-reg-b [data-tap="day"]')].map(b => b.dataset.date),
     want: BF_PAY.overview().missing.filter(r => r.date !== '2026-10-19').map(r => r.date) }));
-  check('All dates: "Needs recording 5" on top (12 Oct … 14 Sep, each "Record ›"), then "Match days"', order.labels[0] === 'Needs recording 5' && order.labels[1] === 'Match days' &&
-    JSON.stringify(order.need.map(x => x.d)) === JSON.stringify(order.want) && order.need.length === 5 && order.need.every(x => x.t.endsWith('Record ›')), order);
-  check('… the "Match days" rows below hold no unrecorded day', await p.evaluate(want => ![...document.querySelectorAll('.adm-reg-b > .rows:not(.adm-needs-rec) [data-tap="day"]')].some(b => want.includes(b.dataset.date)), order.want));
+  check('All dates: "Match days" straight after Collected (no "Needs recording" block), and it lists every day, the 5 to record too', order.labels.join('|') === 'Match days' && order.want.every(d => order.rows.includes(d)), order);
+  await click(p, '[data-seg="money-view"] [data-value="need"]');
+  const need = await p.evaluate(() => ({ tab: document.querySelector('[data-seg="money-view"] [data-value="need"]').innerText.replace(/\s+/g, ' ').trim(),
+    rows: [...document.querySelectorAll('.adm-needs-rec [data-tap="day"]')].map(b => ({ d: b.dataset.date, t: b.innerText.replace(/\s+/g, ' ').trim() })) }));
+  check('the third tab "To record · 5": 12 Oct … 14 Sep, each "Record ›"', need.tab === 'To record · 5' && JSON.stringify(need.rows.map(x => x.d)) === JSON.stringify(order.want) && need.rows.every(x => x.t.endsWith('Record ›')), need);
+  await click(p, '[data-seg="money-view"] [data-value="all"]');
   check('the link reads "+ Other date"', (await p.evaluate(() => document.querySelector('[data-tap="add-date"]').textContent.trim())) === '+ Other date');
   await click(p, '[data-tap="add-date"]');
   check('+ Other date opens a date sheet', await p.evaluate(() => !!document.querySelector('.sh-admin-date [data-newdate]')));
